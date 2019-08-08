@@ -70,9 +70,9 @@ def main() -> None:
     reddit = None
     while reddit is None:
         username = input("Username: ")
-        # password = input("Password: ")
-        password = getpass("Password: ")    # Will only work via command line
-        print("Signing in...")
+        password = input("Password: ")
+        # password = getpass("Password: ")    # Will only work via command line
+        print("Signing in...", end="")
         reddit = sign_in(username, password)
 
     # Establish the download limit
@@ -140,17 +140,24 @@ def sign_in(username: str, password: str):
 
     Returns Reddit object if successful
     """
-    # Try to sign in until it works
+
+    # Don't bother trying to sign in if username or password are blank
+    #  (Also prevents a stack overflow in praw)
+    if username == "" or password == "":
+        print("Unrecognized username or password.\n")
+        return None
+
+    # Try to sign in
     try:
         reddit = praw.Reddit(client_id='scNa87aJbSIcUQ',
                              client_secret='034VwNRplArCc-Y3niSpin0yFqY',
                              user_agent='Saved Sorter',
                              username=username,
                              password=password)
-        print("Signed in as " + str(reddit.user.me()) + ".\n")
+        print("signed in as " + str(reddit.user.me()) + ".\n")
         return reddit
     except prawcore.exceptions.OAuthException:
-        print("Unrecognized username or password.\n")
+        print("unrecognized username or password.\n")
         return None
 
 
@@ -222,8 +229,18 @@ def sanitize_post(post):
         # TODO: TEST
         elif "/imgur.com/" in post.url:
             # Get the parsed page
+
             soup = BeautifulSoup(get(post.url).text)
-            return [soup.select('.image a')[0]['href']]
+
+            images = soup.select('img[src]')
+            post.recognized_urls.append(["https://imgur.com/" + [images[0]['src']]])
+
+            '''try:
+                post.recognized_urls.append([soup.select('.image a')[0]['href']])
+            # If that doesn't work, try finding it through its <img src=""> tag
+            except IndexError:
+            '''
+
 
         # i.redd.it and i.imgur.com are single-image pages
         elif "i.redd.it" in post.url or "i.imgur.com/" in post.url:
@@ -255,8 +272,8 @@ def download_image(title: str, url: str, path: str) -> str:
 
     # If the image couldn't be downloaded, return an empty string
     if image.status_code != 200:
-        print("Error retrieving image from " + url)
-        exit(1)
+        print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
+        return ""
 
     file_extension = splitext(url)[1]
 
@@ -272,7 +289,7 @@ def download_image(title: str, url: str, path: str) -> str:
     file_title = title
 
     # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
-    for i in range(len(listdir(path) + 1)):
+    for i in range(len(listdir(path)) + 1):
 
         # Insert a number in the filename to prevent conflicts
         if i > 0:
@@ -288,12 +305,12 @@ def download_image(title: str, url: str, path: str) -> str:
 
             # If the file is a jpg, resave it as a png
             if file_extension == ".jpg":
-                im = Image.open(file_title + file_extension)
+                im = Image.open(path + file_title + file_extension)
                 file_extension = ".png"
                 rgb_im = im.convert('RGB')
-                rgb_im.save(file_title + file_extension)
+                rgb_im.save(path + file_title + file_extension)
                 # Delete the previous jpg file
-                remove(file_title + ".jpg")
+                remove(path + file_title + ".jpg")
 
             # Return the final name of the file (means it was successfully downloaded there)
             return file_title + file_extension

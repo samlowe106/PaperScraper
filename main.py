@@ -1,3 +1,5 @@
+# region Imports
+
 from getpass import getpass
 from os import listdir
 from os import makedirs
@@ -15,36 +17,44 @@ from bs4 import BeautifulSoup       # bs4
 from PIL import Image               # Pillow
 from requests import get            # Requests
 
+# endregion
+
 """
 Created on Wed Aug 30 16:52:56 2017
-Updated on Mon Dec 8 6:50am 2018
+Updated on Fri Aug 9 7:00pm 2019
 
 @author: Sam
 
 Scrapes a specified amount of image posts from the user's saved posts and saves those images to a file
-Bookmarks non-image links to a txt file
 """
 
-# Current date formatted in month-day-year
+# region Globals
+
+# Current date (in Greenwich Mean Time) formatted in month-day-year
 DATE = strftime("%m-%d-%y", gmtime())
 
 # Directory where images will be saved
-IMAGE_DOWNLOAD_DIRECTORY = "Output\\" + DATE + "\\"
+DIRECTORY = "Output\\" + DATE + "\\"
 
 # Directory where logs will be stored
-LOG_DIRECTORY = "Logs\\"
+LOG_DIRECTORY = DIRECTORY + "Logs\\"
 
 # Log of all urls from which image(s) were downloaded
-LOG_FILE = LOG_DIRECTORY + DATE + ".txt"
+LOG = LOG_DIRECTORY + "Log.txt"
 
 # List of currently unrecognized links (so compatibility can be added later)
-INCOMPATIBLE_LINK_LOG_FILE = LOG_DIRECTORY + "Incompatible Link Log.txt"
+INCOMPATIBLE_DOMAIN_LOG = LOG_DIRECTORY + "Incompatible URL Log.txt"
 
-# Character that windows won't allow in a filename
+# Character that Windows won't allow in a filename
 INVALID_CHARS = ["\\", "/", ":", "*", "?", "<", ">", "|"]
+
+# File extensions that this program should recognize
+RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
 
 # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
 incompatible_domains = {}
+
+# endregion
 
 
 def main() -> None:
@@ -59,27 +69,31 @@ def main() -> None:
     If it links to a non-link image, bookmark and unsave it (doesn't count towards download_limit)
     """
 
-    # Ensure the directories exist
+    # Make directories
     if not exists(LOG_DIRECTORY):
         makedirs(LOG_DIRECTORY)
 
-    if not exists(IMAGE_DOWNLOAD_DIRECTORY):
-        makedirs(IMAGE_DOWNLOAD_DIRECTORY)
-
     # Sign in
-    reddit = None
-    while reddit is None:
+    while True:
         username = input("Username: ")
         password = input("Password: ")
-        # password = getpass("Password: ")    # Will only work via command line
+        # password = getpass("Password: ")    # Only works on the command line
+
         print("Signing in...", end="")
         reddit = sign_in(username, password)
 
+        # If login was successful, continue with the program
+        if reddit is not None:
+            print("signed in as " + str(reddit.user.me()) + ".\n")
+            break
+
+        print("unrecognized username or password!\n")
+
     # Establish the download limit
-    download_limit = None
-    while download_limit is None:
+    while True:
         try:
             download_limit = int(input("How many posts would you like to download? "))
+            break
         except ValueError:
             pass
 
@@ -101,7 +115,7 @@ def main() -> None:
         index += 1
 
         # Parse the image link
-        images_downloaded = [download_image(post.title, url, IMAGE_DOWNLOAD_DIRECTORY) for url in post.recognized_urls]
+        images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
 
         # Print out information about the post
         print("\n{0}. {1}".format(index, post.title))
@@ -111,11 +125,7 @@ def main() -> None:
             print("   Downloaded " + image)
 
         # Log the post
-        log_url(post.title, post.url, LOG_FILE)
-
-        # If no images could be downloaded, write the url to the list of incompatible urls as well
-        if images_downloaded is None:
-            log_url("Unparsed URL ", post.url, INCOMPATIBLE_LINK_LOG_FILE)
+        log_url(post.title, post.url, images_downloaded != [])
 
         # Unsave the post
         post.unsave()
@@ -142,9 +152,8 @@ def sign_in(username: str, password: str):
     """
 
     # Don't bother trying to sign in if username or password are blank
-    #  (Also prevents a stack overflow in praw)
+    #  (praw has a stack overflow without this check!)
     if username == "" or password == "":
-        print("Unrecognized username or password.\n")
         return None
 
     # Try to sign in
@@ -154,11 +163,92 @@ def sign_in(username: str, password: str):
                              user_agent='Saved Sorter',
                              username=username,
                              password=password)
-        print("signed in as " + str(reddit.user.me()) + ".\n")
         return reddit
     except prawcore.exceptions.OAuthException:
-        print("unrecognized username or password.\n")
         return None
+
+
+def parse_imgur_single(url: str) -> str:
+    """
+    Some imgur pages with one image also include the imgur UI, so the page must be scraped to find a direct link
+    to that image
+    :param url: A single-image imgur page
+    :return: A direct link to the image hosted on that page
+    """
+    page = get(url)
+    soup = BeautifulSoup(page.text, "html.parser")
+    return soup.select("link[rel=image_src]")[0]["href"]
+
+
+def parse_imgur_album(album_url: str) -> list:
+    """
+    Imgur albums reference multiple other images hosted on imgur by image ID only, so album pages must be scraped to
+    get single-image webpages, then scraped again to get a list of direct links to each image in the album
+    :param album_url: url of an imgur album
+    :return: direct links to each image in the specified album
+    """
+    # Find all the single image pages referenced by this album
+    album_page = get(album_url)
+    album_soup = BeautifulSoup(album_page.text, "html.parser")
+    single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
+    # Make a list of the direct links to the image hosted on each single-image page; return the list of all those images
+    return [parse_imgur_single(link) for link in single_images]
+
+
+def retitle(current_string: str) -> str:
+    """
+    Capitalizes the first letter in each word, strips non-ASCII characters and characters Windows doesn't support in
+    file names, and removes any preceding or trailing periods and spaces
+    :param current_string: the current string
+    :return: the new string
+    """
+    # Recapitalize the title and remove any incompatible characters
+    new_string = ""
+    # Replace non-ASCII characters with a space
+    for i, char in enumerate(current_string):
+        if ord(char) < 128:
+            if char in INVALID_CHARS:
+                new_string += " "
+            # If the character is the first in the string or after a space, capitalize it
+            elif i == 0 or current_string[i - 1] == ' ':
+                new_string += (char.upper())
+            # Replaces " with ' in the title
+            elif current_string[i] == '"':
+                new_string += "'"
+            else:
+                new_string += char
+
+    # Remove any trailing periods or spaces
+    while new_string.endswith('.') or new_string.endswith(' '):
+        new_string = current_string[:-1]
+
+    # Remove any preceding periods or spaces
+    while new_string.startswith('.') or new_string.startswith(' '):
+        new_string = current_string[1:]
+
+    return new_string
+
+
+def find_urls(url: str) -> list:
+    """
+    :param url: a link to a webpage
+    :return: a list of direct links to images found on that webpage
+    """
+    # If the URL (without query strings) ends with any recognized file extension, this is a direct link to an image
+    # Should match artstation, i.imgur.com, i.redd.it, and other pages
+    for extension in RECOGNIZED_EXTENSIONS:
+        if url.split('?')[0].endswith(extension):  # .split() removes any query strings from the URL
+            return [url.split('?')[0]]
+
+    # Imgur albums
+    if "imgur.com/a/" in url:
+        return parse_imgur_album(url)
+
+    # Imgur single-image pages
+    elif "imgur.com" in url:
+        return [parse_imgur_single(url)]
+
+    return []
 
 
 def sanitize_post(post):
@@ -168,83 +258,24 @@ def sanitize_post(post):
     Returns the same post but with edited data to prevent errors
     """
 
-    # If the post is a comment, mark it as a selfpost
-    if not hasattr(post, 'is_self'):
-        post.is_self = True
-
-    # If the post isn't a comment
-    elif hasattr(post, 'title'):
-
-        # Recapitalize and remove non-ASCII characters from the title
-        new_title = ""
-        for i, char in enumerate(post.title):
-            # Only include ASCII characters in the title
-            if ord(char) < 128:
-                # If the character is invalid, add a space instead
-                if char in INVALID_CHARS:
-                    new_title += " "
-                # Otherwise, if the character is the first in the string or after a space, capitalize it
-                elif i == 0 or post.title[i - 1] == ' ':
-                    new_title += (char.upper())
-                # Otherwise, just add it normally
-                else:
-                    new_title += char
-        post.title = new_title
-
-        # Replaces " with ' in the title
-        post.title = post.title.replace('"', "'")
-
-        # Remove any trailing periods or spaces
-        while post.title.endswith('.') or post.title.endswith(' '):
-            post.title = post.title[:-1]
-
-        # Remove any preceding periods or spaces
-        while post.title.startswith('.') or post.title.startswith(' '):
-            post.title = post.title[1:]
+    if hasattr(post, 'title'):
+        post.is_comment = False
 
         # Ensure the url starts with https://
         if not post.url.startswith("https://"):
             post.url = post.url.lstrip("http://")
             post.url = "https://" + post.url
 
-        # Establish the list of recognized urls in the post
-        post.recognized_urls = []
+        post.recognized_urls = find_urls(post.url)
 
-        # If the url links to Artstation, remove the trailing ? and numbers they append to the end of their urls
-        if "artstation" in post.url:
-            post.recognized_urls = [post.url.split('?')[0]]
+        # If urls were found, clean up the post's title
+        if post.recognized_urls != []:
+            post.title = retitle(post.title)
 
-        # Imgur albums have multiple images in them
-        # TODO: TEST
-        elif "imgur.com/a/" in post.url:
-            """
-            Credit to Al Sweigart for some of this code
-            http://inventwithpython.com/blog/2013/09/30/downloading-imgur-posts-linked-from-reddit-with-python/
-            """
-
-            # Get the parsed page
-            soup = BeautifulSoup(get(post.url).text)
-            post.recognized_urls = ["https:" + match["href"] for match in soup.select('.album-view-image-link a')]
-
-        # TODO: TEST
-        elif "/imgur.com/" in post.url:
-            # Get the parsed page
-
-            soup = BeautifulSoup(get(post.url).text)
-
-            images = soup.select('img[src]')
-            post.recognized_urls.append(["https://imgur.com/" + [images[0]['src']]])
-
-            '''try:
-                post.recognized_urls.append([soup.select('.image a')[0]['href']])
-            # If that doesn't work, try finding it through its <img src=""> tag
-            except IndexError:
-            '''
-
-
-        # i.redd.it and i.imgur.com are single-image pages
-        elif "i.redd.it" in post.url or "i.imgur.com/" in post.url:
-                post.url_list = [post.url]
+    # If the post is a comment, mark it as a selfpost
+    else:
+        post.is_self = True
+        post.is_comment = True
 
     return post
 
@@ -270,12 +301,16 @@ def download_image(title: str, url: str, path: str) -> str:
     # Try to download image data
     image = get(url)
 
-    # If the image couldn't be downloaded, return an empty string
+    # If the image page couldn't be reached, return an empty string for failure
     if image.status_code != 200:
         print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
         return ""
 
     file_extension = splitext(url)[1]
+
+    # If the file extension is unrecognized, don't try to download the file
+    if file_extension not in RECOGNIZED_EXTENSIONS:
+        return ""
 
     # Set up the output path if it doesn't already exist
     if not exists(path):
@@ -316,27 +351,38 @@ def download_image(title: str, url: str, path: str) -> str:
             return file_title + file_extension
 
 
-def log_url(title: str, url: str, filepath: str) -> None:
+def log_url(title: str, url: str, compatible: bool) -> None:
     """
     Writes the given title and url to the specified file, and  adds the url's domain to
     the dictionary of incompatible domains
 
-    Returns: nothing
+    :param title: Title of the post to be logged
+    :param url: The post's URL
+    :param compatible: Whether the post was compatible with this program or not
+    :return: nothing
     """
 
-    # Adds this link to the list of incompatible links
-    with open(filepath, "a") as bookmark_file:
-        bookmark_file.write(title + " : " + url + "\n")
+    # Log the post title, the URL, and whether it was compatible or not
+    with open(LOG, "a") as log_file:
+        log_file.write(title + " : " + url + " : " + str(compatible))
 
-    # Establish the post's domain
-    uri = urlparse(url)
-    domain = '{0}://{1}'.format(uri.scheme, uri.netloc)
+    # If the url was incompatible, update the log of incompatible domains
+    if not compatible:
 
-    # Save that url to a dictionary
-    if domain in incompatible_domains.keys():
-        incompatible_domains[domain] += 1
-    else:
-        incompatible_domains[domain] = 1
+        # Establish the post's domain
+        uri = urlparse(url)
+        domain = '{0}://{1}'.format(uri.scheme, uri.netloc)
+
+        # Save that domain to a dictionary
+        if domain in incompatible_domains.keys():
+            incompatible_domains[domain] += 1
+        else:
+            incompatible_domains[domain] = 1
+
+        # Update the log file
+        with open(INCOMPATIBLE_DOMAIN_LOG, "a") as incompatible_domain_log_file:
+            for domain in incompatible_domains.keys():
+                incompatible_domain_log_file.write(domain + " : " + incompatible_domains[domain] + "\n")
 
     return
 

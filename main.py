@@ -144,142 +144,6 @@ def main() -> None:
     return
 
 
-def sign_in(username: str, password: str):
-    """
-    Attempts to sign into Reddit taking the first two CLAs
-
-    Returns Reddit object if successful
-    """
-
-    # Don't bother trying to sign in if username or password are blank
-    #  (praw has a stack overflow without this check!)
-    if username == "" or password == "":
-        return None
-
-    # Try to sign in
-    try:
-        reddit = praw.Reddit(client_id='scNa87aJbSIcUQ',
-                             client_secret='034VwNRplArCc-Y3niSpin0yFqY',
-                             user_agent='Saved Sorter',
-                             username=username,
-                             password=password)
-        return reddit
-    except prawcore.exceptions.OAuthException:
-        return None
-
-
-def parse_imgur_single(url: str) -> str:
-    """
-    Some imgur pages with one image also include the imgur UI, so the page must be scraped to find a direct link
-    to that image
-    :param url: A single-image imgur page
-    :return: A direct link to the image hosted on that page
-    """
-    page = get(url)
-    soup = BeautifulSoup(page.text, "html.parser")
-    return soup.select("link[rel=image_src]")[0]["href"]
-
-
-def parse_imgur_album(album_url: str) -> list:
-    """
-    Imgur albums reference multiple other images hosted on imgur by image ID only, so album pages must be scraped to
-    get single-image webpages, then scraped again to get a list of direct links to each image in the album
-    :param album_url: url of an imgur album
-    :return: direct links to each image in the specified album
-    """
-    # Find all the single image pages referenced by this album
-    album_page = get(album_url)
-    album_soup = BeautifulSoup(album_page.text, "html.parser")
-    single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
-    # Make a list of the direct links to the image hosted on each single-image page; return the list of all those images
-    return [parse_imgur_single(link) for link in single_images]
-
-
-def retitle(current_string: str) -> str:
-    """
-    Capitalizes the first letter in each word, strips non-ASCII characters and characters Windows doesn't support in
-    file names, and removes any preceding or trailing periods and spaces
-    :param current_string: the current string
-    :return: the new string
-    """
-    # Recapitalize the title and remove any incompatible characters
-    new_string = ""
-    # Replace non-ASCII characters with a space
-    for i, char in enumerate(current_string):
-        if ord(char) < 128:
-            if char in INVALID_CHARS:
-                new_string += " "
-            # If the character is the first in the string or after a space, capitalize it
-            elif i == 0 or current_string[i - 1] == ' ':
-                new_string += (char.upper())
-            # Replaces " with ' in the title
-            elif current_string[i] == '"':
-                new_string += "'"
-            else:
-                new_string += char
-
-    # Remove any trailing periods or spaces
-    while new_string.endswith('.') or new_string.endswith(' '):
-        new_string = current_string[:-1]
-
-    # Remove any preceding periods or spaces
-    while new_string.startswith('.') or new_string.startswith(' '):
-        new_string = current_string[1:]
-
-    return new_string
-
-
-def find_urls(url: str) -> list:
-    """
-    :param url: a link to a webpage
-    :return: a list of direct links to images found on that webpage
-    """
-    # If the URL (without query strings) ends with any recognized file extension, this is a direct link to an image
-    # Should match artstation, i.imgur.com, i.redd.it, and other pages
-    for extension in RECOGNIZED_EXTENSIONS:
-        if url.split('?')[0].endswith(extension):  # .split() removes any query strings from the URL
-            return [url.split('?')[0]]
-
-    # Imgur albums
-    if "imgur.com/a/" in url:
-        return parse_imgur_album(url)
-
-    # Imgur single-image pages
-    elif "imgur.com" in url:
-        return [parse_imgur_single(url)]
-
-    return []
-
-
-def sanitize_post(post):
-    """
-    Takes a post object
-
-    Returns the same post but with edited data to prevent errors
-    """
-
-    if hasattr(post, 'title'):
-        post.is_comment = False
-
-        # Ensure the url starts with https://
-        if not post.url.startswith("https://"):
-            post.url = post.url.lstrip("http://")
-            post.url = "https://" + post.url
-
-        post.recognized_urls = find_urls(post.url)
-
-        # If urls were found, clean up the post's title
-        if post.recognized_urls != []:
-            post.title = retitle(post.title)
-
-    # If the post is a comment, mark it as a selfpost
-    else:
-        post.is_self = True
-        post.is_comment = True
-
-    return post
-
-
 def download_image(title: str, url: str, path: str) -> str:
     """
     Downloads the image from the given url to a file with the name title
@@ -349,6 +213,142 @@ def download_image(title: str, url: str, path: str) -> str:
 
             # Return the final name of the file (means it was successfully downloaded there)
             return file_title + file_extension
+
+
+def find_urls(url: str) -> list:
+    """
+    :param url: a link to a webpage
+    :return: a list of direct links to images found on that webpage
+    """
+    # If the URL (without query strings) ends with any recognized file extension, this is a direct link to an image
+    # Should match artstation, i.imgur.com, i.redd.it, and other pages
+    for extension in RECOGNIZED_EXTENSIONS:
+        if url.split('?')[0].endswith(extension):  # .split() removes any query strings from the URL
+            return [url.split('?')[0]]
+
+    # Imgur albums
+    if "imgur.com/a/" in url:
+        return parse_imgur_album(url)
+
+    # Imgur single-image pages
+    elif "imgur.com" in url:
+        return [parse_imgur_single(url)]
+
+    return []
+
+
+def parse_imgur_album(album_url: str) -> list:
+    """
+    Imgur albums reference multiple other images hosted on imgur by image ID only, so album pages must be scraped to
+    get single-image webpages, then scraped again to get a list of direct links to each image in the album
+    :param album_url: url of an imgur album
+    :return: direct links to each image in the specified album
+    """
+    # Find all the single image pages referenced by this album
+    album_page = get(album_url)
+    album_soup = BeautifulSoup(album_page.text, "html.parser")
+    single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
+    # Make a list of the direct links to the image hosted on each single-image page; return the list of all those images
+    return [parse_imgur_single(link) for link in single_images]
+
+
+def parse_imgur_single(url: str) -> str:
+    """
+    Some imgur pages with one image also include the imgur UI, so the page must be scraped to find a direct link
+    to that image
+    :param url: A single-image imgur page
+    :return: A direct link to the image hosted on that page
+    """
+    page = get(url)
+    soup = BeautifulSoup(page.text, "html.parser")
+    return soup.select("link[rel=image_src]")[0]["href"]
+
+
+def retitle(current_string: str) -> str:
+    """
+    Capitalizes the first letter in each word, strips non-ASCII characters and characters Windows doesn't support in
+    file names, and removes any preceding or trailing periods and spaces
+    :param current_string: the current string
+    :return: the new string
+    """
+    # Recapitalize the title and remove any incompatible characters
+    new_string = ""
+    # Replace non-ASCII characters with a space
+    for i, char in enumerate(current_string):
+        if ord(char) < 128:
+            if char in INVALID_CHARS:
+                new_string += " "
+            # If the character is the first in the string or after a space, capitalize it
+            elif i == 0 or current_string[i - 1] == ' ':
+                new_string += (char.upper())
+            # Replaces " with ' in the title
+            elif current_string[i] == '"':
+                new_string += "'"
+            else:
+                new_string += char
+
+    # Remove any trailing periods or spaces
+    while new_string.endswith('.') or new_string.endswith(' '):
+        new_string = current_string[:-1]
+
+    # Remove any preceding periods or spaces
+    while new_string.startswith('.') or new_string.startswith(' '):
+        new_string = current_string[1:]
+
+    return new_string
+
+
+def sanitize_post(post):
+    """
+    Takes a post object
+
+    Returns the same post but with edited data to prevent errors
+    """
+
+    if hasattr(post, 'title'):
+        post.is_comment = False
+
+        # Ensure the url starts with https://
+        if not post.url.startswith("https://"):
+            post.url = post.url.lstrip("http://")
+            post.url = "https://" + post.url
+
+        post.recognized_urls = find_urls(post.url)
+
+        # If urls were found, clean up the post's title
+        if post.recognized_urls != []:
+            post.title = retitle(post.title)
+
+    # If the post is a comment, mark it as a selfpost
+    else:
+        post.is_self = True
+        post.is_comment = True
+
+    return post
+
+
+def sign_in(username: str, password: str):
+    """
+    Attempts to sign into Reddit taking the first two CLAs
+
+    Returns Reddit object if successful
+    """
+
+    # Don't bother trying to sign in if username or password are blank
+    #  (praw has a stack overflow without this check!)
+    if username == "" or password == "":
+        return None
+
+    # Try to sign in
+    try:
+        reddit = praw.Reddit(client_id='scNa87aJbSIcUQ',
+                             client_secret='034VwNRplArCc-Y3niSpin0yFqY',
+                             user_agent='Saved Sorter',
+                             username=username,
+                             password=password)
+        return reddit
+    except prawcore.exceptions.OAuthException:
+        return None
 
 
 def log_url(title: str, url: str, compatible: bool) -> None:

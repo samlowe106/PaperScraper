@@ -300,9 +300,8 @@ def retitle(current_string: str) -> str:
 
 def sanitize_post(post):
     """
-    Takes a post object
-
-    Returns the same post but with edited data to prevent errors
+    :param post: a post object
+    :return: the same post with edited data to prevent errors
     """
 
     if hasattr(post, 'title'):

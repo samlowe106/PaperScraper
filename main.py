@@ -89,57 +89,70 @@ def main() -> None:
 
         print("unrecognized username or password!\n")
 
-    # Establish the download limit
-    while True:
-        try:
-            download_limit = int(input("How many posts would you like to download? "))
-            break
-        except ValueError:
-            pass
+    # Main loop
+    running = True
+    while running:
 
-    # Retrieve saved posts
-    saved_posts = reddit.redditor(str(reddit.user.me())).saved(limit=None)
+        # Establish the download limit
+        while True:
+            try:
+                download_limit = int(input("How many posts would you like to download? "))
+                break
+            except ValueError:
+                pass
 
-    # Begin looping through saved posts
-    index = 0
-    for post in saved_posts:
+        # Retrieve saved posts
+        saved_posts = reddit.redditor(str(reddit.user.me())).saved(limit=None)
 
-        # Sanitize the post
-        post = sanitize_post(post)
+        # Begin looping through saved posts
+        index = 0
+        for post in saved_posts:
 
-        # Move on if the post is just a selfpost or link to a reddit thread
-        if post.is_self or "https://reddit.com/" in post.url:
-            continue
+            # Sanitize the post
+            post = sanitize_post(post)
 
-        # Increase the index
-        index += 1
+            # Move on if the post is just a selfpost or link to a reddit thread
+            if post.is_self or "https://reddit.com/" in post.url:
+                continue
 
-        # Parse the image link
-        images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
+            # Increase the index
+            index += 1
 
-        # Print out information about the post
-        print("\n{0}. {1}".format(index, post.title))
-        print("   r/" + str(post.subreddit))
-        print("   " + post.url)
-        for image in images_downloaded:
-            print("   Downloaded " + image)
+            # Parse the image link
+            images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
 
-        # Log the post
-        log_url(post.title, post.url, images_downloaded != [])
+            # Print out information about the post
+            print("\n{0}. {1}".format(index, post.title))
+            print("   r/" + str(post.subreddit))
+            print("   " + post.url)
+            for image in images_downloaded:
+                print("   Downloaded " + image)
 
-        # Unsave the post
-        post.unsave()
+            # Log the post
+            log_url(post.title, post.url, images_downloaded != [])
 
-        # If we've downloaded as many (or more) images as was specified, break out
-        if index >= download_limit:
-            break
+            # Unsave the post
+            post.unsave()
 
-    # Print out which domains were unrecognized (so compatibility can be added later)
-    if len(incompatible_domains) > 0:
-        print()
-        print("Several domains were unrecognized:")
-        for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
-            print("\t{0}: {1}".format(domain[0], domain[1]))
+            # If we've downloaded as many (or more) images as was specified, break out
+            if index >= download_limit:
+                break
+
+        # Print out which domains were unrecognized (so compatibility can be added later)
+        if len(incompatible_domains) > 0:
+            print()
+            print("Several domains were unrecognized:")
+            for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
+                print("\t{0}: {1}".format(domain[0], domain[1]))
+
+        # Ask the user if they'd like to download more posts
+        while True:
+            response = input("Would you like to download more images? (y/n) ")
+            if response.lower() == 'y':
+                break
+            elif response.lower() == 'n':
+                running = False
+                break
 
     return
 

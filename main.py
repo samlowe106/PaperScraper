@@ -377,7 +377,7 @@ def log_url(title: str, url: str, compatible: bool) -> None:
 
     # Log the post title, the URL, and whether it was compatible or not
     with open(LOG, "a") as log_file:
-        log_file.write(title + " : " + url + " : " + str(compatible))
+        log_file.write(title + " : " + url + " : " + str(compatible) + '\n')
 
     # If the url was incompatible, update the log of incompatible domains
     if not compatible:

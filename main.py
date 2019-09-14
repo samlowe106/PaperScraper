@@ -89,6 +89,9 @@ def main() -> None:
 
         print("unrecognized username or password!\n")
 
+    # Retrieve saved posts
+    saved_posts = reddit.redditor(str(reddit.user.me())).saved(limit=None)
+
     # Main loop
     running = True
     while running:
@@ -100,9 +103,6 @@ def main() -> None:
                 break
             except ValueError:
                 pass
-
-        # Retrieve saved posts
-        saved_posts = reddit.redditor(str(reddit.user.me())).saved(limit=None)
 
         # Begin looping through saved posts
         index = 0

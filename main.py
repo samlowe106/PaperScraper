@@ -321,15 +321,10 @@ def sanitize_post(post):
     if hasattr(post, 'title'):
         post.is_comment = False
 
-        # Ensure the url starts with https://
-        if not post.url.startswith("https://"):
-            post.url = post.url.lstrip("http://")
-            post.url = "https://" + post.url
-
         post.recognized_urls = find_urls(post.url)
 
         # If urls were found, clean up the post's title
-        if post.recognized_urls != []:
+        if len(post.recognized_urls) > 0:
             post.title = retitle(post.title)
 
     # If the post is a comment, mark it as a selfpost

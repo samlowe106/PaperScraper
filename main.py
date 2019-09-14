@@ -390,7 +390,7 @@ def log_url(title: str, url: str, compatible: bool) -> None:
         # Update the log file
         with open(INCOMPATIBLE_DOMAIN_LOG, "a") as incompatible_domain_log_file:
             for domain in incompatible_domains.keys():
-                incompatible_domain_log_file.write(domain + " : " + incompatible_domains[domain] + "\n")
+                incompatible_domain_log_file.write(domain + " : " + str(incompatible_domains[domain]) + "\n")
 
     return
 

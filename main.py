@@ -126,7 +126,7 @@ def main() -> None:
             print("   r/" + str(post.subreddit))
             print("   " + post.url)
             for image in images_downloaded:
-                print("   Downloaded " + image)
+                print("   Saved as " + image)
 
             # Log the post
             log_url(post.title, post.url, images_downloaded != [])
@@ -183,8 +183,6 @@ def download_image(title: str, url: str, path: str) -> str:
         print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
         return ""
 
-    title = retitle(title)
-
     # Remove any query strings with split, then find the file extension with splitext
     file_extension = splitext(url.split('?')[0])[1]
 
@@ -196,19 +194,15 @@ def download_image(title: str, url: str, path: str) -> str:
     if not exists(path):
         makedirs(path)
 
-    # If the title is too long, limit it to the first sentence
-    if len(title) > 250:
-        title = title.split('.', 1)[0]
-
-    # Define what the filename will (probably) be
-    file_title = title
+    # Define a working filename
+    file_title = retitle(title)
 
     # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
     for i in range(len(listdir(path)) + 1):
 
         # Insert a number in the filename to prevent conflicts
         if i > 0:
-            file_title = "{0} ({1})".format(title, i)
+            file_title = "{0} ({1})".format(file_title, i)
 
         # If no files share the same name, write the file
         if (file_title + file_extension) not in listdir(path):
@@ -303,13 +297,21 @@ def retitle(current_string: str) -> str:
             else:
                 new_string += char
 
+    # If the string is too long, limit it to the first sentence
+    if len(new_string) > 250:
+        new_string = new_string.split('.', 1)[0]
+
+        # If the string is still too long, truncate it
+        if len(new_string) > 250:
+            new_string = new_string[:250]
+
     # Remove any trailing periods or spaces
     while new_string.endswith('.') or new_string.endswith(' '):
-        new_string = current_string[:-1]
+        new_string = new_string[:-1]
 
     # Remove any preceding periods or spaces
     while new_string.startswith('.') or new_string.startswith(' '):
-        new_string = current_string[1:]
+        new_string = new_string[1:]
 
     return new_string
 

@@ -170,7 +170,8 @@ def download_image(title: str, url: str, path: str) -> str:
         print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
         return ""
 
-    file_extension = splitext(url)[1]
+    # Remove any query strings with split, then find the file extension with splitext
+    file_extension = splitext(url.split('?')[0])[1]
 
     # If the file extension is unrecognized, don't try to download the file
     if file_extension not in RECOGNIZED_EXTENSIONS:

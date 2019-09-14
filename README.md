@@ -1,6 +1,8 @@
 # Saved-Sorter-For-Reddit
-A Python script that iterates through a user's saved posts on Reddit, downloading linked images as .png or .gif files.
+A Python script that downloads saved images from the user's Reddit profile and saves them as a png or gif file.
 
-If images are downloaded from a post, that post will be unsaved. All other posts will be ignored.
+Saved posts not linking directly to an image or imgur page will be ignored.
 
-Currently supports directly linked images (such as those on i.redd.it, i.imgur.com, etc), Imgur pages with a single image on them, and Imgur albums. Likely supports directly linked images hosted on Artstation.
+If images are downloaded from a post, that post will be removed from the user's saved posts. 
+
+Currently supports directly linked images (such as those on i.redd.it, i.imgur.com, etc), Imgur pages with a single image on them, and Imgur albums. Likely supports directly linked images hosted on Artstation and similar sites.

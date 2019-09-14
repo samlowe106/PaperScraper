@@ -183,6 +183,8 @@ def download_image(title: str, url: str, path: str) -> str:
         print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
         return ""
 
+    title = retitle(title)
+
     # Remove any query strings with split, then find the file extension with splitext
     file_extension = splitext(url.split('?')[0])[1]
 
@@ -322,10 +324,6 @@ def sanitize_post(post):
         post.is_comment = False
 
         post.recognized_urls = find_urls(post.url)
-
-        # If urls were found, clean up the post's title
-        if len(post.recognized_urls) > 0:
-            post.title = retitle(post.title)
 
     # If the post is a comment, mark it as a selfpost
     else:

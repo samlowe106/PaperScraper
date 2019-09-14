@@ -224,7 +224,7 @@ def find_urls(url: str) -> list:
     # Should match artstation, i.imgur.com, i.redd.it, and other pages
     for extension in RECOGNIZED_EXTENSIONS:
         if url.split('?')[0].endswith(extension):  # .split() removes any query strings from the URL
-            return [url.split('?')[0]]
+            return [url]
 
     # Imgur albums
     if "imgur.com/a/" in url:

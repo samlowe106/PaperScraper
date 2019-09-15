@@ -147,7 +147,7 @@ def main() -> None:
 
         # Ask the user if they'd like to download more posts
         while True:
-            response = input("Would you like to download more images? (y/n) ")
+            response = input("\nWould you like to download more images? (y/n) ")
             if response.lower() == 'y':
                 break
             elif response.lower() == 'n':
@@ -285,21 +285,22 @@ def retitle(current_string: str) -> str:
     new_string = ""
     # Replace non-ASCII characters with a space
     for i, char in enumerate(current_string):
-        if char in INVALID_CHARS:
-            new_string += " "
-        # Replaces " with ' in the title
-        elif char == '"':
-            new_string += "'"
-            # If the character is the first in the string or after a space, capitalize it
-        elif i == 0 or current_string[i - 1] == ' ':
-            new_string += (char.upper())
-        else:
-            new_string += char
+        if char not in INVALID_CHARS:
+            # Replace " with '
+            if char == '"':
+                new_string += "'"
+            # Capitalize the first character and any character after a space
+            elif i == 0 or current_string[i - 1] == ' ':
+                new_string += (char.upper())
+            # Prevent consecutive spaces
+            elif char == ' ' and current_string[i - 1] == ' ':
+                pass
+            else:
+                new_string += char
 
     # If the string is too long, limit it to the first sentence
     if len(new_string) > 250:
         new_string = new_string.split('.', 1)[0]
-
         # If the string is still too long, truncate it
         if len(new_string) > 250:
             new_string = new_string[:250]

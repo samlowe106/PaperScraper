@@ -285,17 +285,16 @@ def retitle(current_string: str) -> str:
     new_string = ""
     # Replace non-ASCII characters with a space
     for i, char in enumerate(current_string):
-        if ord(char) < 128:
-            if char in INVALID_CHARS:
-                new_string += " "
+        if char in INVALID_CHARS:
+            new_string += " "
+        # Replaces " with ' in the title
+        elif char == '"':
+            new_string += "'"
             # If the character is the first in the string or after a space, capitalize it
-            elif i == 0 or current_string[i - 1] == ' ':
-                new_string += (char.upper())
-            # Replaces " with ' in the title
-            elif current_string[i] == '"':
-                new_string += "'"
-            else:
-                new_string += char
+        elif i == 0 or current_string[i - 1] == ' ':
+            new_string += (char.upper())
+        else:
+            new_string += char
 
     # If the string is too long, limit it to the first sentence
     if len(new_string) > 250:
@@ -370,8 +369,7 @@ def log_url(title: str, url: str, compatible: bool) -> None:
     :return: nothing
     """
 
-    # Log the post title, the URL, and whether it was compatible or not
-    with open(LOG, "a") as log_file:
+    with open(LOG, "a", encoding="utf-8") as log_file:
         log_file.write(title + " : " + url + " : " + str(compatible) + '\n')
 
     # If the url was incompatible, update the log of incompatible domains

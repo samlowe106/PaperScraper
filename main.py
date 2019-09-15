@@ -1,11 +1,10 @@
-# region Imports
-
 from getpass import getpass
 from os import listdir
 from os import makedirs
 from os import remove
 from os.path import exists
 from os.path import splitext
+from sys import argv
 from time import gmtime
 from time import strftime
 from urllib.parse import urlparse
@@ -17,15 +16,14 @@ from bs4 import BeautifulSoup       # bs4
 from PIL import Image               # Pillow
 from requests import get            # Requests
 
-# endregion
-
 """
 Created on Wed Aug 30 16:52:56 2017
-Updated on Fri Aug 9 7:00pm 2019
+First version released on Sat Sept 14
+Updated on Sun Sept 15 2:00am 2019
 
 @author: Sam
 
-Scrapes a specified amount of image posts from the user's saved posts and saves those images to a file
+Scrapes a specified amount of image posts from the user's saved posts on Reddit and saves those images to a file
 """
 
 # region Globals
@@ -50,6 +48,9 @@ INVALID_CHARS = ["\\", "/", ":", "*", "?", "<", ">", "|"]
 
 # File extensions that this program should recognize
 RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
+
+# True if the user would like all jpg images converted into png images, else false
+PNG_PREFERRED = False
 
 # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
 incompatible_domains = {}
@@ -145,6 +146,10 @@ def main() -> None:
             for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
                 print("\t{0}: {1}".format(domain[0], domain[1]))
 
+        # End if the program was run from the command line
+        if len(argv) > 0:
+            break
+
         # Ask the user if they'd like to download more posts
         while True:
             response = input("\nWould you like to download more images? (y/n) ")
@@ -153,6 +158,82 @@ def main() -> None:
             elif response.lower() == 'n':
                 running = False
                 break
+
+    # Any cleanup goes here
+
+    return
+
+
+def parse_clas() -> None:
+    """
+    Parses command line arguments
+
+    :return: nothing
+    """
+
+    USAGE = "Usage: ./ssfr username [args]"
+
+    # If too few commands were sent, print usage and exit
+    if len(argv) == 1:
+        print(USAGE)
+        return
+
+    # (str) : (str) dictionary of commands (key) and their corresponding descriptions (val)
+    COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
+                "-dir=": "Set the output directory",
+                "-nolog": "Disable logging (not recommended!)",
+                "-sort": "Place all images into folders named after the subreddits they were downloaded from",
+                "-name": "Append the OP's name to the end of file names",
+                "-t": "Put file names in title case",
+                "-lim=": "Specify how many files should be downloaded (default is limitless)"
+                }
+
+    # Print help if the user needs it
+    if str(argv[1]).lower() == "help":
+        print(USAGE)
+        for key in COMMANDS.keys():
+            print("\t{0}\t{1}".format(key, COMMANDS[key]))
+        print()
+        return
+    else:
+        usern = argv[1]
+
+    # Parse optional arguments
+    if len(argv) > 2:
+        for i in range(2, len(argv)):
+            # The user prefers png images to jpg images
+            if str(argv[i]).lower() == "-png":
+                PNG_PREFERRED = True
+
+            # The user has specified the download directory
+            elif str(argv[i]).lower().startswith("-dir="):
+                DIRECTORY = argv[i][5:]
+
+            # The user has disabled logging
+            elif str(argv[i]).lower() == "-nolog":
+                LOGGING = False
+
+            # The user wants images placed into folders by subreddit
+            elif str(argv[i]).lower() == "-sort":
+                SORT = True
+
+            # The user wants the image poster's name appended to the end of file names
+            elif str(argv[i]).lower() == "-name":
+                ADD_POSTER_NAME = True
+
+            # The user wants file names in title case
+            elif str(argv[i]).lower() == "-t":
+                TITLE = True
+
+            # The user wants file names in title case
+            elif str(argv[i]).lower() == "-lim=":
+                try:
+                    DOWNLOAD_LIMIT = int(argv[i][5:])
+                except ValueError:
+                    print("lim must be an int!")
+
+    # Securely get password
+    passw = getpass("Password: ")
 
     return
 
@@ -212,8 +293,8 @@ def download_image(title: str, url: str, path: str) -> str:
                 for chunk in image.iter_content(4096):
                     File.write(chunk)
 
-            # If the file is a jpg, resave it as a png
-            if file_extension == ".jpg":
+            # If the user prefers PNG images and the file is a jpg, re-save it as a png
+            if PNG_PREFERRED and file_extension == ".jpg":
                 im = Image.open(path + file_title + file_extension)
                 file_extension = ".png"
                 rgb_im = im.convert('RGB')

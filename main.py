@@ -1,4 +1,5 @@
 from getpass import getpass
+from os import chdir
 from os import listdir
 from os import makedirs
 from os import remove
@@ -28,11 +29,13 @@ Scrapes a specified amount of image posts from the user's saved posts on Reddit 
 
 # region Globals
 
+# region Constants
+
 # Current date (in Greenwich Mean Time) formatted in month-day-year
 DATE = strftime("%m-%d-%y", gmtime())
 
 # Directory where images will be saved
-DIRECTORY = "Output\\" + DATE + "\\"
+DIRECTORY = DATE + "\\"
 
 # Directory where logs will be stored
 LOG_DIRECTORY = DIRECTORY + "Logs\\"
@@ -52,6 +55,28 @@ RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
 # True if the user would like all jpg images converted into png images, else false
 PNG_PREFERRED = False
 
+USAGE = "Usage: ./ssfr username [args]"
+
+# (str) : (str) dictionary of commands (key) and their corresponding descriptions (val)
+COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
+            "-dir=": "Set the output directory",
+            "-nolog": "Disable logging (not recommended!)",
+            "-sort": "Place all images into folders named after the subreddits they were downloaded from",
+            "-name": "Append the OP's name to the end of file names",
+            "-t": "Put file names in title case",
+            "-lim=": "Specify how many files should be downloaded (default is limitless)"
+            }
+
+LOGGING = True
+
+SORT = False
+
+ADD_POSTER_NAME = False
+
+TITLE = True
+
+# endregion
+
 # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
 incompatible_domains = {}
 
@@ -70,25 +95,83 @@ def main() -> None:
     If it links to a non-link image, bookmark and unsave it (doesn't count towards download_limit)
     """
 
-    # Make directories
-    if not exists(LOG_DIRECTORY):
-        makedirs(LOG_DIRECTORY)
+    global PNG_PREFERRED, LOGGING, SORT, ADD_POSTER_NAME, TITLE
+
+    # If too few commands were sent, print usage and exit
+    if len(argv) == 1:
+        print(USAGE)
+        return
+
+    # Print help if the user requested it
+    if str(argv[1]).lower() == "help":
+        print(USAGE)
+        for key in COMMANDS.keys():
+            print("\t{0}\t{1}".format(key, COMMANDS[key]))
+        print()
+        return
+    else:
+        username = argv[1]
+
+    # Securely get password
+    password = getpass("Password: ")
 
     # Sign in
-    while True:
-        username = input("Username: ")
-        password = input("Password: ")
-        # password = getpass("Password: ")    # Only works on the command line
+    print("Signing in...", end="")
+    reddit = sign_in(username, password)
 
-        print("Signing in...", end="")
-        reddit = sign_in(username, password)
-
-        # If login was successful, continue with the program
-        if reddit is not None:
-            print("signed in as " + str(reddit.user.me()) + ".\n")
-            break
-
+    # If login was unsuccessful, stop
+    if reddit is not None:
+        print("signed in as " + str(reddit.user.me()) + ".\n")
+    else:
         print("unrecognized username or password!\n")
+        return
+
+    # Tentative working directory
+    working_directory = "Output\\"
+    download_limit = -1
+
+    # Parse optional arguments
+    if len(argv) > 2:
+        for i in range(2, len(argv)):
+            # The user prefers png images to jpg images
+            if str(argv[i]).lower() == "-png":
+                PNG_PREFERRED = True
+
+            # The user has specified the download directory
+            elif str(argv[i]).lower().startswith("-dir="):
+                working_directory = [i][5:]
+
+            # The user has disabled logging
+            elif str(argv[i]).lower() == "-nolog":
+                LOGGING = False
+
+            # The user wants images placed into folders by subreddit
+            elif str(argv[i]).lower() == "-sort":
+                SORT = True
+
+            # The user wants the image poster's name appended to the end of file names
+            elif str(argv[i]).lower() == "-name":
+                ADD_POSTER_NAME = True
+
+            # The user wants file names in title case
+            elif str(argv[i]).lower() == "-t":
+                TITLE = True
+
+            # The user wants file names in title case
+            elif str(argv[i]).lower() == "-lim=":
+                try:
+                    download_limit = int(argv[i][5:])
+                except ValueError:
+                    print("lim must be an int!")
+
+    # Make directories
+    if not exists(working_directory):
+        makedirs(working_directory)
+
+    chdir(working_directory)
+
+    if not exists(LOG_DIRECTORY):
+        makedirs(LOG_DIRECTORY)
 
     # Retrieve saved posts
     saved_posts = reddit.redditor(str(reddit.user.me())).saved(limit=None)
@@ -96,14 +179,6 @@ def main() -> None:
     # Main loop
     running = True
     while running:
-
-        # Establish the download limit
-        while True:
-            try:
-                download_limit = int(input("How many posts would you like to download? "))
-                break
-            except ValueError:
-                pass
 
         # Begin looping through saved posts
         index = 0
@@ -135,8 +210,8 @@ def main() -> None:
             # Unsave the post
             post.unsave()
 
-            # If we've downloaded as many (or more) images as was specified, break out
-            if index >= download_limit:
+            # If we've downloaded as many issues as desired, break out
+            if index >= download_limit > 0:
                 break
 
         # Print out which domains were unrecognized (so compatibility can be added later)
@@ -159,81 +234,7 @@ def main() -> None:
                 running = False
                 break
 
-    # Any cleanup goes here
-
-    return
-
-
-def parse_clas() -> None:
-    """
-    Parses command line arguments
-
-    :return: nothing
-    """
-
-    USAGE = "Usage: ./ssfr username [args]"
-
-    # If too few commands were sent, print usage and exit
-    if len(argv) == 1:
-        print(USAGE)
-        return
-
-    # (str) : (str) dictionary of commands (key) and their corresponding descriptions (val)
-    COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
-                "-dir=": "Set the output directory",
-                "-nolog": "Disable logging (not recommended!)",
-                "-sort": "Place all images into folders named after the subreddits they were downloaded from",
-                "-name": "Append the OP's name to the end of file names",
-                "-t": "Put file names in title case",
-                "-lim=": "Specify how many files should be downloaded (default is limitless)"
-                }
-
-    # Print help if the user needs it
-    if str(argv[1]).lower() == "help":
-        print(USAGE)
-        for key in COMMANDS.keys():
-            print("\t{0}\t{1}".format(key, COMMANDS[key]))
-        print()
-        return
-    else:
-        usern = argv[1]
-
-    # Parse optional arguments
-    if len(argv) > 2:
-        for i in range(2, len(argv)):
-            # The user prefers png images to jpg images
-            if str(argv[i]).lower() == "-png":
-                PNG_PREFERRED = True
-
-            # The user has specified the download directory
-            elif str(argv[i]).lower().startswith("-dir="):
-                DIRECTORY = argv[i][5:]
-
-            # The user has disabled logging
-            elif str(argv[i]).lower() == "-nolog":
-                LOGGING = False
-
-            # The user wants images placed into folders by subreddit
-            elif str(argv[i]).lower() == "-sort":
-                SORT = True
-
-            # The user wants the image poster's name appended to the end of file names
-            elif str(argv[i]).lower() == "-name":
-                ADD_POSTER_NAME = True
-
-            # The user wants file names in title case
-            elif str(argv[i]).lower() == "-t":
-                TITLE = True
-
-            # The user wants file names in title case
-            elif str(argv[i]).lower() == "-lim=":
-                try:
-                    DOWNLOAD_LIMIT = int(argv[i][5:])
-                except ValueError:
-                    print("lim must be an int!")
-
-    # Securely get password
-    passw = getpass("Password: ")
+    # End-of-program cleanup goes here
 
     return
 
@@ -242,18 +243,11 @@ def download_image(title: str, url: str, path: str) -> str:
     """
     Downloads the image from the given url to a file with the name title
 
-    Args:
-        title: Title of the image (not including (i))
-        url: A URL containing a single image, (the one to be downloaded)
-        path: The filepath that the file should be saved to
-
-    Returns:
-        filepath that the image was downloaded to (str)
-        empty string if failed
-
-    Raises:
-        IOError
-        FileNotFoundError
+    :param title: Title of the image (not including (i))
+    :param url: A URL containing a single image, (the one to be downloaded)
+    :param path: The filepath that the file should be saved to
+    :return: filepath that the image was downloaded to, empty string if failed
+    :raises: IOError, FileNotFoundError
     """
 
     # Try to download image data
@@ -276,7 +270,7 @@ def download_image(title: str, url: str, path: str) -> str:
         makedirs(path)
 
     # Define a working filename
-    file_title = retitle(title)
+    file_title = retitle(title, TITLE)
 
     # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
     for i in range(len(listdir(path)) + 1):
@@ -308,6 +302,8 @@ def download_image(title: str, url: str, path: str) -> str:
 
 def find_urls(url: str) -> list:
     """
+    Attempts to find images on a linked page
+    Currently supports directly linked images and imgur pages
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
@@ -355,12 +351,13 @@ def parse_imgur_single(url: str) -> str:
     return soup.select("link[rel=image_src]")[0]["href"]
 
 
-def retitle(current_string: str) -> str:
+def retitle(current_string: str, title_case: bool) -> str:
     """
     Capitalizes the first letter in each word, strips non-ASCII characters and characters Windows doesn't support in
     file names, and removes any preceding or trailing periods and spaces
     :param current_string: the current string
-    :return: the new string
+    :param title_case: True if the returned string should be in title case, else False
+    :return: valid file name with no leading or trailing spaces, periods, or commas
     """
     # Recapitalize the title and remove any incompatible characters
     new_string = ""
@@ -370,8 +367,8 @@ def retitle(current_string: str) -> str:
             # Replace " with '
             if char == '"':
                 new_string += "'"
-            # Capitalize the first character and any character after a space
-            elif i == 0 or current_string[i - 1] == ' ':
+            # If desired, enforce title case
+            elif title_case and (i == 0 or current_string[i - 1] == ' '):
                 new_string += (char.upper())
             # Prevent consecutive spaces
             elif char == ' ' and current_string[i - 1] == ' ':
@@ -387,11 +384,11 @@ def retitle(current_string: str) -> str:
             new_string = new_string[:250]
 
     # Remove any trailing periods or spaces
-    while new_string.endswith('.') or new_string.endswith(' '):
+    while new_string.endswith('.') or new_string.endswith(',') or new_string.endswith(' '):
         new_string = new_string[:-1]
 
-    # Remove any preceding periods or spaces
-    while new_string.startswith('.') or new_string.startswith(' '):
+    # Remove any preceding periods, spaces, or commas
+    while new_string.startswith('.') or new_string.startswith(',') or new_string.startswith(' '):
         new_string = new_string[1:]
 
     return new_string
@@ -399,13 +396,14 @@ def retitle(current_string: str) -> str:
 
 def sanitize_post(post):
     """
+    Adds is_comment properties to posts and is_self property to comments, and finds valid urls in non-self posts
     :param post: a post object
     :return: the same post with edited data to prevent errors
     """
 
+    # If the post links somewhere, find scrape-able images
     if hasattr(post, 'title'):
         post.is_comment = False
-
         post.recognized_urls = find_urls(post.url)
 
     # If the post is a comment, mark it as a selfpost
@@ -419,8 +417,9 @@ def sanitize_post(post):
 def sign_in(username: str, password: str):
     """
     Attempts to sign into Reddit taking the first two CLAs
-
-    Returns Reddit object if successful
+    :param username: The user's username
+    :param password: The user's password
+    :return: reddit object if successful, else None
     """
 
     # Don't bother trying to sign in if username or password are blank
@@ -444,10 +443,9 @@ def log_url(title: str, url: str, compatible: bool) -> None:
     """
     Writes the given title and url to the specified file, and  adds the url's domain to
     the dictionary of incompatible domains
-
-    :param title: Title of the post to be logged
-    :param url: The post's URL
-    :param compatible: Whether the post was compatible with this program or not
+    :param title: title of the post to be logged
+    :param url: the post's URL
+    :param compatible: whether the post was compatible with this program or not
     :return: nothing
     """
 

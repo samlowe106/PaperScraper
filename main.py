@@ -97,72 +97,86 @@ def main() -> None:
 
     global PNG_PREFERRED, LOGGING, SORT, ADD_POSTER_NAME, TITLE
 
-    # If too few commands were sent, print usage and exit
-    if len(argv) == 1:
-        print(USAGE)
-        return
-
-    # Print help if the user requested it
-    if str(argv[1]).lower() == "help":
-        print(USAGE)
-        for key in COMMANDS.keys():
-            print("\t{0}\t{1}".format(key, COMMANDS[key]))
-        print()
-        return
-    else:
-        username = argv[1]
-
-    # Securely get password
-    password = getpass("Password: ")
-
-    # Sign in
-    print("Signing in...", end="")
-    reddit = sign_in(username, password)
-
-    # If login was unsuccessful, stop
-    if reddit is not None:
-        print("signed in as " + str(reddit.user.me()) + ".\n")
-    else:
-        print("unrecognized username or password!\n")
-        return
-
     # Tentative working directory
     working_directory = "Output\\"
-    download_limit = -1
 
-    # Parse optional arguments
-    if len(argv) > 2:
-        for i in range(2, len(argv)):
-            # The user prefers png images to jpg images
-            if str(argv[i]).lower() == "-png":
-                PNG_PREFERRED = True
+    # If no commands were sent, ask for information via console
+    if len(argv) == 1:
+        while True:
+            username = input("Username: ")
+            password = input("Password: ")
+            # password = getpass("Password: ")    # Only works on the command line
 
-            # The user has specified the download directory
-            elif str(argv[i]).lower().startswith("-dir="):
-                working_directory = [i][5:]
+            print("Signing in...", end="")
+            reddit = sign_in(username, password)
 
-            # The user has disabled logging
-            elif str(argv[i]).lower() == "-nolog":
-                LOGGING = False
+            # If login was successful, continue with the program
+            if reddit is not None:
+                print("signed in as " + str(reddit.user.me()) + ".\n")
+                break
 
-            # The user wants images placed into folders by subreddit
-            elif str(argv[i]).lower() == "-sort":
-                SORT = True
+            print("unrecognized username or password!\n")
+    # If commands were sent, parse them
+    else:
+        # Print help if the user requested it
+        if str(argv[1]).lower() == "help":
+            print(USAGE)
+            for key in COMMANDS.keys():
+                print("\t{0}\t{1}".format(key, COMMANDS[key]))
+            print()
+            return
+        else:
+            username = argv[1]
 
-            # The user wants the image poster's name appended to the end of file names
-            elif str(argv[i]).lower() == "-name":
-                ADD_POSTER_NAME = True
+        # Securely get password
+        password = getpass("Password: ")
 
-            # The user wants file names in title case
-            elif str(argv[i]).lower() == "-t":
-                TITLE = True
+        # Sign in
+        print("Signing in...", end="")
+        reddit = sign_in(username, password)
 
-            # The user wants file names in title case
-            elif str(argv[i]).lower() == "-lim=":
-                try:
-                    download_limit = int(argv[i][5:])
-                except ValueError:
-                    print("lim must be an int!")
+        # If login was unsuccessful, stop
+        if reddit is not None:
+            print("signed in as " + str(reddit.user.me()) + ".\n")
+        else:
+            print("unrecognized username or password!\n")
+            return
+
+        download_limit = -1
+
+        # Parse optional arguments
+        if len(argv) > 2:
+            for i in range(2, len(argv)):
+                # The user prefers png images to jpg images
+                if str(argv[i]).lower() == "-png":
+                    PNG_PREFERRED = True
+
+                # The user has specified the download directory
+                elif str(argv[i]).lower().startswith("-dir="):
+                    working_directory = [i][5:]
+
+                # The user has disabled logging
+                elif str(argv[i]).lower() == "-nolog":
+                    LOGGING = False
+
+                # The user wants images placed into folders by subreddit
+                elif str(argv[i]).lower() == "-sort":
+                    SORT = True
+
+                # The user wants the image poster's name appended to the end of file names
+                elif str(argv[i]).lower() == "-name":
+                    ADD_POSTER_NAME = True
+
+                # The user wants file names in title case
+                elif str(argv[i]).lower() == "-t":
+                    TITLE = True
+
+                # The user wants file names in title case
+                elif str(argv[i]).lower() == "-lim=":
+                    try:
+                        download_limit = int(argv[i][5:])
+                    except ValueError:
+                        print("lim must be an int!")
 
     # Make directories
     if not exists(working_directory):
@@ -179,6 +193,14 @@ def main() -> None:
     # Main loop
     running = True
     while running:
+
+        # If this isn't running via command line, ask for download limit
+        while len(argv) == 1:
+            try:
+                download_limit = int(input("How many posts would you like to download? "))
+                break
+            except ValueError:
+                pass
 
         # Begin looping through saved posts
         index = 0

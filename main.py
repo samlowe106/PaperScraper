@@ -99,6 +99,8 @@ def main() -> None:
 
     # Tentative working directory
     working_directory = "Output\\"
+    # Tentative download limit
+    download_limit = -1
 
     # If no commands were sent, ask for information via console
     if len(argv) == 1:
@@ -141,8 +143,6 @@ def main() -> None:
         else:
             print("unrecognized username or password!\n")
             return
-
-        download_limit = -1
 
         # Parse optional arguments
         if len(argv) > 2:

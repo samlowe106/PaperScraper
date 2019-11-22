@@ -1,5 +1,5 @@
-# Saved-Sorter-For-Reddit
-A Python script that downloads saved images from the user's Reddit account.
+# Paper Scraper for Reddit
+A Python script that downloads wallpapers and other images from the saved category of the user's Reddit account.
 
 Saved posts not linking directly to an image or imgur page will be ignored.
 

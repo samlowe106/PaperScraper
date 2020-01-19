@@ -40,20 +40,16 @@
         <!-- DOWNLOAD LIMIT -->
         Number of images to download:<br>
         <input type="number" name="limit" min="1" max="1000" value="10" required>
-        <input type="submit">
 
         <br><!-- IMAGE TITLE FORMAT --><br>
         <!-- TODO: write explanation -->
-        <button type="button" class="collapsible">
-            <i>Optional Settings</i></button>
-            <div class="content">
-                Title format: <abbr title="Use %t in place of the post title
+        <button type="button" class="collapsible"><i>Optional Settings</i></button>
+            <div class="content">Title format <abbr title="Use %t in place of the post title
 Use %s in place of the subreddit
 Use %p in place of the poster
 
 Example:
-%t (posted by %p on r/%s)">(?)</abbr>
-        <br>
+%t (posted by %p on r/%s)">(?)</abbr>: <br>
 
                 <input type="text" name="title" value="" size="40" maxlength="40">
                 <!-- Server MUST validate that the final string for the title is no longer than 250 chars -->

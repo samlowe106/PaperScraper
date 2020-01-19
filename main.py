@@ -1,3 +1,4 @@
+from datetime import datetime
 from getpass import getpass
 from os import chdir
 from os import listdir
@@ -10,17 +11,19 @@ from time import gmtime
 from time import strftime
 from urllib.parse import urlparse
 
-import praw                         # PRAW
-import prawcore.exceptions          # PRAW
+import praw                                 # PRAW
+import prawcore.exceptions                  # PRAW
 
-from bs4 import BeautifulSoup       # bs4
-from PIL import Image               # Pillow
-from requests import get            # Requests
+from bs4 import BeautifulSoup               # bs4
+from flask import Flask, render_template    # flask
+from flask_moment import Moment             # flask-moment
+from PIL import Image                       # Pillow
+from requests import get                    # Requests
 
 """
 Created on Wed Aug 30 16:52:56 2017
 First version released on Sat Sept 14
-Updated on Sun Sept 15 2:00am 2019
+Updated on Sun January 12 3:00pm 2020
 
 @author: Sam
 
@@ -81,6 +84,19 @@ TITLE = True
 incompatible_domains = {}
 
 # endregion
+
+app = Flask(__name__)
+moment = Moment(app)
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
 
 
 def main() -> None:
@@ -436,6 +452,7 @@ def sanitize_post(post):
     return post
 
 
+@app.route('/signin')
 def sign_in(username: str, password: str):
     """
     Attempts to sign into Reddit taking the first two CLAs
@@ -447,7 +464,7 @@ def sign_in(username: str, password: str):
     # Don't bother trying to sign in if username or password are blank
     #  (praw has a stack overflow without this check!)
     if username == "" or password == "":
-        return None
+        return render_template('apology.html')
 
     # Try to sign in
     try:
@@ -458,7 +475,7 @@ def sign_in(username: str, password: str):
                              password=password)
         return reddit
     except prawcore.exceptions.OAuthException:
-        return None
+        return render_template('apology.html')
 
 
 def log_url(title: str, url: str, compatible: bool) -> None:

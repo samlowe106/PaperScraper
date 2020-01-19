@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Paper Scraper</title>
+    <style>
+        .collapsible {
+          background-color: #777;
+          color: white;
+          cursor: pointer;
+          padding: 18px;
+          width: 100%;
+          border: none;
+          text-align: left;
+          outline: none;
+          font-size: 15px;
+        }
+
+        .active, .collapsible:hover {
+          background-color: #555;
+        }
+
+        .content {
+          padding: 0 18px;
+          display: none;
+          overflow: hidden;
+          background-color: #f1f1f1;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>PaperScraper</h1>
+
+    <!-- Some parts of this page were copied from W3Schools
+    https://www.w3schools.com/html/html_form_attributes.asp -->
+
+    <form action="/action_page.php">
+
+        <!-- DOWNLOAD LIMIT -->
+        Number of images to download:<br>
+        <input type="number" name="limit" min="1" max="1000" value="10" required>
+        <input type="submit">
+
+        <br><!-- IMAGE TITLE FORMAT --><br>
+        <!-- TODO: write explanation -->
+        <button type="button" class="collapsible">
+            <i>Optional Settings</i></button>
+            <div class="content">
+                Title format: <abbr title="Use %t in place of the post title
+Use %s in place of the subreddit
+Use %p in place of the poster
+
+Example:
+%t (posted by %p on r/%s)">(?)</abbr>
+        <br>
+
+                <input type="text" name="title" value="" size="40" maxlength="40">
+                <!-- Server MUST validate that the final string for the title is no longer than 250 chars -->
+
+                <br>
+
+                <input type="checkbox" name="option1" value="prefer_png"> Convert JPEG/JPG images to PNG images<br>
+                <input type="checkbox" name="option2" value="sort"> Sort pictures by subreddit<br>
+                <input type="checkbox" name="option3" value="title_case"> Put file names in title case<br>
+                <input type="checkbox" name="option4" value="unsave" checked> Unsave images after download<br>
+
+                <br>
+
+            </div>
+
+        <br><!-- OPTIONAL SETTINGS --><br>
+
+        <input type="submit" value="Submit">
+    </form>
+
+    <script>
+        var coll = document.getElementsByClassName("collapsible");
+        var i;
+
+        for (i = 0; i < coll.length; i++) {
+          coll[i].addEventListener("click", function() {
+            this.classList.toggle("active");
+            var content = this.nextElementSibling;
+            if (content.style.display === "block") {
+              content.style.display = "none";
+            } else {
+              content.style.display = "block";
+            }
+          });
+        }
+    </script>
+
+</body>
+</html>

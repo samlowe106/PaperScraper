@@ -1,26 +1,12 @@
-from os import listdir
-from os import remove
+from bs4 import BeautifulSoup
+from flask import Flask, redirect, render_template, request, session
+from os import listdir, remove
 from os.path import splitext
+from requests import get
+from PIL import Image
+import praw
+import prawcore.exceptions
 from urllib.parse import urlparse
-
-import praw                                 # PRAW
-import prawcore.exceptions                  # PRAW
-
-from bs4 import BeautifulSoup               # bs4
-from flask import Flask, render_template    # flask
-from flask_moment import Moment             # flask-moment
-from PIL import Image                       # Pillow
-from requests import get                    # Requests
-
-"""
-Created on Wed Aug 30 16:52:56 2017
-First version released on Sat Sept 14
-Updated on Sun January 12 3:00pm 2020
-
-@author: Sam
-
-Scrapes a specified amount of image posts from the user's saved posts on Reddit and saves those images to a file
-"""
 
 # region Constants
 
@@ -32,8 +18,8 @@ RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
 
 # endregion
 
+# Initiate app
 app = Flask(__name__)
-moment = Moment(app)
 
 
 @app.errorhandler(404)
@@ -48,14 +34,8 @@ def internal_server_error(e):
 
 def main() -> None:
     """
-    Takes the Reddit username, password, and number of posts to be sorted (int)
-
-    Retrieve all posts just in case there are a lot of selfposts (or this script has been run recently)
-    Loop through each post:
-
-    If the post links to an image, download that image (DOES count towards download_limit)
-    If the post is a selfpost or comment, move on to the next post (doesn't count towards download_limit)
-    If it links to a non-link image, bookmark it (doesn't count towards download_limit)
+    Loops through the posts saved on a user's Reddit account,
+    downloading a certain number of images and ignoring other posts
     """
 
     # True if the user would like all jpg images converted into png images, else false
@@ -67,8 +47,6 @@ def main() -> None:
     # True if the user wants file names in title case
     title_case = True
 
-    # Tentative working directory
-    working_directory = "Output\\"
     # Tentative download limit
     download_limit = -1
 
@@ -290,14 +268,15 @@ def sanitize_post(post, title_case):
     return post
 
 
-@app.route('/signin')
-def sign_in(username: str, password: str):
+@app.route('/signin', methods=["GET", "POST"])
+def sign_in():
     """
     Attempts to sign into Reddit taking the first two CLAs
-    :param username: The user's username
-    :param password: The user's password
     :return: reddit object if successful, else None
     """
+
+    username = request.form.get("username")
+    password = request.form.get("password")
 
     # Don't bother trying to sign in if username or password are blank
     #  (praw has a stack overflow without this check!)

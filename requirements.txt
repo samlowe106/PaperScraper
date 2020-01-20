@@ -1,6 +1,5 @@
 beautifulsoup4
 flask
-flask-moment
 praw
 prawcore
 Pillow

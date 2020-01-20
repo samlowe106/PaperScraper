@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Page Not Found</title>
-</head>
-<body>
-<h1>We're sorry, we couldn't find what you were looking for.</h1>
-</body>
-</html>
+{% extends"base.html" %}
+
+{% block title %}PaperScraper | Page Not Found{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <p>We're sorry, we couldn't find what you were looking for.</p>
+</div>
+{% endblock %}

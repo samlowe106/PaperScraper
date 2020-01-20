@@ -13,8 +13,13 @@ from urllib.parse import urlparse
 # Character that Windows won't allow in a filename
 INVALID_CHARS = ["\\", "/", ":", "*", "?", "<", ">", "|"]
 
-# File extensions that this program should recognize
+# Recognized file extensions
 RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
+
+# Client ID and Secret
+with open("info.txt", 'r') as info_file:
+    CLIENT_ID = info_file.readline()
+    CLIENT_SECRET = info_file.readline()
 
 # endregion
 
@@ -285,8 +290,8 @@ def sign_in():
 
     # Try to sign in
     try:
-        reddit = praw.Reddit(client_id='scNa87aJbSIcUQ',
-                             client_secret='034VwNRplArCc-Y3niSpin0yFqY',
+        reddit = praw.Reddit(client_id=CLIENT_ID,
+                             client_secret=CLIENT_SECRET,
                              user_agent='Saved Sorter',
                              username=username,
                              password=password)

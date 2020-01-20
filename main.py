@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from flask import Flask, redirect, render_template, request, session
+from flask_bootstrap import Bootstrap
 from os import listdir, remove
 from os.path import splitext
 from requests import get
@@ -20,11 +21,14 @@ RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
 with open("info.txt", 'r') as info_file:
     CLIENT_ID = info_file.readline()
     CLIENT_SECRET = info_file.readline()
+    SECRET_KEY = info_file.readline()
 
 # endregion
 
 # Initiate app
 app = Flask(__name__)
+boostrap = Bootstrap(app)
+app.config['SECRET_KEY'] = SECRET_KEY
 
 
 @app.errorhandler(404)
@@ -37,6 +41,38 @@ def internal_server_error(e):
     return render_template('500.html'), 500
 
 
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+
+@app.route('/signin', methods=["GET", "POST"])
+def sign_in():
+    """
+    Attempts to sign into Reddit taking the first two CLAs
+    :return: reddit object if successful, else None
+    """
+
+    username = request.form.get("username")
+    password = request.form.get("password")
+
+    # Don't bother trying to sign in if username or password are blank
+    #  (praw has a stack overflow without this check!)
+    if username == "" or password == "":
+        return render_template('apology.html')
+
+    # Try to sign in
+    try:
+        reddit = praw.Reddit(client_id=CLIENT_ID,
+                             client_secret=CLIENT_SECRET,
+                             user_agent='PaperScraper',
+                             username=username,
+                             password=password)
+        return reddit
+    except prawcore.exceptions.OAuthException:
+        return render_template('apology.html')
+
+
 def main() -> None:
     """
     Loops through the posts saved on a user's Reddit account,
@@ -44,13 +80,16 @@ def main() -> None:
     """
 
     # True if the user would like all jpg images converted into png images, else false
-    prefer_png = False
+    prefer_png = request.form.get("prefer_png")
 
     # True if the user wants images sorted by subreddit
-    sort_by_sub = False
+    sort_by_sub = request.form.get("sort_by_sub")
 
     # True if the user wants file names in title case
-    title_case = True
+    title_case = request.form.get("title_case")
+
+    # True if the user wants to unsave posts after downloading that post's image
+    unsave = request.form.get("unsave")
 
     # Tentative download limit
     download_limit = -1
@@ -63,7 +102,7 @@ def main() -> None:
     while running:
 
         # Begin looping through saved posts
-        index = 0
+        count = 0
         for post in saved_posts:
 
             # Sanitize the post
@@ -73,8 +112,8 @@ def main() -> None:
             if post.is_self or post.url.startswith("https://reddit.com/") or post.url.startswith("https://reddit.com/"):
                 continue
 
-            # Increase the index
-            index += 1
+            # Increase the count
+            count += 1
 
             # Parse the image link
             images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
@@ -88,14 +127,15 @@ def main() -> None:
                 print("   Saved as " + image)
             """
 
-            # Unsave the post
-            post.unsave()
+            # Unsave the post if the user wants to
+            if unsave:
+                post.unsave()
 
-            # If we've downloaded as many issues as desired, break out
-            if index >= download_limit > 0:
+            # If we've downloaded as many posts as desired, break out
+            if count >= download_limit > 0:
                 break
 
-    # End-of-program cleanup goes here
+    """ End-of-program cleanup goes here """
 
     return
 
@@ -104,10 +144,10 @@ def download_image(title: str, url: str, path: str) -> str:
     """
     Downloads the image from the given url to a file with the name title
 
-    :param title: Title of the image (not including (i))
-    :param url: A URL containing a single image, (the one to be downloaded)
+    :param title: Desired title of the image
+    :param url: A direct link to the image that will be downloaded
     :param path: The filepath that the file should be saved to
-    :return: filepath that the image was downloaded to, empty string if failed
+    :return: filepath that the image was downloaded to, or empty string for failure
     :raises: IOError, FileNotFoundError
     """
 
@@ -157,6 +197,7 @@ def find_urls(url: str) -> list:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
+
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
@@ -181,6 +222,7 @@ def parse_imgur_album(album_url: str) -> list:
     """
     Imgur albums reference multiple other images hosted on imgur by image ID only, so album pages must be scraped to
     get single-image webpages, then scraped again to get a list of direct links to each image in the album
+
     :param album_url: url of an imgur album
     :return: direct links to each image in the specified album
     """
@@ -194,8 +236,9 @@ def parse_imgur_album(album_url: str) -> list:
 
 def parse_imgur_single(url: str) -> str:
     """
-    Some imgur pages with one image also include the imgur UI, so the page must be scraped to find a direct link
-    to that image
+    Scrapes an imgur page containing only a single image (NOT a direct link to the image) and returns
+    a direct link to that image
+
     :param url: A single-image imgur page
     :return: A direct link to the image hosted on that page
     """
@@ -206,8 +249,9 @@ def parse_imgur_single(url: str) -> str:
 
 def retitle(current_string: str, title_case: bool) -> str:
     """
-    Capitalizes the first letter in each word, strips non-ASCII characters and characters Windows doesn't support in
-    file names, and removes any preceding or trailing periods and spaces
+    Strips non-ASCII characters and characters Windows doesn't support in file names, removes any preceding or
+    trailing periods and spaces, and optionally capitalizes the first letter of each word
+
     :param current_string: the current string
     :param title_case: True if the returned string should be in title case, else False
     :return: valid file name with no leading or trailing spaces, periods, or commas
@@ -249,7 +293,9 @@ def retitle(current_string: str, title_case: bool) -> str:
 
 def sanitize_post(post, title_case):
     """
-    Adds is_comment properties to posts and is_self property to comments, and finds valid urls in non-self posts
+    Adds is_comment properties to posts and is_self property to comments, finds valid urls in non-self posts,
+    cleans up post title, and adds info about the post's domain
+
     :param post: a post object
     :param title_case: True if the post title should be in title case, else false
     :return: the same post with edited data to prevent errors
@@ -271,33 +317,6 @@ def sanitize_post(post, title_case):
         post.is_comment = True
 
     return post
-
-
-@app.route('/signin', methods=["GET", "POST"])
-def sign_in():
-    """
-    Attempts to sign into Reddit taking the first two CLAs
-    :return: reddit object if successful, else None
-    """
-
-    username = request.form.get("username")
-    password = request.form.get("password")
-
-    # Don't bother trying to sign in if username or password are blank
-    #  (praw has a stack overflow without this check!)
-    if username == "" or password == "":
-        return render_template('apology.html')
-
-    # Try to sign in
-    try:
-        reddit = praw.Reddit(client_id=CLIENT_ID,
-                             client_secret=CLIENT_SECRET,
-                             user_agent='Saved Sorter',
-                             username=username,
-                             password=password)
-        return reddit
-    except prawcore.exceptions.OAuthException:
-        return render_template('apology.html')
 
 
 if __name__ == "__main__":

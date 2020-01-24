@@ -1,13 +1,20 @@
 from bs4 import BeautifulSoup
 from flask import Flask, redirect, render_template, request, session
 from flask_bootstrap import Bootstrap
-from os import listdir, remove
-from os.path import splitext
+from os import listdir, mkdir, remove, walk
+from os.path import exists, join, splitext
 from requests import get
 from PIL import Image
 import praw
 import prawcore.exceptions
+from shutil import rmtree
 from urllib.parse import urlparse
+import zipfile
+
+"""
+Some code was taken from Harvard's CS50 Problem Set 7
+Some code was taken from W3Schools
+"""
 
 # region Constants
 
@@ -17,18 +24,41 @@ INVALID_CHARS = ["\\", "/", ":", "*", "?", "<", ">", "|"]
 # Recognized file extensions
 RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
 
-# Client ID and Secret
+OPTIONS = ["prefer_png",    # True if user wants jpg/jpeg images converted to png images
+           "sort_by_sub",   # True if the user wants images sorted by subreddit
+           "title_case",    # True if the user wants file names in title case
+           "unsave",        # True if the user wants to unsave posts after downloading that post's image
+           "limit",         # Download limit
+           "desired_title"  # Format that the user wants file titles to have
+           ]
+
+# Load sensitive information from a file
 with open("info.txt", 'r') as info_file:
     CLIENT_ID = info_file.readline()
     CLIENT_SECRET = info_file.readline()
     SECRET_KEY = info_file.readline()
 
+# To prevent errors, file names (excluding extensions) shouldn't exceed 250 chars
+MAX_FILE_NAME_LEN = 250
+
 # endregion
 
-# Initiate app
+# region Initiation
+
 app = Flask(__name__)
 boostrap = Bootstrap(app)
 app.config['SECRET_KEY'] = SECRET_KEY
+session.clear()
+reddit = None
+
+# endregion
+
+# region Error Handling
+
+
+@app.errorhandler(403)
+def page_not_found(e):
+    return render_template('403.html'), 403
 
 
 @app.errorhandler(404)
@@ -41,36 +71,62 @@ def internal_server_error(e):
     return render_template('500.html'), 500
 
 
+def apology(message, code=400):
+    """Render message as an apology to the user"""
+    return render_template("apology.html", top=code, bottom=message, code=code)
+
+# endregion
+
+
 @app.route('/')
 def index():
+    # If the user hasn't signed in or come to this page via post, redirect them
+    if session["username"] is None:
+        redirect("/signin")
+
+    # If the user has signed in and came via POST, begin downloading and saving posts
+    if request.method == "POST":
+        for option in OPTIONS:
+            session[option] = request.form.get[option]
+
+        main()
+
     return render_template("index.html")
 
 
 @app.route('/signin', methods=["GET", "POST"])
 def sign_in():
-    """
-    Attempts to sign into Reddit taking the first two CLAs
-    :return: reddit object if successful, else None
-    """
+    """Attempts to sign into Reddit"""
 
-    username = request.form.get("username")
-    password = request.form.get("password")
+    # Only allow info to be submitted via POST
+    if request.method == "POST":
+        # Ensure username and password were provided
+        if not request.form.get("username"):
+            return apology("Must provide a username", 403)
+        if not request.form.get("password"):
+            return apology("Must provide a password", 403)
 
-    # Don't bother trying to sign in if username or password are blank
-    #  (praw has a stack overflow without this check!)
-    if username == "" or password == "":
-        return render_template('apology.html')
+        # Try to sign in
+        try:
+            session["reddit"] = praw.Reddit(client_id=CLIENT_ID,
+                                            client_secret=CLIENT_SECRET,
+                                            user_agent='PaperScraper',
+                                            username=request.form.get("username"),
+                                            password=request.form.get("password"))
+            session["username"] = str(session["reddit"].user.me)
+            session["directory"] = "\\files\\{}".format(session["username"])
+            session["downloads"] = session["directory"] + "downloads"
 
-    # Try to sign in
-    try:
-        reddit = praw.Reddit(client_id=CLIENT_ID,
-                             client_secret=CLIENT_SECRET,
-                             user_agent='PaperScraper',
-                             username=username,
-                             password=password)
-        return reddit
-    except prawcore.exceptions.OAuthException:
-        return render_template('apology.html')
+            # If directory doesn't exist, make it
+            if not exists(session["downloads"]):
+                mkdir(session["downloads"])
+
+            return redirect("/")
+
+        except prawcore.exceptions.OAuthException:
+            return apology("Invalid username or password", 403)
+    else:
+        return render_template("signin.html")
 
 
 def main() -> None:
@@ -79,65 +135,53 @@ def main() -> None:
     downloading a certain number of images and ignoring other posts
     """
 
-    # True if the user would like all jpg images converted into png images, else false
-    prefer_png = request.form.get("prefer_png")
-
-    # True if the user wants images sorted by subreddit
-    sort_by_sub = request.form.get("sort_by_sub")
-
-    # True if the user wants file names in title case
-    title_case = request.form.get("title_case")
-
-    # True if the user wants to unsave posts after downloading that post's image
-    unsave = request.form.get("unsave")
-
-    # Tentative download limit
-    download_limit = -1
-
     # Retrieve saved posts
-    saved_posts = reddit.redditor(str(reddit.user.me())).saved(limit=None)
+    saved_posts = session["reddit"].redditor(session["username"]).saved(limit=None)
 
-    # Main loop
-    running = True
-    while running:
+    # Begin looping through saved posts
+    count = 0
+    for post in saved_posts:
 
-        # Begin looping through saved posts
-        count = 0
-        for post in saved_posts:
+        # Sanitize the post
+        post = sanitize_post(post, session["title_case"])
 
-            # Sanitize the post
-            post = sanitize_post(post, title_case)
+        # Move on if the post is just a selfpost or link to a reddit thread
+        if post.is_self or post.url.startswith("https://reddit.com/") or post.url.startswith("https://reddit.com/"):
+            continue
 
-            # Move on if the post is just a selfpost or link to a reddit thread
-            if post.is_self or post.url.startswith("https://reddit.com/") or post.url.startswith("https://reddit.com/"):
-                continue
+        file_title = generate_title(session["desired_title"], post.title, post.subreddit, post.author)
 
-            # Increase the count
-            count += 1
+        # Increase the count
+        count += 1
 
-            # Parse the image link
-            images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
+        # Download images from image links
+        for url in post.recognized_urls:
+            download_image(post.title, url, session["directory"])
 
-            """
-             Information about the post
-            print("\n{0}. {1}".format(index, post.title))
-            print("   r/" + str(post.subreddit))
-            print("   " + post.url)
-            for image in images_downloaded:
-                print("   Saved as " + image)
-            """
+        # Unsave the post if the user wants to
+        if session["unsave"]:
+            post.unsave()
 
-            # Unsave the post if the user wants to
-            if unsave:
-                post.unsave()
-
-            # If we've downloaded as many posts as desired, break out
-            if count >= download_limit > 0:
-                break
+        # If we've downloaded as many posts as desired, break out
+        if count >= session["limit"]:
+            break
 
     """ End-of-program cleanup goes here """
 
+    # Zip the folder containing the downloaded images
+    zipped_images = zipfile.ZipFile("PaperScraper Download.zip", 'w', zipfile.ZIP_DEFLATED)
+    zip_dir(session["downloads"], zipped_images)
+    zipped_images.close()
+
+    # TODO: send the zip file to the user
+
+    # Delete the files on the server
+    rmtree(session["directory"])
+
     return
+
+
+# region Helper Functions
 
 
 def download_image(title: str, url: str, path: str) -> str:
@@ -181,7 +225,7 @@ def download_image(title: str, url: str, path: str) -> str:
                     File.write(chunk)
 
             # If the user prefers PNG images and the file is a jpg, re-save it as a png
-            if PNG_PREFERRED and file_extension == ".jpg":
+            if session["prefer_png"] and file_extension == ".jpg":
                 im = Image.open(path + file_title + file_extension)
                 file_extension = ".png"
                 rgb_im = im.convert('RGB')
@@ -273,13 +317,6 @@ def retitle(current_string: str, title_case: bool) -> str:
             else:
                 new_string += char
 
-    # If the string is too long, limit it to the first sentence
-    if len(new_string) > 250:
-        new_string = new_string.split('.', 1)[0]
-        # If the string is still too long, truncate it
-        if len(new_string) > 250:
-            new_string = new_string[:250]
-
     # Remove any trailing periods or spaces
     while new_string.endswith('.') or new_string.endswith(',') or new_string.endswith(' '):
         new_string = new_string[:-1]
@@ -319,5 +356,47 @@ def sanitize_post(post, title_case):
     return post
 
 
-if __name__ == "__main__":
-    main()
+def generate_title(original_string: str, title: str, subreddit: str, poster: str) -> str:
+    """
+    Generates a new title based on the layout the user indicated
+
+    :param original_string: way the author wants the post to be sorted
+    :param title: title of reddit post
+    :param subreddit: title of the subreddit the reddit post is from
+    :param poster: title of the author of the reddit post
+    :return:
+    """
+    # TODO: add drag-and-drop so user can only have up to one occurrence of %t, %s, and %p then simplify code
+
+    # Replace special characters in string title
+    for old, new in [('%s', subreddit), ('%p', poster), ('%t', title)]:
+        new_string = original_string.replace(old, new)
+
+    # If the string is too long, limit any occurrences of the title to the first sentence
+    if len(new_string) > MAX_FILE_NAME_LEN:
+        for old, new in [('%s', subreddit), ('%p', poster), ('%t', title.split('.', 1)[0])]:
+            new_string = original_string.replace(old, new)
+        # If the string is still too long, truncate it
+        if len(new_string) > MAX_FILE_NAME_LEN:
+            new_string = new_string[:MAX_FILE_NAME_LEN]
+
+    return new_string
+
+
+def zip_dir(path: str, zip_handle) -> None:
+    """
+    Zips the specified path into the specified zipfile
+
+    https://stackoverflow.com/a/1855118
+
+    :param path:
+    :param zip_handle:
+    :return:
+    """
+    for root, dirs, files in walk(path):
+        for file in files:
+            zip_handle.write(join(root, file))
+    return
+
+
+# endregion

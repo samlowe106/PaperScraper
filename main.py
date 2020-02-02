@@ -143,7 +143,7 @@ def main() -> None:
     """
 
     # Retrieve saved posts
-    saved_posts = session["reddit"].redditor(session["username"]).saved(limit=None)
+    saved_posts = session["reddit"].redditor(session["username"]).saved()
 
     # Begin looping through saved posts
     count = 0

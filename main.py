@@ -12,8 +12,7 @@ from urllib.parse import urlparse
 import zipfile
 
 """
-Some code was taken from Harvard's CS50 Problem Set 7
-Some code was taken from W3Schools
+Some code was taken from Harvard's CS50 Problem Set 7, W3Schools, and StackOverflow
 """
 
 # region Constants
@@ -46,7 +45,7 @@ MAX_FILE_NAME_LEN = 250
 # region Initiation
 
 app = Flask(__name__)
-boostrap = Bootstrap(app)
+bootstrap = Bootstrap(app)
 app.config['SECRET_KEY'] = SECRET_KEY
 session.clear()
 reddit = None
@@ -76,6 +75,8 @@ def apology(message, code=400):
     return render_template("apology.html", top=code, bottom=message, code=code)
 
 # endregion
+
+# region Main
 
 
 @app.route('/')
@@ -181,6 +182,8 @@ def main() -> None:
     return
 
 
+# endregion
+
 # region Helper Functions
 
 
@@ -195,12 +198,12 @@ def download_image(title: str, url: str, path: str) -> str:
     :raises: IOError, FileNotFoundError
     """
 
-    # Try to download image data
-    image = get(url)
-
     # If the image page couldn't be reached, return an empty string for failure
+    image = get(url)
     if image.status_code != 200:
         return ""
+
+    file_title = title
 
     # Remove any query strings with split, then find the file extension with splitext
     file_extension = splitext(url.split('?')[0])[1]
@@ -368,7 +371,7 @@ def generate_title(original_string: str, title: str, subreddit: str, poster: str
     """
     # TODO: add drag-and-drop so user can only have up to one occurrence of %t, %s, and %p then simplify code
 
-    # Replace special characters in string title
+    # Replace special characters in string title (inspired by some of the code in CS50 2018 PSet 7)
     for old, new in [('%s', subreddit), ('%p', poster), ('%t', title)]:
         new_string = original_string.replace(old, new)
 
@@ -386,8 +389,7 @@ def generate_title(original_string: str, title: str, subreddit: str, poster: str
 def zip_dir(path: str, zip_handle) -> None:
     """
     Zips the specified path into the specified zipfile
-
-    https://stackoverflow.com/a/1855118
+    Credit to https://stackoverflow.com/a/1855118
 
     :param path:
     :param zip_handle:
@@ -397,6 +399,5 @@ def zip_dir(path: str, zip_handle) -> None:
         for file in files:
             zip_handle.write(join(root, file))
     return
-
 
 # endregion

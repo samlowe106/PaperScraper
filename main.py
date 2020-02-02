@@ -71,7 +71,14 @@ def internal_server_error(e):
 
 
 def apology(message, code=400):
-    """Render message as an apology to the user"""
+    """
+    Render message as an apology to the user
+    Idea taken from CS50 2018's PSet 7
+
+    :param message: error message
+    :param code: error code
+    :return: error page
+    """
     return render_template("apology.html", top=code, bottom=message, code=code)
 
 # endregion
@@ -180,7 +187,6 @@ def main() -> None:
     rmtree(session["directory"])
 
     return
-
 
 # endregion
 
@@ -388,12 +394,12 @@ def generate_title(original_string: str, title: str, subreddit: str, poster: str
 
 def zip_dir(path: str, zip_handle) -> None:
     """
-    Zips the specified path into the specified zipfile
+    Zips the specified directory into the specified zipfile object
     Credit to https://stackoverflow.com/a/1855118
 
-    :param path:
-    :param zip_handle:
-    :return:
+    :param path: directory to be zipped
+    :param zip_handle: zipfile object to write to
+    :return: None
     """
     for root, dirs, files in walk(path):
         for file in files:

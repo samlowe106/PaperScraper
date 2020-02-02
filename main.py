@@ -75,6 +75,10 @@ ADD_POSTER_NAME = False
 
 TITLE = True
 
+with open("info.txt", 'r') as info_file:
+    CLIENT_ID = info_file.readline()
+    CLIENT_SECRET = info_file.readline()
+
 # endregion
 
 # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
@@ -263,10 +267,10 @@ def main() -> None:
 
 def download_image(title: str, url: str, path: str) -> str:
     """
-    Downloads the image from the given url to a file with the name title
+    Attempts to download an image from the given url to a file with the specified title
 
-    :param title: Title of the image (not including (i))
-    :param url: A URL containing a single image, (the one to be downloaded)
+    :param title: Desired title of the image file
+    :param url: A URL containing a direct link to the image to be downloaded
     :param path: The filepath that the file should be saved to
     :return: filepath that the image was downloaded to, empty string if failed
     :raises: IOError, FileNotFoundError
@@ -326,6 +330,7 @@ def find_urls(url: str) -> list:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
+
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
@@ -348,8 +353,8 @@ def find_urls(url: str) -> list:
 
 def parse_imgur_album(album_url: str) -> list:
     """
-    Imgur albums reference multiple other images hosted on imgur by image ID only, so album pages must be scraped to
-    get single-image webpages, then scraped again to get a list of direct links to each image in the album
+    Scrapes the specified imgur album for direct links to each image
+
     :param album_url: url of an imgur album
     :return: direct links to each image in the specified album
     """
@@ -363,8 +368,8 @@ def parse_imgur_album(album_url: str) -> list:
 
 def parse_imgur_single(url: str) -> str:
     """
-    Some imgur pages with one image also include the imgur UI, so the page must be scraped to find a direct link
-    to that image
+    Scrapes regular imgur page for a direct link to the image displayed on that page
+
     :param url: A single-image imgur page
     :return: A direct link to the image hosted on that page
     """
@@ -376,7 +381,8 @@ def parse_imgur_single(url: str) -> str:
 def retitle(current_string: str, title_case: bool) -> str:
     """
     Capitalizes the first letter in each word, strips non-ASCII characters and characters Windows doesn't support in
-    file names, and removes any preceding or trailing periods and spaces
+    file names, and removes any preceding or trailing periods and spaces. Optionally enforces title case
+
     :param current_string: the current string
     :param title_case: True if the returned string should be in title case, else False
     :return: valid file name with no leading or trailing spaces, periods, or commas
@@ -419,6 +425,7 @@ def retitle(current_string: str, title_case: bool) -> str:
 def sanitize_post(post):
     """
     Adds is_comment properties to posts and is_self property to comments, and finds valid urls in non-self posts
+
     :param post: a post object
     :return: the same post with edited data to prevent errors
     """
@@ -439,6 +446,7 @@ def sanitize_post(post):
 def sign_in(username: str, password: str):
     """
     Attempts to sign into Reddit taking the first two CLAs
+
     :param username: The user's username
     :param password: The user's password
     :return: reddit object if successful, else None
@@ -451,8 +459,8 @@ def sign_in(username: str, password: str):
 
     # Try to sign in
     try:
-        reddit = praw.Reddit(client_id='scNa87aJbSIcUQ',
-                             client_secret='034VwNRplArCc-Y3niSpin0yFqY',
+        reddit = praw.Reddit(client_id=CLIENT_ID,
+                             client_secret=CLIENT_SECRET,
                              user_agent='Saved Sorter',
                              username=username,
                              password=password)
@@ -465,6 +473,7 @@ def log_url(title: str, url: str, compatible: bool) -> None:
     """
     Writes the given title and url to the specified file, and  adds the url's domain to
     the dictionary of incompatible domains
+
     :param title: title of the post to be logged
     :param url: the post's URL
     :param compatible: whether the post was compatible with this program or not

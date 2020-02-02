@@ -192,7 +192,7 @@ def main() -> None:
         makedirs(LOG_DIRECTORY)
 
     # Retrieve saved posts
-    saved_posts = reddit.redditor(str(reddit.user.me())).saved(limit=None)
+    saved_posts = reddit.redditor(str(reddit.user.me())).saved()
 
     # Main loop
     running = True

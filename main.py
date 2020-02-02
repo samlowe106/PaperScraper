@@ -32,12 +32,10 @@ OPTIONS = ["prefer_png",    # True if user wants jpg/jpeg images converted to pn
            ]
 
 # Load sensitive information from a file
-with open("info.txt", 'r') as info_file:
-    CLIENT_ID = info_file.readline()
-    CLIENT_SECRET = info_file.readline()
-    SECRET_KEY = info_file.readline()
+with open("secret.txt", 'r') as secret_file:
+    SECRET_KEY = secret_file.readline()
 
-# To prevent errors, file names (excluding extensions) shouldn't exceed 250 chars
+# To prevent OS errors, file names (excluding extensions) shouldn't exceed 250 chars
 MAX_FILE_NAME_LEN = 250
 
 # endregion
@@ -116,11 +114,12 @@ def sign_in():
 
         # Try to sign in
         try:
-            session["reddit"] = praw.Reddit(client_id=CLIENT_ID,
-                                            client_secret=CLIENT_SECRET,
-                                            user_agent='PaperScraper',
-                                            username=request.form.get("username"),
-                                            password=request.form.get("password"))
+            with open("info.txt", 'r') as info_file:
+                session["reddit"] = praw.Reddit(client_id=info_file.readline(),
+                                                client_secret=info_file.readline(),
+                                                user_agent='PaperScraper',
+                                                username=request.form.get("username"),
+                                                password=request.form.get("password"))
             session["username"] = str(session["reddit"].user.me)
             session["directory"] = "\\files\\{}".format(session["username"])
             session["downloads"] = session["directory"] + "downloads"

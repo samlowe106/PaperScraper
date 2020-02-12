@@ -47,8 +47,6 @@ RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
 # True if the user would like all jpg images converted into png images, else false
 PNG_PREFERRED = False
 
-USAGE = "Usage: ./ssfr username [args]"
-
 LOGGING = True
 
 SORT = False
@@ -166,6 +164,11 @@ def parse_clas():
     return
 
 
+def log_post(post) -> None:
+    log_url(post.title, post.url, post.images_downloaded != [])
+    return
+
+
 def main() -> None:
     """
     Scrapes and downloads any images from posts in the user's saved posts category on Reddit
@@ -200,19 +203,15 @@ def main() -> None:
         post = sanitize_post(post)
 
         # Move on if the post is just a selfpost or link to a reddit thread
-        if post.is_self or "https://reddit.com/" in post.url:
+        if post.skippable:
             continue
 
-        # Increase the index
         index += 1
 
         # Parse the image link
         post.images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
 
-        # Log the post
-        log_url(post.title, post.url, images_downloaded != [])
-
-        # Unsave the post
+        log_post(post)
         post.unsave()
 
         # If we've downloaded as many issues as desired, break out
@@ -429,6 +428,8 @@ def sanitize_post(post):
     else:
         post.is_self = True
         post.is_comment = True
+
+    post.skippable = post.is_self or "https://reddit.com/" in post.url
 
     return post
 

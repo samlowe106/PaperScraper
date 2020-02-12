@@ -1,3 +1,4 @@
+import argparse
 from getpass import getpass
 from os import chdir
 from os import listdir
@@ -57,16 +58,6 @@ PNG_PREFERRED = False
 
 USAGE = "Usage: ./ssfr username [args]"
 
-# (str) : (str) dictionary of commands (key) and their corresponding descriptions (val)
-COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
-            "-dir=": "Set the output directory",
-            "-nolog": "Disable logging (not recommended!)",
-            "-sort": "Place all images into folders named after the subreddits they were downloaded from",
-            "-name": "Append the OP's name to the end of file names",
-            "-t": "Put file names in title case",
-            "-lim=": "Specify how many files should be downloaded (default is limitless)"
-            }
-
 LOGGING = True
 
 SORT = False
@@ -83,6 +74,26 @@ with open("info.txt", 'r') as info_file:
 
 # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
 incompatible_domains = {}
+
+# endregion
+
+# region Initiation
+
+parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
+parser.add_argument("limit", metavar='L', type=int, help="max number of images to download")
+parser.addargument("sort", metavar="s")
+
+args = parser.parse_args()
+
+# (str) : (str) dictionary of commands (key) and their corresponding descriptions (val)
+COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
+            "-dir=": "Set the output directory",
+            "-nolog": "Disable logging (not recommended!)",
+            "-sort": "Place all images into folders named after the subreddits they were downloaded from",
+            "-name": "Append the OP's name to the end of file names",
+            "-t": "Put file names in title case",
+            "-lim=": "Specify how many files should be downloaded (default is limitless)"
+            }
 
 # endregion
 

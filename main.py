@@ -69,9 +69,20 @@ incompatible_domains = {}
 # region Initiation
 
 parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
-parser.add_argument("limit", metavar='L', type=int, help="max number of images to download")
-parser.addargument("sort", metavar="s")
-
+parser.add_argument("-l", "--limit",     type=int, default=1000,
+                    help="max number of images to download")
+parser.add_argument("-s", "--sort",      action='store_false',
+                    help="sort images into folders by subreddit")
+parser.add_argument("-p", "--png",       action='store_true',
+                    help="convert .jpg files to .png files")
+parser.add_argument("-n", "--name",      action='store_false',
+                    help="append OP's name to the filename")
+parser.add_argument("-d", "--directory", type=str,
+                    help="directory that files should be saved to")
+parser.add_argument("--nolog",           type=bool, action='store_true',
+                    help="disable logging")
+parser.add_argument("-t", "--titlecase", type=bool, action='store_true',
+                    help="saves filenames in title case")
 args = parser.parse_args()
 
 # (str) : (str) dictionary of commands (key) and their corresponding descriptions (val)

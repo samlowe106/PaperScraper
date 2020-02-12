@@ -18,15 +18,6 @@ from bs4 import BeautifulSoup       # bs4
 from PIL import Image               # Pillow
 from requests import get            # Requests
 
-"""
-Created on Wed Aug 30 16:52:56 2017
-First version released on Sat Sept 14
-Updated on Sun Sept 15 2:00am 2019
-
-@author: Sam
-
-Scrapes a specified amount of image posts from the user's saved posts on Reddit and saves those images to a file
-"""
 
 # region Globals
 
@@ -98,16 +89,88 @@ COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
 # endregion
 
 
+def attempt_sign_in():
+    """
+    Prompts the user to sign in
+
+    :return: Reddit object
+    """
+    while True:
+        username = input("Username: ")
+        password = getpass("Password: ") # Only works through the command line!
+
+        print("Signing in...", end="")
+        reddit = sign_in(username, password)
+
+        # If login was successful, continue with the program
+        if reddit is not None:
+            print("signed in as " + str(reddit.user.me()) + ".\n")
+            break
+
+        print("unrecognized username or password.\n")
+
+    return reddit
+
+
+def create_directory(dirpath: str) -> None:
+    """
+    Creates a directory with the specified name if that directory doesn't already exist
+    :param dirpath: name of the directory
+    :return:
+    """
+    if not exists(dirpath):
+        makedirs(dirpath)
+    return
+
+
+def parse_clas():
+    """
+    Parses optional CLAs
+    :return:
+    """
+    # TODO: refactor!
+    # Parse optional arguments
+    if len(argv) > 2:
+        for i in range(2, len(argv)):
+            # The user prefers png images to jpg images
+            if str(argv[i]).lower() == "-png":
+                PNG_PREFERRED = True
+
+            # The user has specified the download directory
+            elif str(argv[i]).lower().startswith("-dir="):
+                working_directory = [i][5:]
+
+            # The user has disabled logging
+            elif str(argv[i]).lower() == "-nolog":
+                LOGGING = False
+
+            # The user wants images placed into folders by subreddit
+            elif str(argv[i]).lower() == "-sort":
+                SORT = True
+
+            # The user wants the image poster's name appended to the end of file names
+            elif str(argv[i]).lower() == "-name":
+                ADD_POSTER_NAME = True
+
+            # The user wants file names in title case
+            elif str(argv[i]).lower() == "-t":
+                TITLE = True
+
+            # The user wants file names in title case
+            elif str(argv[i]).lower() == "-lim=":
+                try:
+                    download_limit = int(argv[i][5:])
+                except ValueError:
+                    print("lim must be an int!")
+
+    return
+
+
 def main() -> None:
     """
-    Takes the Reddit username, password, and number of posts to be sorted (int)
+    Scrapes and downloads any images from posts in the user's saved posts category on Reddit
 
-    Retrieve all posts just in case there are a lot of selfposts (or this script has been run recently)
-    Loop through each post:
-
-    If the post links to an image, download and unsave that image (DOES count towards download_limit)
-    If the post is a selfpost or comment, move on to the next post (doesn't count towards download_limit)
-    If it links to a non-link image, bookmark and unsave it (doesn't count towards download_limit)
+    :return:
     """
 
     global PNG_PREFERRED, LOGGING, SORT, ADD_POSTER_NAME, TITLE
@@ -117,162 +180,78 @@ def main() -> None:
     # Tentative download limit
     download_limit = -1
 
-    # If no commands were sent, ask for information via console
-    if len(argv) == 1:
-        while True:
-            username = input("Username: ")
-            password = input("Password: ")
-            # password = getpass("Password: ")    # Only works on the command line
+    reddit = attempt_sign_in()
 
-            print("Signing in...", end="")
-            reddit = sign_in(username, password)
-
-            # If login was successful, continue with the program
-            if reddit is not None:
-                print("signed in as " + str(reddit.user.me()) + ".\n")
-                break
-
-            print("unrecognized username or password!\n")
-    # If commands were sent, parse them
-    else:
-        # Print help if the user requested it
-        if str(argv[1]).lower() == "help":
-            print(USAGE)
-            for key in COMMANDS.keys():
-                print("\t{0}\t{1}".format(key, COMMANDS[key]))
-            print()
-            return
-        else:
-            username = argv[1]
-
-        # Securely get password
-        password = getpass("Password: ")
-
-        # Sign in
-        print("Signing in...", end="")
-        reddit = sign_in(username, password)
-
-        # If login was unsuccessful, stop
-        if reddit is not None:
-            print("signed in as " + str(reddit.user.me()) + ".\n")
-        else:
-            print("unrecognized username or password!\n")
-            return
-
-        # Parse optional arguments
-        if len(argv) > 2:
-            for i in range(2, len(argv)):
-                # The user prefers png images to jpg images
-                if str(argv[i]).lower() == "-png":
-                    PNG_PREFERRED = True
-
-                # The user has specified the download directory
-                elif str(argv[i]).lower().startswith("-dir="):
-                    working_directory = [i][5:]
-
-                # The user has disabled logging
-                elif str(argv[i]).lower() == "-nolog":
-                    LOGGING = False
-
-                # The user wants images placed into folders by subreddit
-                elif str(argv[i]).lower() == "-sort":
-                    SORT = True
-
-                # The user wants the image poster's name appended to the end of file names
-                elif str(argv[i]).lower() == "-name":
-                    ADD_POSTER_NAME = True
-
-                # The user wants file names in title case
-                elif str(argv[i]).lower() == "-t":
-                    TITLE = True
-
-                # The user wants file names in title case
-                elif str(argv[i]).lower() == "-lim=":
-                    try:
-                        download_limit = int(argv[i][5:])
-                    except ValueError:
-                        print("lim must be an int!")
+    parse_clas()
 
     # Make directories
-    if not exists(working_directory):
-        makedirs(working_directory)
-
+    create_directory(working_directory)
     chdir(working_directory)
-
-    if not exists(LOG_DIRECTORY):
-        makedirs(LOG_DIRECTORY)
+    create_directory(LOG_DIRECTORY)
 
     # Retrieve saved posts
     saved_posts = reddit.redditor(str(reddit.user.me())).saved()
 
-    # Main loop
-    running = True
-    while running:
+    # Loop through saved posts
+    index = 0
+    for post in saved_posts:
 
-        # If this isn't running via command line, ask for download limit
-        while len(argv) == 1:
-            try:
-                download_limit = int(input("How many posts would you like to download? "))
-                break
-            except ValueError:
-                pass
+        # Sanitize the post
+        post = sanitize_post(post)
 
-        # Begin looping through saved posts
-        index = 0
-        for post in saved_posts:
+        # Move on if the post is just a selfpost or link to a reddit thread
+        if post.is_self or "https://reddit.com/" in post.url:
+            continue
 
-            # Sanitize the post
-            post = sanitize_post(post)
+        # Increase the index
+        index += 1
 
-            # Move on if the post is just a selfpost or link to a reddit thread
-            if post.is_self or "https://reddit.com/" in post.url:
-                continue
+        # Parse the image link
+        post.images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
 
-            # Increase the index
-            index += 1
+        # Log the post
+        log_url(post.title, post.url, images_downloaded != [])
 
-            # Parse the image link
-            images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
+        # Unsave the post
+        post.unsave()
 
-            # Print out information about the post
-            print("\n{0}. {1}".format(index, post.title))
-            print("   r/" + str(post.subreddit))
-            print("   " + post.url)
-            for image in images_downloaded:
-                print("   Saved as " + image)
-
-            # Log the post
-            log_url(post.title, post.url, images_downloaded != [])
-
-            # Unsave the post
-            post.unsave()
-
-            # If we've downloaded as many issues as desired, break out
-            if index >= download_limit > 0:
-                break
-
-        # Print out which domains were unrecognized (so compatibility can be added later)
-        if len(incompatible_domains) > 0:
-            print()
-            print("Several domains were unrecognized:")
-            for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
-                print("\t{0}: {1}".format(domain[0], domain[1]))
-
-        # End if the program was run from the command line
-        if len(argv) > 0:
+        # If we've downloaded as many issues as desired, break out
+        if index >= download_limit > 0:
             break
 
-        # Ask the user if they'd like to download more posts
-        while True:
-            response = input("\nWould you like to download more images? (y/n) ")
-            if response.lower() == 'y':
-                break
-            elif response.lower() == 'n':
-                running = False
-                break
+    print_unrecognized_domains()
 
-    # End-of-program cleanup goes here
+    """ End-of-program cleanup goes here """
 
+    return
+
+
+def print_post_info(index: int, post) -> None:
+    """
+    Prints out information about the specified post
+
+    :param index: the index number of the post
+    :param post: a post object
+    :return: None
+    """
+    print("\n{0}. {1}".format(index, post.title))
+    print("   r/" + str(post.subreddit))
+    print("   " + post.url)
+    for image in post.downloaded_images:
+        print("   Saved as " + image)
+    return
+
+
+def print_unrecognized_domains() -> None:
+    """
+    Prints unrecognized domains (so compatibility can be added later)
+    :return: None
+    """
+    if len(incompatible_domains) > 0:
+        print()
+        print("Several domains were unrecognized:")
+        for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
+            print("\t{0}: {1}".format(domain[0], domain[1]))
     return
 
 

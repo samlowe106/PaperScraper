@@ -172,6 +172,13 @@ def main() -> None:
 
         index += 1
 
+        for i, url in enumerate(post.recognized_urls):
+            downloaded_file = download_image(post.title, url, DIRECTORY)
+            if downloaded_file != "":
+                post.images_downloaded.append(downloaded_file)
+                if PNG_PREFERRED:
+                    convert_to_png(DIRECTORY, downloaded_file)
+
         # Parse the image link
         post.images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
 
@@ -238,40 +245,13 @@ def download_image(title: str, url: str, path: str) -> str:
         return ""
 
     # Remove any query strings with split, then find the file extension with splitext
-    file_extension = splitext(url.split('?')[0])[1]
+    extension = splitext(url.split('?')[0])[1]
 
     # If the file extension is unrecognized, don't try to download the file
-    if file_extension not in RECOGNIZED_EXTENSIONS:
+    if extension not in RECOGNIZED_EXTENSIONS:
         return ""
 
-    # Set up the output path
-    create_directory(path)
-
-    # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
-    for i in range(len(listdir(path)) + 1):
-
-        # Insert a number in the filename to prevent conflicts
-        if i > 0:
-            file_title = "{0} ({1})".format(title, i)
-        else:
-            file_title = title
-
-        # If no files share the same name, write the file
-        if (file_title + file_extension) not in listdir(path):
-
-            # Write the file
-            with open(path + file_title + file_extension, "wb") as File:
-                for chunk in image.iter_content(4096):
-                    File.write(chunk)
-
-            # If the user prefers PNG images and the file is a jpg, re-save it as a png
-            if PNG_PREFERRED and file_extension.lower() in [".jpg", ".jpeg"]:
-                convert_to_png(path, file_title, file_extension)
-                # Delete the previous jpg file
-                remove(path + file_title + ".jpg")
-
-            # Return the final name of the file (means it was successfully downloaded there)
-            return file_title + file_extension
+    return save_image(image, path, title, extension)
 
 
 def save_image(image, path: str, title: str, extension: str) -> str:
@@ -283,6 +263,9 @@ def save_image(image, path: str, title: str, extension: str) -> str:
     :param extension: the file extension
     :return: final filename (with extension)
     """
+    # Set up the output path
+    create_directory(path)
+
     # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
     for i in range(len(listdir(path)) + 1):
 
@@ -304,19 +287,30 @@ def save_image(image, path: str, title: str, extension: str) -> str:
             return file_title + extension
 
 
-def convert_to_png(path: str, file_title: str, current_extension: str) -> str:
+def get_extension(filename: str) -> str:
+    """
+    Gets the extension of the specified file
+    :param filename: name of the file (including the extension)
+    :return: the file extension
+    """
+    sections = filename.split('.')
+    count = len(sections)
+    return sections[len(sections) - 1]
+
+
+def convert_to_png(path: str, filename: str) -> str:
     """
     Converts the given image to a .png
     :param path: path that the image is located in
-    :param file_title: title of the file to be converted
-    :param current_extension: image's current file extension
+    :param filename: title of the file to be converted
     :return: filename (with new extension)
     """
     new_extension = ".png"
-    with Image.open(path + file_title + current_extension) as im:
+    current_extension = get_extension(filename)
+    with Image.open(path + filename + current_extension) as im:
         rgb_im = im.convert('RGB')
-        rgb_im.save(path + file_title + new_extension)
-    return file_title + new_extension
+        rgb_im.save(path + filename + new_extension)
+    return filename + new_extension
 
 
 def find_urls(url: str) -> list:

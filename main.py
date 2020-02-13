@@ -1,12 +1,8 @@
 import argparse
 from getpass import getpass
-from os import chdir
-from os import listdir
-from os import makedirs
-from os import remove
+from os import chdir, listdir, makedirs, path, remove
 from os.path import exists
 from os.path import splitext
-from sys import argv
 from time import gmtime
 from time import strftime
 from urllib.parse import urlparse
@@ -101,81 +97,40 @@ COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
 def attempt_sign_in():
     """
     Prompts the user to sign in
-
     :return: Reddit object
     """
-    while True:
-        username = input("Username: ")
-        password = getpass("Password: ") # Only works through the command line!
+    username = input("Username: ")
+    password = getpass("Password: ")  # Only works through the command line!
 
-        print("Signing in...", end="")
-        reddit = sign_in(username, password)
+    print("Signing in...", end="")
+    reddit = sign_in(username, password)
 
-        # If login was successful, continue with the program
-        if reddit is not None:
-            print("signed in as " + str(reddit.user.me()) + ".\n")
-            break
+    # If login was successful, continue with the program
+    if reddit is not None:
+        print("signed in as " + str(reddit.user.me()) + ".\n")
+        return reddit
 
-        print("unrecognized username or password.\n")
-
-    return reddit
+    print("unrecognized username or password.\n")
+    return
 
 
 def create_directory(dirpath: str) -> None:
     """
     Creates a directory with the specified name if that directory doesn't already exist
     :param dirpath: name of the directory
-    :return:
+    :return: None
     """
     if not exists(dirpath):
         makedirs(dirpath)
     return
 
 
-def parse_clas():
-    """
-    Parses optional CLAs
-    :return:
-    """
-    # TODO: refactor!
-    # Parse optional arguments
-    if len(argv) > 2:
-        for i in range(2, len(argv)):
-            # The user prefers png images to jpg images
-            if str(argv[i]).lower() == "-png":
-                PNG_PREFERRED = True
-
-            # The user has specified the download directory
-            elif str(argv[i]).lower().startswith("-dir="):
-                working_directory = [i][5:]
-
-            # The user has disabled logging
-            elif str(argv[i]).lower() == "-nolog":
-                LOGGING = False
-
-            # The user wants images placed into folders by subreddit
-            elif str(argv[i]).lower() == "-sort":
-                SORT = True
-
-            # The user wants the image poster's name appended to the end of file names
-            elif str(argv[i]).lower() == "-name":
-                ADD_POSTER_NAME = True
-
-            # The user wants file names in title case
-            elif str(argv[i]).lower() == "-t":
-                TITLE = True
-
-            # The user wants file names in title case
-            elif str(argv[i]).lower() == "-lim=":
-                try:
-                    download_limit = int(argv[i][5:])
-                except ValueError:
-                    print("lim must be an int!")
-
-    return
-
-
 def log_post(post) -> None:
+    """
+    Logs a given post
+    :param post: post to be logged
+    :return: None
+    """
     log_url(post.title, post.url, post.images_downloaded != [])
     return
 
@@ -195,8 +150,6 @@ def main() -> None:
     download_limit = -1
 
     reddit = attempt_sign_in()
-
-    parse_clas()
 
     # Make directories
     create_directory(working_directory)
@@ -291,19 +244,17 @@ def download_image(title: str, url: str, path: str) -> str:
     if file_extension not in RECOGNIZED_EXTENSIONS:
         return ""
 
-    # Set up the output path if it doesn't already exist
-    if not exists(path):
-        makedirs(path)
-
-    # Define a working filename
-    file_title = retitle(title, TITLE)
+    # Set up the output path
+    create_directory(path)
 
     # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
     for i in range(len(listdir(path)) + 1):
 
         # Insert a number in the filename to prevent conflicts
         if i > 0:
-            file_title = "{0} ({1})".format(file_title, i)
+            file_title = "{0} ({1})".format(title, i)
+        else:
+            file_title = title
 
         # If no files share the same name, write the file
         if (file_title + file_extension) not in listdir(path):
@@ -314,11 +265,8 @@ def download_image(title: str, url: str, path: str) -> str:
                     File.write(chunk)
 
             # If the user prefers PNG images and the file is a jpg, re-save it as a png
-            if PNG_PREFERRED and file_extension == ".jpg":
-                im = Image.open(path + file_title + file_extension)
-                file_extension = ".png"
-                rgb_im = im.convert('RGB')
-                rgb_im.save(path + file_title + file_extension)
+            if PNG_PREFERRED and file_extension.lower() in [".jpg", ".jpeg"]:
+                convert_to_png(path, file_title, file_extension)
                 # Delete the previous jpg file
                 remove(path + file_title + ".jpg")
 
@@ -326,11 +274,55 @@ def download_image(title: str, url: str, path: str) -> str:
             return file_title + file_extension
 
 
+def save_image(image, path: str, title: str, extension: str) -> str:
+    """
+    Saves the specified image to the specified path with the specified title and file extension
+    :param image: the image to be saved
+    :param path: the path the image should be saved to
+    :param title: the title the image file should have
+    :param extension: the file extension
+    :return: final filename (with extension)
+    """
+    # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
+    for i in range(len(listdir(path)) + 1):
+
+        # Insert a number in the filename to prevent conflicts
+        if i > 0:
+            file_title = "{0} ({1})".format(title, i)
+        else:
+            file_title = title
+
+        # If no files share the same name, write the file
+        if (file_title + extension) not in listdir(path):
+
+            # Write the file
+            with open(path + file_title + extension, "wb") as File:
+                for chunk in image.iter_content(4096):
+                    File.write(chunk)
+
+            # Return the final filename (with extension)
+            return file_title + extension
+
+
+def convert_to_png(path: str, file_title: str, current_extension: str) -> str:
+    """
+    Converts the given image to a .png
+    :param path: path that the image is located in
+    :param file_title: title of the file to be converted
+    :param current_extension: image's current file extension
+    :return: filename (with new extension)
+    """
+    new_extension = ".png"
+    with Image.open(path + file_title + current_extension) as im:
+        rgb_im = im.convert('RGB')
+        rgb_im.save(path + file_title + new_extension)
+    return file_title + new_extension
+
+
 def find_urls(url: str) -> list:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
-
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
@@ -354,7 +346,6 @@ def find_urls(url: str) -> list:
 def parse_imgur_album(album_url: str) -> list:
     """
     Scrapes the specified imgur album for direct links to each image
-
     :param album_url: url of an imgur album
     :return: direct links to each image in the specified album
     """
@@ -369,7 +360,6 @@ def parse_imgur_album(album_url: str) -> list:
 def parse_imgur_single(url: str) -> str:
     """
     Scrapes regular imgur page for a direct link to the image displayed on that page
-
     :param url: A single-image imgur page
     :return: A direct link to the image hosted on that page
     """
@@ -378,53 +368,110 @@ def parse_imgur_single(url: str) -> str:
     return soup.select("link[rel=image_src]")[0]["href"]
 
 
-def retitle(current_string: str, title_case: bool) -> str:
+def file_title(s: str) -> str:
     """
-    Capitalizes the first letter in each word, strips non-ASCII characters and characters Windows doesn't support in
-    file names, and removes any preceding or trailing periods and spaces. Optionally enforces title case
-
-    :param current_string: the current string
-    :param title_case: True if the returned string should be in title case, else False
-    :return: valid file name with no leading or trailing spaces, periods, or commas
+    Removes characters that Windows doesn't allow in filenames from the specified string
+    :param s: string to remove characters from
+    :return: the given string without invalid characters
     """
-    # Recapitalize the title and remove any incompatible characters
-    new_string = ""
-    # Replace non-ASCII characters with a space
-    for i, char in enumerate(current_string):
-        if char not in INVALID_CHARS:
-            # Replace " with '
-            if char == '"':
-                new_string += "'"
-            # If desired, enforce title case
-            elif title_case and (i == 0 or current_string[i - 1] == ' '):
-                new_string += (char.upper())
-            # Prevent consecutive spaces
-            elif char == ' ' and current_string[i - 1] == ' ':
-                pass
-            else:
-                new_string += char
+    s.replace("'", '"')
+    for invalid_char in ["\\", "/", ":", "*", "?", "<", ">", "|"]:
+        s.replace(invalid_char, "")
+    return s
 
-    # If the string is too long, limit it to the first sentence
-    if len(new_string) > 250:
-        new_string = new_string.split('.', 1)[0]
-        # If the string is still too long, truncate it
-        if len(new_string) > 250:
-            new_string = new_string[:250]
 
-    # Remove any trailing periods or spaces
-    while new_string.endswith('.') or new_string.endswith(',') or new_string.endswith(' '):
-        new_string = new_string[:-1]
+def shorten(s: str, max_length: int = 250) -> str:
+    """
+    Shortens s to be no longer than the first sentence. Truncates words if possible,
+    but truncates characters when necessary
+    :param s: string to be shortened
+    :param max_length: the maximum character length that s can be (defaults to 250)
+    :return: s
+    """
+    shortened_words = attempt_shorten(s, ' ', max_length)
+    # If the attempt to shorten s using words fails, truncate s
+    if len(shortened_words) < max_length:
+        return shortened_words
+    else:
+        return s[:max_length]
 
-    # Remove any preceding periods, spaces, or commas
-    while new_string.startswith('.') or new_string.startswith(',') or new_string.startswith(' '):
-        new_string = new_string[1:]
 
-    return new_string
+def attempt_shorten(s: str, splitter: str, max_length: int = 250) -> str:
+    """
+    Attempts to shorten s by splitting it up into its constituent sections (words, sentences, lines, etc. depending on
+    how splitter is specified) and removing trailing sections until it's below the max character length.
+    :param s: the string that this function is attempting to shorten
+    :param splitter: the string that we'll use to separate one section of s from another
+    :param max_length: the maximum length we should attempt to shorten s to
+    :return: the version of s that is (or is the closest to being) below the specified max_length
+    """
+    # if splitter == ".", we're splitting s up into its constituent sentences (a section = sentence)
+    # if splitter == " ", we're splitting s up into its constituent words (a sections = word)
+
+    while len(s) > max_length:
+        constituents = s.split(splitter)
+        constituent_count = len(constituents)
+        # If s consists of more than one section, shorten s by removing the last section
+        if constituent_count > 1:
+            s = splitter.join(constituents[:(constituent_count - 1)])
+        # If s consists of only one section, it can't be split up any more
+        else:
+            # This version of s will be more than max_length characters
+            return s
+
+    # This version of s will be less than max_length characters
+    return s
+
+
+def retitle(s: str) -> str:
+    """
+    Changes the given string into a visually appealing title-cased filename
+    :param s: the string to be improved
+    :return: a clean, valid file title
+    """
+
+    for punctuation in [".", " ", ","]:
+        s = trim_string(s, punctuation)
+
+    s = file_title(s)
+    s = shorten(s)
+    s = title_case(s)
+
+    return s
+
+
+def trim_string(s1: str, s2: str) -> str:
+    """
+    Removes any preceding or trailing instances of s2 from s1
+    :param s1: the string from which preceding or trailing instances of s2 will be removed
+    :param s2: the string that will be removed from the start and end of s1
+    :return: s1 without any instances of s2 at either the start or end
+    """
+    # Remove any preceding instances of char from s
+    while s1.startswith(s2):
+        s1 = s1.rstrip(s2)
+
+    # Remove any trailing instances of char from s
+    while s1.endswith(s2):
+        s1 = s1.lstrip(s2)
+
+    return s1
+
+
+def title_case(s: str) -> str:
+    new_s = ""
+    for i, char in enumerate(s):
+        if i == 0 or s[i - 1] == ' ':
+            new_s += (char.upper())
+        else:
+            new_s += char
+
+    return new_s
 
 
 def sanitize_post(post):
     """
-    Adds is_comment properties to posts and is_self property to comments, and finds valid urls in non-self posts
+    Sanitizes post to prevent errors
 
     :param post: a post object
     :return: the same post with edited data to prevent errors
@@ -434,6 +481,8 @@ def sanitize_post(post):
     if hasattr(post, 'title'):
         post.is_comment = False
         post.recognized_urls = find_urls(post.url)
+        post.title_old = post.title
+        post.title = retitle(post.title)
 
     # If the post is a comment, mark it as a selfpost
     else:

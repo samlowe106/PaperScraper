@@ -1,19 +1,14 @@
 import argparse
 from getpass import getpass
-from os import chdir, listdir, makedirs, path, remove
-from os.path import exists
-from os.path import splitext
+from filehelpers import convert_to_png, create_directory
+from imagehelpers import download_image, find_urls
+from os import chdir
+import praw                         # PRAW
+import prawcore.exceptions          # PRAW
+from strhelpers import *
 from time import gmtime
 from time import strftime
 from urllib.parse import urlparse
-
-import praw                         # PRAW
-import prawcore.exceptions          # PRAW
-
-from bs4 import BeautifulSoup       # bs4
-from PIL import Image               # Pillow
-from requests import get            # Requests
-
 
 # region Globals
 
@@ -33,12 +28,6 @@ LOG = LOG_DIRECTORY + "Log.txt"
 
 # List of currently unrecognized links (so compatibility can be added later)
 INCOMPATIBLE_DOMAIN_LOG = LOG_DIRECTORY + "Incompatible URL Log.txt"
-
-# Character that Windows won't allow in a filename
-INVALID_CHARS = ["\\", "/", ":", "*", "?", "<", ">", "|"]
-
-# File extensions that this program should recognize
-RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
 
 # True if the user would like all jpg images converted into png images, else false
 PNG_PREFERRED = False
@@ -92,47 +81,6 @@ COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
             }
 
 # endregion
-
-
-def attempt_sign_in():
-    """
-    Prompts the user to sign in
-    :return: Reddit object
-    """
-    username = input("Username: ")
-    password = getpass("Password: ")  # Only works through the command line!
-
-    print("Signing in...", end="")
-    reddit = sign_in(username, password)
-
-    # If login was successful, continue with the program
-    if reddit is not None:
-        print("signed in as " + str(reddit.user.me()) + ".\n")
-        return reddit
-
-    print("unrecognized username or password.\n")
-    return
-
-
-def create_directory(dirpath: str) -> None:
-    """
-    Creates a directory with the specified name if that directory doesn't already exist
-    :param dirpath: name of the directory
-    :return: None
-    """
-    if not exists(dirpath):
-        makedirs(dirpath)
-    return
-
-
-def log_post(post) -> None:
-    """
-    Logs a given post
-    :param post: post to be logged
-    :return: None
-    """
-    log_url(post.title, post.url, post.images_downloaded != [])
-    return
 
 
 def main() -> None:
@@ -196,271 +144,50 @@ def main() -> None:
     return
 
 
-def print_post_info(index: int, post) -> None:
+def attempt_sign_in():
     """
-    Prints out information about the specified post
+    Prompts the user to sign in
+    :return: Reddit object
+    """
+    username = input("Username: ")
+    password = getpass("Password: ")  # Only works through the command line!
 
-    :param index: the index number of the post
-    :param post: a post object
-    :return: None
-    """
-    print("\n{0}. {1}".format(index, post.title))
-    print("   r/" + str(post.subreddit))
-    print("   " + post.url)
-    for image in post.downloaded_images:
-        print("   Saved as " + image)
+    print("Signing in...", end="")
+    reddit = sign_in(username, password)
+
+    # If login was successful, continue with the program
+    if reddit is not None:
+        print("signed in as " + str(reddit.user.me()) + ".\n")
+        return reddit
+
+    print("unrecognized username or password.\n")
     return
 
 
-def print_unrecognized_domains() -> None:
+def sign_in(username: str, password: str):
     """
-    Prints unrecognized domains (so compatibility can be added later)
-    :return: None
-    """
-    if len(incompatible_domains) > 0:
-        print()
-        print("Several domains were unrecognized:")
-        for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
-            print("\t{0}: {1}".format(domain[0], domain[1]))
-    return
+    Attempts to sign into Reddit taking the first two CLAs
 
-
-def download_image(title: str, url: str, path: str) -> str:
-    """
-    Attempts to download an image from the given url to a file with the specified title
-
-    :param title: Desired title of the image file
-    :param url: A URL containing a direct link to the image to be downloaded
-    :param path: The filepath that the file should be saved to
-    :return: filepath that the image was downloaded to, empty string if failed
-    :raises: IOError, FileNotFoundError
+    :param username: The user's username
+    :param password: The user's password
+    :return: reddit object if successful, else None
     """
 
-    # Try to download image data
-    image = get(url)
+    # Don't bother trying to sign in if username or password are blank
+    #  (praw has a stack overflow without this check!)
+    if username == "" or password == "":
+        return None
 
-    # If the image page couldn't be reached, return an empty string for failure
-    if image.status_code != 200:
-        print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
-        return ""
-
-    # Remove any query strings with split, then find the file extension with splitext
-    extension = splitext(url.split('?')[0])[1]
-
-    # If the file extension is unrecognized, don't try to download the file
-    if extension not in RECOGNIZED_EXTENSIONS:
-        return ""
-
-    return save_image(image, path, title, extension)
-
-
-def save_image(image, path: str, title: str, extension: str) -> str:
-    """
-    Saves the specified image to the specified path with the specified title and file extension
-    :param image: the image to be saved
-    :param path: the path the image should be saved to
-    :param title: the title the image file should have
-    :param extension: the file extension
-    :return: final filename (with extension)
-    """
-    # Set up the output path
-    create_directory(path)
-
-    # Start a loop (prevents this file from overwriting another with the same name by adding (i) before the extension)
-    for i in range(len(listdir(path)) + 1):
-
-        # Insert a number in the filename to prevent conflicts
-        if i > 0:
-            file_title = "{0} ({1})".format(title, i)
-        else:
-            file_title = title
-
-        # If no files share the same name, write the file
-        if (file_title + extension) not in listdir(path):
-
-            # Write the file
-            with open(path + file_title + extension, "wb") as File:
-                for chunk in image.iter_content(4096):
-                    File.write(chunk)
-
-            # Return the final filename (with extension)
-            return file_title + extension
-
-
-def get_extension(filename: str) -> str:
-    """
-    Gets the extension of the specified file
-    :param filename: name of the file (including the extension)
-    :return: the file extension
-    """
-    sections = filename.split('.')
-    count = len(sections)
-    return sections[len(sections) - 1]
-
-
-def convert_to_png(path: str, filename: str) -> str:
-    """
-    Converts the given image to a .png
-    :param path: path that the image is located in
-    :param filename: title of the file to be converted
-    :return: filename (with new extension)
-    """
-    new_extension = ".png"
-    current_extension = get_extension(filename)
-    with Image.open(path + filename + current_extension) as im:
-        rgb_im = im.convert('RGB')
-        rgb_im.save(path + filename + new_extension)
-    return filename + new_extension
-
-
-def find_urls(url: str) -> list:
-    """
-    Attempts to find images on a linked page
-    Currently supports directly linked images and imgur pages
-    :param url: a link to a webpage
-    :return: a list of direct links to images found on that webpage
-    """
-    # If the URL (without query strings) ends with any recognized file extension, this is a direct link to an image
-    # Should match artstation, i.imgur.com, i.redd.it, and other pages
-    for extension in RECOGNIZED_EXTENSIONS:
-        if url.split('?')[0].endswith(extension):  # .split() removes any query strings from the URL
-            return [url]
-
-    # Imgur albums
-    if "imgur.com/a/" in url:
-        return parse_imgur_album(url)
-
-    # Imgur single-image pages
-    elif "imgur.com" in url:
-        return [parse_imgur_single(url)]
-
-    return []
-
-
-def parse_imgur_album(album_url: str) -> list:
-    """
-    Scrapes the specified imgur album for direct links to each image
-    :param album_url: url of an imgur album
-    :return: direct links to each image in the specified album
-    """
-    # Find all the single image pages referenced by this album
-    album_page = get(album_url)
-    album_soup = BeautifulSoup(album_page.text, "html.parser")
-    single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
-    # Make a list of the direct links to the image hosted on each single-image page; return the list of all those images
-    return [parse_imgur_single(link) for link in single_images]
-
-
-def parse_imgur_single(url: str) -> str:
-    """
-    Scrapes regular imgur page for a direct link to the image displayed on that page
-    :param url: A single-image imgur page
-    :return: A direct link to the image hosted on that page
-    """
-    page = get(url)
-    soup = BeautifulSoup(page.text, "html.parser")
-    return soup.select("link[rel=image_src]")[0]["href"]
-
-
-def file_title(s: str) -> str:
-    """
-    Removes characters that Windows doesn't allow in filenames from the specified string
-    :param s: string to remove characters from
-    :return: the given string without invalid characters
-    """
-    s.replace("'", '"')
-    for invalid_char in ["\\", "/", ":", "*", "?", "<", ">", "|"]:
-        s.replace(invalid_char, "")
-    return s
-
-
-def shorten(s: str, max_length: int = 250) -> str:
-    """
-    Shortens s to be no longer than the first sentence. Truncates words if possible,
-    but truncates characters when necessary
-    :param s: string to be shortened
-    :param max_length: the maximum character length that s can be (defaults to 250)
-    :return: s
-    """
-    shortened_words = attempt_shorten(s, ' ', max_length)
-    # If the attempt to shorten s using words fails, truncate s
-    if len(shortened_words) < max_length:
-        return shortened_words
-    else:
-        return s[:max_length]
-
-
-def attempt_shorten(s: str, splitter: str, max_length: int = 250) -> str:
-    """
-    Attempts to shorten s by splitting it up into its constituent sections (words, sentences, lines, etc. depending on
-    how splitter is specified) and removing trailing sections until it's below the max character length.
-    :param s: the string that this function is attempting to shorten
-    :param splitter: the string that we'll use to separate one section of s from another
-    :param max_length: the maximum length we should attempt to shorten s to
-    :return: the version of s that is (or is the closest to being) below the specified max_length
-    """
-    # if splitter == ".", we're splitting s up into its constituent sentences (a section = sentence)
-    # if splitter == " ", we're splitting s up into its constituent words (a sections = word)
-
-    while len(s) > max_length:
-        constituents = s.split(splitter)
-        constituent_count = len(constituents)
-        # If s consists of more than one section, shorten s by removing the last section
-        if constituent_count > 1:
-            s = splitter.join(constituents[:(constituent_count - 1)])
-        # If s consists of only one section, it can't be split up any more
-        else:
-            # This version of s will be more than max_length characters
-            return s
-
-    # This version of s will be less than max_length characters
-    return s
-
-
-def retitle(s: str) -> str:
-    """
-    Changes the given string into a visually appealing title-cased filename
-    :param s: the string to be improved
-    :return: a clean, valid file title
-    """
-
-    for punctuation in [".", " ", ","]:
-        s = trim_string(s, punctuation)
-
-    s = file_title(s)
-    s = shorten(s)
-    s = title_case(s)
-
-    return s
-
-
-def trim_string(s1: str, s2: str) -> str:
-    """
-    Removes any preceding or trailing instances of s2 from s1
-    :param s1: the string from which preceding or trailing instances of s2 will be removed
-    :param s2: the string that will be removed from the start and end of s1
-    :return: s1 without any instances of s2 at either the start or end
-    """
-    # Remove any preceding instances of char from s
-    while s1.startswith(s2):
-        s1 = s1.rstrip(s2)
-
-    # Remove any trailing instances of char from s
-    while s1.endswith(s2):
-        s1 = s1.lstrip(s2)
-
-    return s1
-
-
-def title_case(s: str) -> str:
-    new_s = ""
-    for i, char in enumerate(s):
-        if i == 0 or s[i - 1] == ' ':
-            new_s += (char.upper())
-        else:
-            new_s += char
-
-    return new_s
+    # Try to sign in
+    try:
+        reddit = praw.Reddit(client_id=CLIENT_ID,
+                             client_secret=CLIENT_SECRET,
+                             user_agent='Saved Sorter',
+                             username=username,
+                             password=password)
+        return reddit
+    except prawcore.exceptions.OAuthException:
+        return None
 
 
 def sanitize_post(post):
@@ -488,30 +215,14 @@ def sanitize_post(post):
     return post
 
 
-def sign_in(username: str, password: str):
+def log_post(post) -> None:
     """
-    Attempts to sign into Reddit taking the first two CLAs
-
-    :param username: The user's username
-    :param password: The user's password
-    :return: reddit object if successful, else None
+    Logs a given post
+    :param post: post to be logged
+    :return: None
     """
-
-    # Don't bother trying to sign in if username or password are blank
-    #  (praw has a stack overflow without this check!)
-    if username == "" or password == "":
-        return None
-
-    # Try to sign in
-    try:
-        reddit = praw.Reddit(client_id=CLIENT_ID,
-                             client_secret=CLIENT_SECRET,
-                             user_agent='Saved Sorter',
-                             username=username,
-                             password=password)
-        return reddit
-    except prawcore.exceptions.OAuthException:
-        return None
+    log_url(post.title, post.url, post.images_downloaded != [])
+    return
 
 
 def log_url(title: str, url: str, compatible: bool) -> None:
@@ -546,6 +257,35 @@ def log_url(title: str, url: str, compatible: bool) -> None:
             for domain in incompatible_domains.keys():
                 incompatible_domain_log_file.write(domain + " : " + str(incompatible_domains[domain]) + "\n")
 
+    return
+
+
+def print_post_info(index: int, post) -> None:
+    """
+    Prints out information about the specified post
+
+    :param index: the index number of the post
+    :param post: a post object
+    :return: None
+    """
+    print("\n{0}. {1}".format(index, post.old_title))
+    print("   r/" + str(post.subreddit))
+    print("   " + post.url)
+    for image in post.downloaded_images:
+        print("   Saved as " + image)
+    return
+
+
+def print_unrecognized_domains() -> None:
+    """
+    Prints unrecognized domains (so compatibility can be added later)
+    :return: None
+    """
+    if len(incompatible_domains) > 0:
+        print()
+        print("Several domains were unrecognized:")
+        for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
+            print("\t{0}: {1}".format(domain[0], domain[1]))
     return
 
 

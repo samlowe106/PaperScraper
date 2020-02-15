@@ -1,11 +1,11 @@
 import argparse
 from getpass import getpass
-from filehelpers import convert_to_png, create_directory
-from imagehelpers import download_image, find_urls
+from app.filehelpers import convert_to_png, create_directory
+from app.imagehelpers import download_image, find_urls
 from os import chdir
 import praw                         # PRAW
 import prawcore.exceptions          # PRAW
-from strhelpers import *
+from app.strhelpers import *
 from time import gmtime
 from time import strftime
 from urllib.parse import urlparse

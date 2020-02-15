@@ -10,14 +10,7 @@ from time import gmtime
 from time import strftime
 from urllib.parse import urlparse
 
-# region Initiation
-
-with open("info.txt", 'r') as info_file:
-    CLIENT_ID = info_file.readline()
-    CLIENT_SECRET = info_file.readline()
-
-# Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
-incompatible_domains = {}
+# region Argument Initiation
 
 parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
 
@@ -64,6 +57,9 @@ def main() -> None:
     domain_log_path = log_directory + "incompatible.txt"
     create_directory(log_directory)
 
+    # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
+    incompatible_domains = {}
+
     # Retrieve user's saved posts
     saved_posts = reddit.redditor(str(reddit.user.me())).saved()
 
@@ -95,15 +91,18 @@ def main() -> None:
         if post.compatible:
             post.unsave()
         else:
-            log_domain(post.url, domain_log_path)
+            log_domain(post.url, domain_log_path, incompatible_domains)
 
         # End if the desired number of images has been downloaded
         if index >= args.limit > 0:
             break
 
-    print_unrecognized_domains()
-
     """ End-of-program cleanup goes here """
+
+    if len(incompatible_domains) > 0:
+        print("\nSeveral domains were unrecognized:")
+
+    print_dict(incompatible_domains)
 
     return
 
@@ -143,11 +142,12 @@ def sign_in(username: str, password: str):
 
     # Try to sign in
     try:
-        reddit = praw.Reddit(client_id=CLIENT_ID,
-                             client_secret=CLIENT_SECRET,
-                             user_agent='Saved Sorter',
-                             username=username,
-                             password=password)
+        with open("info.txt", 'r') as info_file:
+            reddit = praw.Reddit(client_id=info_file.readline(),
+                                 client_secret=info_file.readline(),
+                                 user_agent='Saved Sorter',
+                                 username=username,
+                                 password=password)
         return reddit
     except prawcore.exceptions.OAuthException:
         return None
@@ -191,29 +191,28 @@ def log_post(post, file_path: str) -> None:
     return
 
 
-def log_domain(url: str, file_path: str) -> None:
+def log_domain(url: str, file_path: str, domain_dict: dict) -> None:
     """
     Logs the domain of an url that wasn't compatible with the program
     :param url: url that wasn't compatible
     :param file_path: the path of the log file to be written to
+    :param domain_dict: dictionary mapping each incompatible domain (str) to the number of times it's appeared (int)
     :return: None
     """
-    global incompatible_domains
-
     # Establish the post's domain
     uri = urlparse(url)
     domain = '{0}://{1}'.format(uri.scheme, uri.netloc)
 
     # Save that domain to a dictionary
-    if domain in incompatible_domains.keys():
-        incompatible_domains[domain] += 1
+    if domain in domain_dict.keys():
+        domain_dict[domain] += 1
     else:
-        incompatible_domains[domain] = 1
+        domain_dict[domain] = 1
 
     # Update the log file
     with open(file_path, "a") as log_file:
-        for domain in incompatible_domains.keys():
-            log_file.write(domain + " : " + str(incompatible_domains[domain]) + "\n")
+        for domain in domain_dict.keys():
+            log_file.write(domain + " : " + str(domain_dict[domain]) + "\n")
 
     return None
 
@@ -233,15 +232,15 @@ def print_post_info(index: int, post) -> None:
     return
 
 
-def print_unrecognized_domains() -> None:
+def print_dict(dictionary: dict) -> None:
     """
-    Prints unrecognized domains (so compatibility can be added later)
+    Prints keys (str) from a dictionary, sorted by their value (int)
+    :param dictionary: dictionary in the form str : int
     :return: None
     """
-    if len(incompatible_domains) > 0:
-        print("\nSeveral domains were unrecognized:")
-        for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
-            print("\t{0}: {1}".format(domain[0], domain[1]))
+
+    for domain in sorted(dictionary.items(), key=lambda x: x[1], reverse=True):
+        print("\t{0}: {1}".format(domain[0], domain[1]))
     return
 
 

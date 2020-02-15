@@ -12,18 +12,6 @@ from urllib.parse import urlparse
 
 # region Initiation
 
-# Directory where images will be saved
-DIRECTORY = strftime("%m-%d-%y", gmtime()) + "\\"
-
-# Directory where logs will be stored
-LOG_DIRECTORY = DIRECTORY + "Logs\\"
-
-# Log of all urls from which image(s) were downloaded
-LOG_FILEPATH = LOG_DIRECTORY + "Log.txt"
-
-# List of currently unrecognized links (so compatibility can be added later)
-INCOMPATIBLE_DOMAIN_LOG = LOG_DIRECTORY + "Incompatible URL Log.txt"
-
 with open("info.txt", 'r') as info_file:
     CLIENT_ID = info_file.readline()
     CLIENT_SECRET = info_file.readline()
@@ -61,15 +49,22 @@ def main() -> None:
     Scrapes and downloads any images from posts in the user's saved posts category on Reddit
     :return: None
     """
-
     reddit = attempt_sign_in()
 
-    # Make directories
+    # Change to specified output directory
     create_directory(args.directory)
     chdir(args.directory)
-    create_directory(LOG_DIRECTORY)
 
-    # Retrieve saved posts
+    # Image directory
+    image_directory = strftime("%m-%d-%y", gmtime()) + "\\"
+
+    # Log file path
+    log_directory = args.directory + "Logs\\"
+    log_path = log_directory + "log.txt"
+    domain_log_path = log_directory + "incompatible.txt"
+    create_directory(log_directory)
+
+    # Retrieve user's saved posts
     saved_posts = reddit.redditor(str(reddit.user.me())).saved()
 
     # Loop through saved posts
@@ -87,18 +82,22 @@ def main() -> None:
 
         # Parse the image link
         for i, url in enumerate(post.recognized_urls):
-            downloaded_file = download_image(post.new_title, url, DIRECTORY)
+            downloaded_file = download_image(post.new_title, url, image_directory)
             if downloaded_file != "":
                 post.images_downloaded.append(downloaded_file)
                 if args.png:
-                    convert_to_png(DIRECTORY, downloaded_file)
+                    convert_to_png(image_directory, downloaded_file)
 
-        # post.images_downloaded = [download_image(post.new_title, url, DIRECTORY) for url in post.recognized_urls]
+        post.compatible = post.images_downloaded != []
 
-        log_post(post)
-        post.unsave()
+        log_post(post, log_path)
 
-        # End if we've downloaded as many issues as desired
+        if post.compatible:
+            post.unsave()
+        else:
+            log_domain(post.url, domain_log_path)
+
+        # End if the desired number of images has been downloaded
         if index >= args.limit > 0:
             break
 
@@ -179,48 +178,44 @@ def sanitize_post(post):
     return post
 
 
-def log_post(post) -> None:
+def log_post(post, file_path: str) -> None:
     """
-    Logs a given post
-    :param post: post to be logged
+    Writes the given post's title and url to the specified file
+    :param post: reddit post object
+    :param file_path: log file path
     :return: None
     """
-    log_url(post.title, post.url, post.images_downloaded != [])
-    return
-
-
-def log_url(title: str, url: str, compatible: bool) -> None:
-    """
-    Writes the given title and url to the specified file, and  adds the url's domain to
-    the dictionary of incompatible domains
-    :param title: title of the post to be logged
-    :param url: the post's URL
-    :param compatible: whether the post was compatible with this program or not
-    :return: nothing
-    """
-
-    with open(LOG_FILEPATH, "a", encoding="utf-8") as log_file:
-        log_file.write(title + " : " + url + " : " + str(compatible) + '\n')
-
-    # If the url was incompatible, update the log of incompatible domains
-    if not compatible:
-
-        # Establish the post's domain
-        uri = urlparse(url)
-        domain = '{0}://{1}'.format(uri.scheme, uri.netloc)
-
-        # Save that domain to a dictionary
-        if domain in incompatible_domains.keys():
-            incompatible_domains[domain] += 1
-        else:
-            incompatible_domains[domain] = 1
-
-        # Update the log file
-        with open(INCOMPATIBLE_DOMAIN_LOG, "a") as incompatible_domain_log_file:
-            for domain in incompatible_domains.keys():
-                incompatible_domain_log_file.write(domain + " : " + str(incompatible_domains[domain]) + "\n")
+    with open(file_path, "a", encoding="utf-8") as log_file:
+        log_file.write(post.title + " : " + post.url + " : " + str(post.compatible) + '\n')
 
     return
+
+
+def log_domain(url: str, file_path: str) -> None:
+    """
+    Logs the domain of an url that wasn't compatible with the program
+    :param url: url that wasn't compatible
+    :param file_path: the path of the log file to be written to
+    :return: None
+    """
+    global incompatible_domains
+
+    # Establish the post's domain
+    uri = urlparse(url)
+    domain = '{0}://{1}'.format(uri.scheme, uri.netloc)
+
+    # Save that domain to a dictionary
+    if domain in incompatible_domains.keys():
+        incompatible_domains[domain] += 1
+    else:
+        incompatible_domains[domain] = 1
+
+    # Update the log file
+    with open(file_path, "a") as log_file:
+        for domain in incompatible_domains.keys():
+            log_file.write(domain + " : " + str(incompatible_domains[domain]) + "\n")
+
+    return None
 
 
 def print_post_info(index: int, post) -> None:

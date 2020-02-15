@@ -4,7 +4,7 @@ from os.path import splitext
 from requests import get            # Requests
 
 # File extensions that this program should recognize
-RECOGNIZED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif"]
+recognized_extensions = [".png", ".jpg", ".jpeg", ".gif"]
 
 
 def parse_imgur_album(album_url: str) -> list:
@@ -41,8 +41,8 @@ def find_urls(url: str) -> list:
     """
     # If the URL (without query strings) ends with any recognized file extension, this is a direct link to an image
     # Should match artstation, i.imgur.com, i.redd.it, and other pages
-    for extension in RECOGNIZED_EXTENSIONS:
-        if url.split('?')[0].endswith(extension):  # .split() removes any query strings from the URL
+    for extension in recognized_extensions:
+        if url.split('?')[0].lower().endswith(extension):  # .split() removes any query strings from the URL
             return [url]
 
     # Imgur albums
@@ -59,7 +59,6 @@ def find_urls(url: str) -> list:
 def download_image(title: str, url: str, path: str) -> str:
     """
     Attempts to download an image from the given url to a file with the specified title
-
     :param title: Desired title of the image file
     :param url: A URL containing a direct link to the image to be downloaded
     :param path: The filepath that the file should be saved to
@@ -77,10 +76,10 @@ def download_image(title: str, url: str, path: str) -> str:
         return ""
 
     # Remove any query strings with split, then find the file extension with splitext
-    extension = splitext(url.split('?')[0])[1]
+    extension = splitext(url.split('?')[0])[1].lower()
 
     # If the file extension is unrecognized, don't try to download the file
-    if extension not in RECOGNIZED_EXTENSIONS:
+    if extension not in recognized_extensions:
         return ""
 
     return save_image(image, path, title, extension)

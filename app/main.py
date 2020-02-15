@@ -8,6 +8,7 @@ import prawcore.exceptions          # PRAW
 from app.strhelpers import *
 from time import gmtime
 from time import strftime
+from typing import Optional
 from urllib.parse import urlparse
 
 # region Argument Initiation
@@ -107,7 +108,7 @@ def main() -> None:
     return
 
 
-def attempt_sign_in():
+def attempt_sign_in() -> Optional[praw.Reddit]:
     """
     Prompts the user to sign in
     :return: Reddit object
@@ -127,7 +128,7 @@ def attempt_sign_in():
     return
 
 
-def sign_in(username: str, password: str):
+def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     """
     Attempts to sign into Reddit
     :param username: The user's username

@@ -10,75 +10,48 @@ from time import gmtime
 from time import strftime
 from urllib.parse import urlparse
 
-# region Globals
-
-# region Constants
-
-# Current date (in Greenwich Mean Time) formatted in month-day-year
-DATE = strftime("%m-%d-%y", gmtime())
+# region Initiation
 
 # Directory where images will be saved
-DIRECTORY = DATE + "\\"
+DIRECTORY = strftime("%m-%d-%y", gmtime()) + "\\"
 
 # Directory where logs will be stored
 LOG_DIRECTORY = DIRECTORY + "Logs\\"
 
 # Log of all urls from which image(s) were downloaded
-LOG = LOG_DIRECTORY + "Log.txt"
+LOG_FILEPATH = LOG_DIRECTORY + "Log.txt"
 
 # List of currently unrecognized links (so compatibility can be added later)
 INCOMPATIBLE_DOMAIN_LOG = LOG_DIRECTORY + "Incompatible URL Log.txt"
-
-# True if the user would like all jpg images converted into png images, else false
-PNG_PREFERRED = False
-
-LOGGING = True
-
-SORT = False
-
-ADD_POSTER_NAME = False
-
-TITLE = True
 
 with open("info.txt", 'r') as info_file:
     CLIENT_ID = info_file.readline()
     CLIENT_SECRET = info_file.readline()
 
-# endregion
-
 # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
 incompatible_domains = {}
 
-# endregion
-
-# region Initiation
-
 parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
+
 parser.add_argument("-l", "--limit",     type=int, default=1000,
                     help="max number of images to download")
-parser.add_argument("-s", "--sort",      action='store_false',
-                    help="sort images into folders by subreddit")
 parser.add_argument("-p", "--png",       action='store_true',
                     help="convert .jpg files to .png files")
-parser.add_argument("-n", "--name",      action='store_false',
-                    help="append OP's name to the filename")
-parser.add_argument("-d", "--directory", type=str,
+parser.add_argument("-d", "--directory", type=str, default="Output\\",
                     help="directory that files should be saved to")
-parser.add_argument("--nolog",           type=bool, action='store_true',
-                    help="disable logging")
 parser.add_argument("-t", "--titlecase", type=bool, action='store_true',
                     help="saves filenames in title case")
-args = parser.parse_args()
 
-# (str) : (str) dictionary of commands (key) and their corresponding descriptions (val)
-COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
-            "-dir=": "Set the output directory",
-            "-nolog": "Disable logging (not recommended!)",
-            "-sort": "Place all images into folders named after the subreddits they were downloaded from",
-            "-name": "Append the OP's name to the end of file names",
-            "-t": "Put file names in title case",
-            "-lim=": "Specify how many files should be downloaded (default is limitless)"
-            }
+# region NOT YET IMPLEMENTED
+parser.add_argument("-n", "--name",      action='store_false',
+                    help="append OP's name to the filename")
+parser.add_argument("-s", "--sort",      action='store_false',
+                    help="sort images into folders by subreddit")
+parser.add_argument("--nolog",           type=bool, action='store_true',
+                    help="disable logging")
+# endregion
+
+args = parser.parse_args()
 
 # endregion
 
@@ -86,22 +59,14 @@ COMMANDS = {"-png": "Convert all JPG/JPEG images to PNG images",
 def main() -> None:
     """
     Scrapes and downloads any images from posts in the user's saved posts category on Reddit
-
-    :return:
+    :return: None
     """
-
-    global PNG_PREFERRED, LOGGING, SORT, ADD_POSTER_NAME, TITLE
-
-    # Tentative working directory
-    working_directory = "Output\\"
-    # Tentative download limit
-    download_limit = -1
 
     reddit = attempt_sign_in()
 
     # Make directories
-    create_directory(working_directory)
-    chdir(working_directory)
+    create_directory(args.directory)
+    chdir(args.directory)
     create_directory(LOG_DIRECTORY)
 
     # Retrieve saved posts
@@ -120,21 +85,21 @@ def main() -> None:
 
         index += 1
 
+        # Parse the image link
         for i, url in enumerate(post.recognized_urls):
-            downloaded_file = download_image(post.title, url, DIRECTORY)
+            downloaded_file = download_image(post.new_title, url, DIRECTORY)
             if downloaded_file != "":
                 post.images_downloaded.append(downloaded_file)
-                if PNG_PREFERRED:
+                if args.png:
                     convert_to_png(DIRECTORY, downloaded_file)
 
-        # Parse the image link
-        post.images_downloaded = [download_image(post.title, url, DIRECTORY) for url in post.recognized_urls]
+        # post.images_downloaded = [download_image(post.new_title, url, DIRECTORY) for url in post.recognized_urls]
 
         log_post(post)
         post.unsave()
 
-        # If we've downloaded as many issues as desired, break out
-        if index >= download_limit > 0:
+        # End if we've downloaded as many issues as desired
+        if index >= args.limit > 0:
             break
 
     print_unrecognized_domains()
@@ -166,8 +131,7 @@ def attempt_sign_in():
 
 def sign_in(username: str, password: str):
     """
-    Attempts to sign into Reddit taking the first two CLAs
-
+    Attempts to sign into Reddit
     :param username: The user's username
     :param password: The user's password
     :return: reddit object if successful, else None
@@ -192,8 +156,7 @@ def sign_in(username: str, password: str):
 
 def sanitize_post(post):
     """
-    Sanitizes post to prevent errors
-
+    Changes post data to prevent errors
     :param post: a post object
     :return: the same post with edited data to prevent errors
     """
@@ -202,8 +165,9 @@ def sanitize_post(post):
     if hasattr(post, 'title'):
         post.is_comment = False
         post.recognized_urls = find_urls(post.url)
-        post.title_old = post.title
-        post.title = retitle(post.title)
+        post.new_title = retitle(post.title)
+        if args.titlecase:
+            post.new_title = title_case(post.new_title)
 
     # If the post is a comment, mark it as a selfpost
     else:
@@ -229,14 +193,13 @@ def log_url(title: str, url: str, compatible: bool) -> None:
     """
     Writes the given title and url to the specified file, and  adds the url's domain to
     the dictionary of incompatible domains
-
     :param title: title of the post to be logged
     :param url: the post's URL
     :param compatible: whether the post was compatible with this program or not
     :return: nothing
     """
 
-    with open(LOG, "a", encoding="utf-8") as log_file:
+    with open(LOG_FILEPATH, "a", encoding="utf-8") as log_file:
         log_file.write(title + " : " + url + " : " + str(compatible) + '\n')
 
     # If the url was incompatible, update the log of incompatible domains
@@ -263,7 +226,6 @@ def log_url(title: str, url: str, compatible: bool) -> None:
 def print_post_info(index: int, post) -> None:
     """
     Prints out information about the specified post
-
     :param index: the index number of the post
     :param post: a post object
     :return: None
@@ -282,8 +244,7 @@ def print_unrecognized_domains() -> None:
     :return: None
     """
     if len(incompatible_domains) > 0:
-        print()
-        print("Several domains were unrecognized:")
+        print("\nSeveral domains were unrecognized:")
         for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
             print("\t{0}: {1}".format(domain[0], domain[1]))
     return

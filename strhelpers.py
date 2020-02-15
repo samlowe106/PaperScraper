@@ -89,10 +89,16 @@ def attempt_shorten(s: str, splitter: str, max_length: int = 250) -> str:
 
 
 def title_case(s: str) -> str:
+    """
+    Capitalizes the first character and all characters immediately after spaces in the given string
+    (the string.title() method additionally capitalizes characters after punctuation)
+    :param s: the string to be title-cased
+    :return: s in title case
+    """
     new_s = ""
     for i, char in enumerate(s):
         if i == 0 or s[i - 1] == ' ':
-            new_s += (char.upper())
+            new_s += char.upper()
         else:
             new_s += char
 

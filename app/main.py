@@ -11,52 +11,6 @@ from time import strftime
 from typing import Optional
 from urllib.parse import urlparse
 
-# region Argument Initiation
-
-parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
-
-parser.add_argument("-l",
-                    "--limit",
-                    type=int,
-                    default=1000,
-                    help="max number of images to download")
-
-parser.add_argument("-d",
-                    "--directory",
-                    type=str,
-                    default="Output\\",
-                    help="directory that files should be saved to")
-
-parser.add_argument("-t",
-                    "--titlecase",
-                    action='store_true',
-                    help="saves filenames in title case")
-
-parser.add_argument("-p",
-                    "--png",
-                    action='store_true',
-                    help="convert .jpg files to .png files")
-
-# region NOT YET IMPLEMENTED
-parser.add_argument("-n",
-                    "--name",
-                    action='store_false',
-                    help="append OP's name to the filename")
-
-parser.add_argument("-s",
-                    "--sort",
-                    action='store_false',
-                    help="sort images into folders by subreddit")
-
-parser.add_argument("--nolog",
-                    action='store_true',
-                    help="disable logging")
-# endregion
-
-args = parser.parse_args()
-
-# endregion
-
 
 def main() -> None:
     """
@@ -262,4 +216,47 @@ def print_dict(dictionary: dict) -> None:
 
 
 if __name__ == "__main__":
+
+    # region Argument Parsing
+
+    parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
+    parser.add_argument("-l",
+                        "--limit",
+                        type=int,
+                        default=1000,
+                        help="max number of images to download")
+    parser.add_argument("-d",
+                        "--directory",
+                        type=str,
+                        default="Output\\",
+                        help="directory that files should be saved to")
+    parser.add_argument("-t",
+                        "--titlecase",
+                        action='store_true',
+                        help="saves filenames in title case")
+    parser.add_argument("-p",
+                        "--png",
+                        action='store_true',
+                        help="convert .jpg files to .png files")
+
+    # region NOT YET IMPLEMENTED
+    parser.add_argument("-n",
+                        "--name",
+                        action='store_false',
+                        help="append OP's name to the filename")
+
+    parser.add_argument("-s",
+                        "--sort",
+                        action='store_false',
+                        help="sort images into folders by subreddit")
+
+    parser.add_argument("--nolog",
+                        action='store_true',
+                        help="disable logging")
+    # endregion
+
+    args = parser.parse_args()
+
+    # endregion
+
     main()

@@ -3,8 +3,8 @@ from getpass import getpass
 from app.filehelpers import convert_to_png, create_directory
 from app.imagehelpers import download_image, find_urls
 from os import chdir
-import praw                         # PRAW
-import prawcore.exceptions          # PRAW
+import prawcore.exceptions
+import praw
 from app.strhelpers import *
 from time import gmtime
 from time import strftime
@@ -15,21 +15,41 @@ from urllib.parse import urlparse
 
 parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
 
-parser.add_argument("-l", "--limit",     type=int, default=1000,
+parser.add_argument("-l",
+                    "--limit",
+                    type=int,
+                    default=1000,
                     help="max number of images to download")
-parser.add_argument("-p", "--png",       action='store_true',
-                    help="convert .jpg files to .png files")
-parser.add_argument("-d", "--directory", type=str, default="Output\\",
+
+parser.add_argument("-d",
+                    "--directory",
+                    type=str,
+                    default="Output\\",
                     help="directory that files should be saved to")
-parser.add_argument("-t", "--titlecase", type=bool, action='store_true',
+
+parser.add_argument("-t",
+                    "--titlecase",
+                    action='store_true',
                     help="saves filenames in title case")
 
+parser.add_argument("-p",
+                    "--png",
+                    action='store_true',
+                    help="convert .jpg files to .png files")
+
 # region NOT YET IMPLEMENTED
-parser.add_argument("-n", "--name",      action='store_false',
+parser.add_argument("-n",
+                    "--name",
+                    action='store_false',
                     help="append OP's name to the filename")
-parser.add_argument("-s", "--sort",      action='store_false',
+
+parser.add_argument("-s",
+                    "--sort",
+                    action='store_false',
                     help="sort images into folders by subreddit")
-parser.add_argument("--nolog",           type=bool, action='store_true',
+
+parser.add_argument("--nolog",
+                    action='store_true',
                     help="disable logging")
 # endregion
 
@@ -117,7 +137,6 @@ def attempt_sign_in() -> Optional[praw.Reddit]:
     print("Signing in...", end="")
     reddit = sign_in(username, password)
 
-    # If login was successful, continue with the program
     if reddit is not None:
         print("signed in as " + str(reddit.user.me()) + ".\n")
     else:

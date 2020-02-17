@@ -120,10 +120,10 @@ def attempt_sign_in() -> Optional[praw.Reddit]:
     # If login was successful, continue with the program
     if reddit is not None:
         print("signed in as " + str(reddit.user.me()) + ".\n")
-        return reddit
+    else:
+        print("unrecognized username or password.\n")
 
-    print("unrecognized username or password.\n")
-    return
+    return reddit
 
 
 def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
@@ -134,22 +134,21 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     :return: reddit object if successful, else None
     """
 
-    # Don't bother trying to sign in if username or password are blank
-    #  (praw has a stack overflow without this check!)
-    if not (username and password):
-        return None
+    reddit = None
 
-    # Try to sign in
-    try:
+    if username and password:  # (praw stack overflows if both username and password are "")
         with open("info.txt", 'r') as info_file:
-            reddit = praw.Reddit(client_id=info_file.readline(),
-                                 client_secret=info_file.readline(),
-                                 user_agent='Saved Sorter',
-                                 username=username,
-                                 password=password)
-        return reddit
-    except prawcore.exceptions.OAuthException:
-        return None
+            try:
+                reddit = praw.Reddit(client_id=info_file.readline(),
+                                     client_secret=info_file.readline(),
+                                     user_agent='Saved Sorter',
+                                     username=username,
+                                     password=password)
+            # Suppress error if username/password were unrecognized
+            except prawcore.exceptions.OAuthException:
+                pass
+
+    return reddit
 
 
 def sanitize_post(post):

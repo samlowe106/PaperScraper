@@ -1,11 +1,11 @@
-import argparse
-from getpass import getpass
+from app.strhelpers import *
 from app.filehelpers import convert_to_png, create_directory
 from app.imagehelpers import download_image, find_urls
+import argparse
+from getpass import getpass
 from os import chdir
-import prawcore.exceptions
+from prawcore.exceptions import OAuthException
 import praw
-from app.strhelpers import *
 from time import gmtime
 from time import strftime
 from typing import Optional
@@ -118,7 +118,7 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
                                      username=username,
                                      password=password)
             # Suppress error if username/password were unrecognized
-            except prawcore.exceptions.OAuthException:
+            except OAuthException:
                 pass
 
     return reddit

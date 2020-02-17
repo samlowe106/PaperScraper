@@ -10,7 +10,6 @@ def retitle(s: str) -> str:
 
     s = file_title(s)
     s = shorten(s)
-    s = title_case(s)
 
     return s
 

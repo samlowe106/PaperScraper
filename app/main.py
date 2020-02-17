@@ -85,14 +85,12 @@ def main() -> None:
                 if args.png:
                     convert_to_png(image_directory, downloaded_file)
 
-        post.compatible = post.images_downloaded != []
-
         log_post(post, log_path)
 
-        if post.compatible:
+        if post.images_downloaded:
             post.unsave()
         else:
-            log_domain(post.url, domain_log_path, incompatible_domains)
+            log_domain(post.url, domain_log_path, post.images_downloaded)
 
         # End if the desired number of images has been downloaded
         if index >= args.limit > 0:
@@ -100,7 +98,7 @@ def main() -> None:
 
     """ End-of-program cleanup goes here """
 
-    if len(incompatible_domains) > 0:
+    if incompatible_domains:
         print("\nSeveral domains were unrecognized:")
 
     print_dict(incompatible_domains)
@@ -138,7 +136,7 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
 
     # Don't bother trying to sign in if username or password are blank
     #  (praw has a stack overflow without this check!)
-    if username == "" or password == "":
+    if not (username and password):
         return None
 
     # Try to sign in
@@ -187,7 +185,7 @@ def log_post(post, file_path: str) -> None:
     :return: None
     """
     with open(file_path, "a", encoding="utf-8") as log_file:
-        log_file.write(post.title + " : " + post.url + " : " + str(post.compatible) + '\n')
+        log_file.write(post.title + " : " + post.url + " : " + str(bool(post.images_downloaded)) + '\n')
 
     return
 

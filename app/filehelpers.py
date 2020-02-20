@@ -22,22 +22,22 @@ def convert_to_png(path: str, filename: str) -> str:
     :return: filename (with new extension)
     """
     new_extension = ".png"
-    current_extension = get_extension(filename)
+    current_extension = img_file_extension(filename)
     with Image.open(path + filename + current_extension) as im:
         rgb_im = im.convert('RGB')
         rgb_im.save(path + filename + new_extension)
     return filename + new_extension
 
 
-def get_extension(filename: str) -> str:
+def img_file_extension(filename: str) -> str:
     """
     Gets the extension of the specified file
     :param filename: name of the file (including the extension)
-    :return: the file extension
+    :return: the lowercase file extension, including the .
     """
     sections = filename.split('.')
     count = len(sections)
-    return sections[len(sections) - 1]
+    return sections[count - 1].lower()
 
 
 def save_image(image, path: str, title: str, extension: str) -> str:

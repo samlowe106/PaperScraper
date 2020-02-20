@@ -114,7 +114,7 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
             try:
                 reddit = praw.Reddit(client_id=info_file.readline(),
                                      client_secret=info_file.readline(),
-                                     user_agent='Saved Sorter',
+                                     user_agent='PaperScraper',
                                      username=username,
                                      password=password)
             # Suppress error if username/password were unrecognized

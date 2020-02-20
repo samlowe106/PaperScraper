@@ -1,7 +1,7 @@
-from bs4 import BeautifulSoup       # bs4
+from bs4 import BeautifulSoup
 from app.filehelpers import save_image
 from os.path import splitext
-from requests import get            # Requests
+from requests import get
 
 # File extensions that this program should recognize
 recognized_extensions = [".png", ".jpg", ".jpeg", ".gif"]
@@ -39,21 +39,25 @@ def find_urls(url: str) -> list:
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
-    # If the URL (without query strings) ends with any recognized file extension, this is a direct link to an image
-    # Should match artstation, i.imgur.com, i.redd.it, and other pages
-    for extension in recognized_extensions:
-        if url.split('?')[0].lower().endswith(extension):  # .split() removes any query strings from the URL
-            return [url]
+
+    extension = img_url_extension(url)
+
+    # If the image in the url has a recognized file extension, this is a direct link to an image
+    # (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
+    if extension_recognized(extension):
+        return [url]
 
     # Imgur albums
-    if "imgur.com/a/" in url:
+    elif "imgur.com/a/" in url:
         return parse_imgur_album(url)
 
     # Imgur single-image pages
     elif "imgur.com" in url:
         return [parse_imgur_single(url)]
 
-    return []
+    # Unrecognized pages
+    else:
+        return []
 
 
 def download_image(title: str, url: str, path: str) -> str:
@@ -75,11 +79,29 @@ def download_image(title: str, url: str, path: str) -> str:
         print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
         return ""
 
-    # Remove any query strings with split, then find the file extension with splitext
-    extension = splitext(url.split('?')[0])[1].lower()
+    # Find the file extension
+    extension = img_url_extension(url)
 
     # If the file extension is unrecognized, don't try to download the file
-    if extension not in recognized_extensions:
+    if not extension_recognized(extension):
         return ""
+    else:
+        return save_image(image, path, title, extension)
 
-    return save_image(image, path, title, extension)
+
+def img_url_extension(url: str) -> str:
+    """
+    Gets the extension from the given image url
+    :param url: the url of an image
+    :return: the lowercase extension of that image including the . or "" on failure
+    """
+    return splitext(url.split('?')[0])[1].lower()
+
+
+def extension_recognized(extension: str) -> bool:
+    """
+    Checks if the specified extension is recognized
+    :param extension: the extension to check
+    :return: True if the extension is recognized, False otherwise
+    """
+    return extension.lower() in recognized_extensions

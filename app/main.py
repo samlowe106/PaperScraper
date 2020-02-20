@@ -8,7 +8,7 @@ from prawcore.exceptions import OAuthException
 import praw
 from time import gmtime
 from time import strftime
-from typing import Optional
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
 
@@ -162,7 +162,7 @@ def log_post(post, file_path: str) -> None:
     return
 
 
-def log_domain(url: str, file_path: str, domain_dict: dict) -> None:
+def log_domain(url: str, file_path: str, domain_dict: Dict[str, int]) -> None:
     """
     Logs the domain of an url that wasn't compatible with the program
     :param url: url that wasn't compatible
@@ -203,7 +203,7 @@ def print_post_info(index: int, post) -> None:
     return
 
 
-def print_dict(dictionary: dict) -> None:
+def print_dict(dictionary: Dict[str, int]) -> None:
     """
     Prints keys (str) from a dictionary, sorted by their value (int)
     :param dictionary: dictionary in the form str : int

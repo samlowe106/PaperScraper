@@ -2,12 +2,13 @@ from bs4 import BeautifulSoup
 from app.filehelpers import save_image
 from os.path import splitext
 from requests import get
+from typing import List
 
 # File extensions that this program should recognize
 recognized_extensions = [".png", ".jpg", ".jpeg", ".gif"]
 
 
-def parse_imgur_album(album_url: str) -> list:
+def parse_imgur_album(album_url: str) -> List[str]:
     """
     Scrapes the specified imgur album for direct links to each image
     :param album_url: url of an imgur album
@@ -32,7 +33,7 @@ def parse_imgur_single(url: str) -> str:
     return soup.select("link[rel=image_src]")[0]["href"]
 
 
-def find_urls(url: str) -> list:
+def find_urls(url: str) -> List[str]:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages

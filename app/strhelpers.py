@@ -51,7 +51,12 @@ def shorten(s: str, max_length: int = 250) -> str:
     :param s: string to be shortened
     :param max_length: the maximum character length that s can be (defaults to 250)
     :return: s
+    :raises IndexError: if max_length is less than 0
     """
+
+    if max_length < 0:
+        raise IndexError("Argument max_length must be a positive integer, not %d" % max_length)
+
     shortened_words = attempt_shorten(s, ' ', max_length)
     # If the attempt to shorten s using words fails, truncate s
     if len(shortened_words) < max_length:
@@ -68,7 +73,12 @@ def attempt_shorten(s: str, splitter: str, max_length: int = 250) -> str:
     :param splitter: the string that we'll use to separate one section of s from another
     :param max_length: the maximum length we should attempt to shorten s to
     :return: the version of s that is (or is the closest to being) below the specified max_length
+    :raises IndexError: if max_length is less than 0
     """
+
+    if max_length < 0:
+        raise IndexError("Argument max_length must be a positive integer, not %d" % max_length)
+
     # if splitter == ".", we're splitting s up into its constituent sentences (a section = sentence)
     # if splitter == " ", we're splitting s up into its constituent words (a sections = word)
 

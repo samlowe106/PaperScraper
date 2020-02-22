@@ -21,13 +21,15 @@ def trim_string(s1: str, s2: str) -> str:
     :param s2: the string that will be removed from the start and end of s1
     :return: s1 without any instances of s2 at either the start or end
     """
-    # Remove any preceding instances of char from s
-    while s1.startswith(s2):
-        s1 = s1.lstrip(s2)
 
-    # Remove any trailing instances of char from s
-    while s1.endswith(s2):
-        s1 = s1.rstrip(s2)
+    if s2:  # if s2 == "" these loops won't terminate
+        # Remove any preceding instances of s2 from s1
+        while s1.startswith(s2):
+            s1 = s1.lstrip(s2)
+
+        # Remove any trailing instances of s2 from s1
+        while s1.endswith(s2):
+            s1 = s1.rstrip(s2)
 
     return s1
 

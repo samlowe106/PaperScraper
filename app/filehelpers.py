@@ -22,7 +22,7 @@ def convert_to_png(path: str, filename: str) -> str:
     :return: filename (with new extension)
     """
     new_extension = ".png"
-    current_extension = img_file_extension(filename)
+    current_extension = get_extension(filename)
     with Image.open(path + filename + current_extension) as im:
         rgb_im = im.convert('RGB')
         rgb_im.save(path + filename + new_extension)

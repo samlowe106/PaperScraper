@@ -23,11 +23,11 @@ def trim_string(s1: str, s2: str) -> str:
     """
     # Remove any preceding instances of char from s
     while s1.startswith(s2):
-        s1 = s1.rstrip(s2)
+        s1 = s1.lstrip(s2)
 
     # Remove any trailing instances of char from s
     while s1.endswith(s2):
-        s1 = s1.lstrip(s2)
+        s1 = s1.rstrip(s2)
 
     return s1
 

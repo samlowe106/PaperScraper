@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
-from app.filehelpers import save_image
-from os.path import splitext
+from app.filehelpers import get_extension, save_image
 from requests import get
 from typing import List
 
@@ -41,7 +40,7 @@ def find_urls(url: str) -> List[str]:
     :return: a list of direct links to images found on that webpage
     """
 
-    extension = img_url_extension(url)
+    extension = get_extension(url)
 
     # If the image in the url has a recognized file extension, this is a direct link to an image
     # (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
@@ -81,22 +80,13 @@ def download_image(title: str, url: str, path: str) -> str:
         return ""
 
     # Find the file extension
-    extension = img_url_extension(url)
+    extension = get_extension(url)
 
     # If the file extension is unrecognized, don't try to download the file
     if not extension_recognized(extension):
         return ""
     else:
         return save_image(image, path, title, extension)
-
-
-def img_url_extension(url: str) -> str:
-    """
-    Gets the extension from the given image url
-    :param url: the url of an image
-    :return: the lowercase extension of that image including the . or "" on failure
-    """
-    return splitext(url.split('?')[0])[1].lower()
 
 
 def extension_recognized(extension: str) -> bool:

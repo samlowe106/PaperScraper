@@ -1,5 +1,5 @@
 from os import listdir, makedirs
-from os.path import exists
+from os.path import exists, splitext
 from PIL import Image
 
 
@@ -29,15 +29,14 @@ def convert_to_png(path: str, filename: str) -> str:
     return filename + new_extension
 
 
-def img_file_extension(filename: str) -> str:
+def get_extension(s: str) -> str:
     """
-    Gets the extension of the specified file
-    :param filename: name of the file (including the extension)
-    :return: the lowercase file extension, including the .
+    Gets the extension from the given filepath or url
+    :param s: the url or filepath
+    :return: the lowercase extension of that image including the . or "" on failure
     """
-    sections = filename.split('.')
-    count = len(sections)
-    return sections[count - 1].lower()
+    # split removes query strings from urls
+    return splitext(s.split('?')[0])[1].lower()
 
 
 def save_image(image, path: str, title: str, extension: str) -> str:

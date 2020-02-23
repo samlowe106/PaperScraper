@@ -64,7 +64,7 @@ def main() -> None:
         else:
             log_domain(post.url, domain_log_path, post.images_downloaded)
 
-        # End if the desired number of images has been downloaded
+        # End if the desired number of posts have had their images downloaded
         if index >= args.limit:
             break
 
@@ -72,8 +72,7 @@ def main() -> None:
 
     if incompatible_domains:
         print("\nSeveral domains were unrecognized:")
-
-    print_dict(incompatible_domains)
+        print_dict(incompatible_domains)
 
     return
 

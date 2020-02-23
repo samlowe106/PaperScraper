@@ -40,9 +40,9 @@ def file_title(s: str) -> str:
     :param s: string to remove characters from
     :return: the given string without invalid characters
     """
-    s.replace("'", '"')
+    s = s.replace('"', "'")
     for invalid_char in ["\\", "/", ":", "*", "?", "<", ">", "|"]:
-        s.replace(invalid_char, "")
+        s = s.replace(invalid_char, "")
     return s
 
 
@@ -106,11 +106,13 @@ def title_case(s: str) -> str:
     :param s: the string to be title-cased
     :return: s in title case
     """
-    new_s = ""
+    # Using ''.join() is faster than using += to accumulate a string within a loop
+    # https://google.github.io/styleguide/pyguide.html#310-strings
+    new_s = []
     for i, char in enumerate(s):
         if i == 0 or s[i - 1] == ' ':
-            new_s += char.upper()
+            new_s.append(char.upper())
         else:
-            new_s += char
+            new_s.append(char)
 
-    return new_s
+    return "".join(new_s)

@@ -19,6 +19,10 @@ def main() -> None:
     """
     reddit = attempt_sign_in()
 
+    # TODO: refactor?
+    if reddit is None:
+        return
+
     # Change to specified output directory
     create_directory(args.directory)
     chdir(args.directory)
@@ -93,14 +97,17 @@ def attempt_sign_in() -> Optional[praw.Reddit]:
     password = getpass("Password: ")  # Only works through the command line!
 
     print("Signing in...", end="")
-    reddit = sign_in(username, password)
-
-    if reddit is not None:
+    try:
+        reddit = sign_in(username, password)
+        # TODO: remove this if statement after sign_in is refactored
+        if reddit is None:
+            print("unrecognized username or password.\n")
+            return
         print("signed in as " + str(reddit.user.me()) + ".\n")
-    else:
+        return reddit
+    except OAuthException as e:
         print("unrecognized username or password.\n")
-
-    return reddit
+        return
 
 
 def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
@@ -109,23 +116,18 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     :param username: The user's username
     :param password: The user's password
     :return: reddit object if successful, else None
+    :raises OAuthException: if username and password were unrecognized
     """
-
-    reddit = None
 
     if username and password:  # (praw stack overflows if both username and password are "")
         with open("info.txt", 'r') as info_file:
-            try:
-                reddit = praw.Reddit(client_id=info_file.readline(),
-                                     client_secret=info_file.readline(),
-                                     user_agent='PaperScraper',
-                                     username=username,
-                                     password=password)
-            # Suppress error if username/password were unrecognized
-            except OAuthException:
-                pass
-
-    return reddit
+            return praw.Reddit(client_id=info_file.readline(),
+                               client_secret=info_file.readline(),
+                               user_agent='PaperScraper',
+                               username=username,
+                               password=password)
+    # TODO: raise OAuthException if username or password were "" instead of returning None
+    return None
 
 
 def is_skippable(post) -> bool:

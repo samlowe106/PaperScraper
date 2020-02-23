@@ -1,6 +1,6 @@
 from app.strhelpers import *
 from app.filehelpers import convert_to_png, create_directory
-from app.imagehelpers import download_image, find_urls
+from app.imagehelpers import download_image, ExtensionUnrecognizedError, find_urls
 import argparse
 from getpass import getpass
 from os import chdir
@@ -51,11 +51,14 @@ def main() -> None:
 
         # Parse the image link
         for i, url in enumerate(post.recognized_urls):
-            downloaded_file = download_image(post.new_title, url, image_directory)
-            if downloaded_file != "":
-                post.images_downloaded.append(downloaded_file)
+            try:
+                # Download the image(s) and associate it with the current post object
+                downloaded_file_path = download_image(post.new_title, url, image_directory)
+                post.images_downloaded.append(downloaded_file_path)
                 if args.png:
-                    convert_to_png(image_directory, downloaded_file)
+                    convert_to_png(image_directory, downloaded_file_path)
+            except (ConnectionError, ExtensionUnrecognizedError) as e:
+                print("\n" + e)
 
         log_post(post, log_path)
 

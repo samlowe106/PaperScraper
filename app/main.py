@@ -49,6 +49,9 @@ def main() -> None:
 
         post = sanitize_post(post)
 
+        # True if post was parsed correctly, False if there were failures
+        parsed = True
+
         # Parse the image link
         for i, url in enumerate(post.recognized_urls):
             try:
@@ -59,10 +62,11 @@ def main() -> None:
                     convert_to_png(image_directory, downloaded_file_path)
             except (ConnectionError, ExtensionUnrecognizedError) as e:
                 print("\n" + e)
+                parsed = False
 
         log_post(post, log_path)
 
-        if post.images_downloaded:
+        if post.images_downloaded and parsed:
             post.unsave()
         else:
             log_domain(post.url, domain_log_path, post.images_downloaded)

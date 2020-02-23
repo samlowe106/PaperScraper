@@ -38,11 +38,9 @@ def main() -> None:
     # Retrieve user's saved posts
     saved_posts = reddit.redditor(str(reddit.user.me())).saved()
 
-    # Loop through saved posts
     index = 0
     for post in saved_posts:
 
-        # Sanitize the post
         post = sanitize_post(post)
 
         # Move on if the post is just a selfpost or link to a reddit thread
@@ -67,10 +65,10 @@ def main() -> None:
             log_domain(post.url, domain_log_path, post.images_downloaded)
 
         # End if the desired number of images has been downloaded
-        if index >= args.limit > 0:
+        if index >= args.limit:
             break
 
-    """ End-of-program cleanup goes here """
+    """ End-of-program cleanup """
 
     if incompatible_domains:
         print("\nSeveral domains were unrecognized:")

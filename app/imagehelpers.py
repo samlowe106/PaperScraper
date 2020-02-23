@@ -7,6 +7,10 @@ from typing import List
 recognized_extensions = [".png", ".jpg", ".jpeg", ".gif"]
 
 
+class ExtensionUnrecognizedError(Exception):
+    """ A file was not recognized by PaperScraper """
+
+
 def parse_imgur_album(album_url: str) -> List[str]:
     """
     Scrapes the specified imgur album for direct links to each image
@@ -67,7 +71,10 @@ def download_image(title: str, url: str, path: str) -> str:
     :param url: A URL containing a direct link to the image to be downloaded
     :param path: The filepath that the file should be saved to
     :return: filepath that the image was downloaded to, empty string if failed
-    :raises: IOError, FileNotFoundError
+    :raises IOError:
+    :raises FileNotFoundError:
+    :raises ConnectionError: if image status code was not 200 after download
+    :raises ExtensionUnrecognizedError: if the downloaded file extension was not recognized
     """
 
     # Try to download image data
@@ -75,16 +82,14 @@ def download_image(title: str, url: str, path: str) -> str:
 
     # If the image page couldn't be reached, return an empty string for failure
     if image.status_code != 200:
-        # TODO: move error print to main function
-        print("\nERROR: Couldn't retrieve image from " + url + " , skipping...")
-        return ""
+        raise ConnectionError("Couldn't retrieve image from " + url)
 
     # Find the file extension
     extension = get_extension(url)
 
     # If the file extension is unrecognized, don't try to download the file
     if not extension_recognized(extension):
-        return ""
+        raise ExtensionUnrecognizedError("Extension %s was not recognized" % extension)
     else:
         return save_image(image, path, title, extension)
 

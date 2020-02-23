@@ -41,13 +41,13 @@ def main() -> None:
     index = 0
     for post in saved_posts:
 
-        post = sanitize_post(post)
-
         # Move on if the post is just a selfpost or link to a reddit thread
-        if post.skippable:
+        if is_skippable(post):
             continue
 
         index += 1
+
+        post = sanitize_post(post)
 
         # Parse the image link
         for i, url in enumerate(post.recognized_urls):
@@ -122,28 +122,25 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     return reddit
 
 
+def is_skippable(post) -> bool:
+    """
+    Determines if a given reddit post can be skipped or not
+    :param post: a reddit post object
+    :return: True if the given post is a comment, selfpost, or links to another reddit post, else False
+    """
+    return (not hasattr(post, 'title')) or post.is_self or "https://reddit.com/" in post.url
+
+
 def sanitize_post(post):
     """
-    Changes post data to prevent errors
+    Fixes post's title and finds post's urls
     :param post: a post object
-    :return: the same post with edited data to prevent errors
+    :return: the same post with additional new_title and recognized_urls fields
     """
-
-    # If the post links somewhere, find scrape-able images
-    if hasattr(post, 'title'):
-        post.is_comment = False
-        post.recognized_urls = find_urls(post.url)
-        post.new_title = retitle(post.title)
-        if args.titlecase:
-            post.new_title = title_case(post.new_title)
-
-    # If the post is a comment, mark it as a selfpost
-    else:
-        post.is_self = True
-        post.is_comment = True
-
-    post.skippable = post.is_self or "https://reddit.com/" in post.url
-
+    post.recognized_urls = find_urls(post.url)
+    post.new_title = retitle(post.title)
+    if args.titlecase:
+        post.new_title = title_case(post.new_title)
     return post
 
 

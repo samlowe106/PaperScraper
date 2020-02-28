@@ -6,6 +6,7 @@ from getpass import getpass
 from os import chdir
 from prawcore.exceptions import OAuthException
 import praw
+from praw.models import Submission
 from time import gmtime
 from time import strftime
 from typing import Dict, Optional
@@ -97,6 +98,7 @@ def attempt_sign_in() -> Optional[praw.Reddit]:
 
     print("Signing in...", end="")
     reddit = None
+
     try:
         reddit = sign_in(username, password)
         print("signed in as " + str(reddit.user.me()) + ".\n")
@@ -130,7 +132,7 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
         raise ConnectionError("Username and password unrecognized.")
 
 
-def is_skippable(post) -> bool:
+def is_skippable(post: Submission) -> bool:
     """
     Determines if a given reddit post can be skipped or not
     :param post: a reddit post object
@@ -139,7 +141,7 @@ def is_skippable(post) -> bool:
     return (not hasattr(post, 'title')) or post.is_self or "https://reddit.com/" in post.url
 
 
-def sanitize_post(post):
+def sanitize_post(post: Submission) -> Submission:
     """
     Fixes post's title and finds post's urls
     :param post: a post object
@@ -152,7 +154,7 @@ def sanitize_post(post):
     return post
 
 
-def log_post(post, file_path: str) -> None:
+def log_post(post: Submission, file_path: str) -> None:
     """
     Writes the given post's title and url to the specified file
     :param post: reddit post object

@@ -19,6 +19,9 @@ def main() -> None:
     """
     reddit = attempt_sign_in()
 
+    if reddit is None:
+        return
+
     # Change to specified output directory
     create_directory(args.directory)
     chdir(args.directory)
@@ -46,10 +49,7 @@ def main() -> None:
             continue
 
         index += 1
-
         post = sanitize_post(post)
-
-        # True if post was parsed correctly, False if there were failures
         parsed = True
 
         # Parse the image link
@@ -96,13 +96,14 @@ def attempt_sign_in() -> Optional[praw.Reddit]:
         password = getpass("Password: ")  # Only works through the command line!
 
     print("Signing in...", end="")
+    reddit = None
     try:
         reddit = sign_in(username, password)
         print("signed in as " + str(reddit.user.me()) + ".\n")
-        return reddit
     except ConnectionError as e:
         print(str(e).lower() + "\n")
-        return
+    finally:
+        return reddit
 
 
 def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
@@ -114,18 +115,18 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     :raises ConnectionException: if username and password were unrecognized
     """
 
-    if username and password:  # (praw stack overflows if both username and password are "")
-        try:
-            with open("info.txt", 'r') as info_file:
-                return praw.Reddit(client_id=info_file.readline(),
-                                   client_secret=info_file.readline(),
-                                   user_agent='PaperScraper',
-                                   username=username,
-                                   password=password)
-        # Raise an error with a more helpful message
-        except OAuthException as e:
-            raise ConnectionError("Username and password unrecognized.")
-    else:
+    if not (username and password):  # (praw stack overflows if both username and password are "")
+        raise ConnectionError("Username and password unrecognized.")
+
+    try:
+        with open("info.txt", 'r') as info_file:
+            return praw.Reddit(client_id=info_file.readline(),
+                               client_secret=info_file.readline(),
+                               user_agent='PaperScraper',
+                               username=username,
+                               password=password)
+    # Catch and re-raise error with a more helpful message
+    except OAuthException as e:
         raise ConnectionError("Username and password unrecognized.")
 
 

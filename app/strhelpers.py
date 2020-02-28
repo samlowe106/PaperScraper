@@ -37,6 +37,9 @@ def trim_string(s1: str, s2: str) -> str:
 def file_title(s: str) -> str:
     """
     Removes characters that Windows doesn't allow in filenames from the specified string
+
+    Note: might be worth looking at Django's slugify function which implements a similar functionality
+    https://docs.djangoproject.com/en/3.0/_modules/django/utils/text/#slugify
     :param s: string to remove characters from
     :return: the given string without invalid characters
     """

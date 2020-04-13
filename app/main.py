@@ -4,6 +4,7 @@ from app.imagehelpers import download_image, ExtensionUnrecognizedError, find_ur
 import argparse
 from getpass import getpass
 from os import chdir
+from os.path import isfile
 from prawcore.exceptions import OAuthException
 import praw
 from praw.models import Submission
@@ -116,6 +117,8 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     :return: reddit object if successful, else None
     :raises ConnectionException: if username and password were unrecognized
     """
+
+    assert (isfile("info.txt")), "File containing Client ID and Client secret couldn't be found!"
 
     with open("info.txt", 'r') as info_file:
         client_id = info_file.readline()

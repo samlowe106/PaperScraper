@@ -59,7 +59,7 @@ def shorten(s: str, max_length: int = 250) -> str:
     :raises IndexError: if max_length is less than 0
     """
 
-    if max_length < 0:
+    if not isinstance(max_length, int) and max_length < 0:
         raise IndexError("Argument max_length must be a positive integer, not %d" % max_length)
 
     shortened_words = attempt_shorten(s, ' ', max_length)

@@ -59,7 +59,7 @@ def shorten(s: str, max_length: int = 250) -> str:
     :raises IndexError: if max_length is less than 0
     """
 
-    if not isinstance(max_length, int) and max_length < 0:
+    if (not isinstance(max_length, int)) and max_length < 0:
         raise IndexError("Argument max_length must be a positive integer, not %d" % max_length)
 
     shortened_words = attempt_shorten(s, ' ', max_length)
@@ -90,9 +90,11 @@ def attempt_shorten(s: str, splitter: str, max_length: int = 250) -> str:
     while len(s) > max_length:
         constituents = s.split(splitter)
         constituent_count = len(constituents)
+
         # If s consists of more than one section, shorten s by removing the last section
         if constituent_count > 1:
             s = splitter.join(constituents[:(constituent_count - 1)])
+
         # If s consists of only one section, it can't be split up any more
         else:
             # This version of s will be more than max_length characters

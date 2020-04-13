@@ -117,16 +117,23 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     :raises ConnectionException: if username and password were unrecognized
     """
 
-    if not (username and password):  # (praw stack overflows if both username and password are "")
+    with open("info.txt", 'r') as info_file:
+        client_id = info_file.readline()
+        client_secret = info_file.readline()
+
+    # praw returns an invalid reddit instance if the  client id or client secret are ""
+    assert (client_id and client_secret), "Client ID or Client Secret is blank!"
+
+    # praw stack overflows if both username and password are ""
+    if not (username and password and client_id and client_secret):
         raise ConnectionError("Username and password unrecognized.")
 
     try:
-        with open("info.txt", 'r') as info_file:
-            return praw.Reddit(client_id=info_file.readline(),
-                               client_secret=info_file.readline(),
-                               user_agent='PaperScraper',
-                               username=username,
-                               password=password)
+        return praw.Reddit(client_id=client_id,
+                           client_secret=client_secret,
+                           user_agent='PaperScraper',
+                           username=username,
+                           password=password)
     # Catch and re-raise error with a more helpful message
     except OAuthException as e:
         raise ConnectionError("Username and password unrecognized.")

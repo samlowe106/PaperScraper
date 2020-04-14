@@ -113,11 +113,11 @@ def title_case(s: str) -> str:
     """
     # Using ''.join() is faster than using += to accumulate a string within a loop
     # https://google.github.io/styleguide/pyguide.html#310-strings
-    new_s = []
+    chars = []
     for i, char in enumerate(s):
         if i == 0 or s[i - 1] == ' ':
-            new_s.append(char.upper())
+            chars.append(char.upper())
         else:
-            new_s.append(char)
+            chars.append(char)
 
-    return "".join(new_s)
+    return "".join(chars)

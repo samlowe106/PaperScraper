@@ -1,4 +1,5 @@
 import unittest
+from app.main import is_skippable
 from app.filehelpers import *
 from app.strhelpers import *
 from app.imagehelpers import *
@@ -174,6 +175,13 @@ class TestImageHelpers(unittest.TestCase):
                          get_extension("www.site.com/file.xml?querystring"))
         self.assertEqual(".foo",
                          get_extension("www.site.com/file.foo?q1?q2"))
+
+
+class TestMainFunctions(unittest.TestCase):
+    """
+    def test_is_skippable(self):
+        self.assertEqual(True, False)
+    """
 
 
 if __name__ == '__main__':

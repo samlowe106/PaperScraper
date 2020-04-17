@@ -1,5 +1,5 @@
 import unittest
-from app.main import is_skippable
+from app.main import *
 from app.filehelpers import *
 from app.strhelpers import *
 from app.imagehelpers import *
@@ -178,6 +178,10 @@ class TestImageHelpers(unittest.TestCase):
 
 
 class TestMainFunctions(unittest.TestCase):
+    def test_sign_in(self):
+        with self.assertRaises(ConnectionError):
+            sign_in("", "")
+
     """
     def test_is_skippable(self):
         self.assertEqual(True, False)

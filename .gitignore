@@ -1,5 +1,12 @@
-app/info.txt
-app/Output
-venv
+# IDE-specific
 .idea
 .vscode
+
+# Client ID/Secret File
+app/info.txt
+
+# Output folder
+app/Output
+
+# Virtual Environment
+venv

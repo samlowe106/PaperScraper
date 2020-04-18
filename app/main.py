@@ -92,10 +92,7 @@ def attempt_sign_in() -> Optional[praw.Reddit]:
     :return: Reddit object
     """
     username = input("Username: ")
-    if args.debug:
-        password = input("Password: ")
-    else:
-        password = getpass("Password: ")  # Only works through the command line!
+    password = getpass("Password: ")  # Only works through the command line!
 
     print("Signing in...", end="")
     reddit = None
@@ -118,15 +115,15 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     :raises ConnectionException: if username and password were unrecognized
     """
 
-    assert (isfile("info.txt")), "File containing Client ID and Client secret couldn't be found!"
+    assert isfile("info.txt"), "info.txt couldn't be found!"
 
     with open("info.txt", 'r') as info_file:
         client_id = info_file.readline()
         client_secret = info_file.readline()
 
     # praw returns an invalid reddit instance if the  client id or client secret are ""
-    assert (client_id), "Client ID is blank!"
-    assert (client_secret), "Client Secret is blank!"
+    assert client_id, "Client ID is blank!"
+    assert client_secret, "Client Secret is blank!"
 
     # praw stack overflows if both username and password are ""
     if not (username and password and client_id and client_secret):

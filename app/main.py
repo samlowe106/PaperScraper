@@ -251,11 +251,10 @@ if __name__ == "__main__":
                         "--png",
                         action='store_true',
                         help="convert .jpg files to .png files")
-    parser.add_argument("--debug",
-                        action='store_true',
-                        help="runs in debug mode")
 
-    # region NOT YET IMPLEMENTED
+    """
+    NOT YET IMPLEMENTED
+    
     parser.add_argument("-n",
                         "--name",
                         action='store_false',
@@ -269,7 +268,7 @@ if __name__ == "__main__":
     parser.add_argument("--nolog",
                         action='store_true',
                         help="disable logging")
-    # endregion
+    """
 
     args = parser.parse_args()
 

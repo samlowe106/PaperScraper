@@ -125,7 +125,8 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
         client_secret = info_file.readline()
 
     # praw returns an invalid reddit instance if the  client id or client secret are ""
-    assert (client_id and client_secret), "Client ID or Client Secret is blank!"
+    assert (client_id), "Client ID is blank!"
+    assert (client_secret), "Client Secret is blank!"
 
     # praw stack overflows if both username and password are ""
     if not (username and password and client_id and client_secret):

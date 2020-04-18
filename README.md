@@ -1,8 +1,12 @@
 # Paper Scraper for Reddit
-A Python script that downloads wallpapers and other images from the saved category of the user's Reddit account.
+PaperScraper is a Python script that downloads images from the user's saved category on Reddit.
 
-Saved posts not linking directly to an image or imgur page will be ignored.
+Posts linking directly to an image or imgur page will be downloaded and unsaved; all other posts will be ignored.
 
-If images are downloaded from a post, that post will be unsaved. 
+## Usage
 
-Currently supports directly linked images (such as those on i.redd.it, i.imgur.com, etc), Imgur pages with a single image on them, and Imgur albums. Likely supports directly linked images hosted on Artstation and similar sites.
+1. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
+2. Click "create app"
+3. Fill out the app's info, choosing script as the app type
+4. In PaperScraper's app directory, create a file named info.txt 
+5. Put the client ID in the first line and the client secret in the second line

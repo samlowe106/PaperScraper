@@ -10,6 +10,7 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 3. Fill out the app's info, choosing script as the app type
 4. In PaperScraper's app directory, create a file named info.txt 
 5. Put the client ID in the first line and the client secret in the second line
+6. Launch PaperScraper from the command prompt (PaperScraper uses getpass, so it's incompatible with Python consoles like those in PyCharm)
 
 ## License
 

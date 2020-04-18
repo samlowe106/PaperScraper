@@ -1,6 +1,8 @@
 from os import listdir, makedirs
 from os.path import exists, splitext
 from PIL import Image
+from typing import Tuple
+import ntpath
 
 
 def create_directory(dirpath: str) -> None:
@@ -14,29 +16,30 @@ def create_directory(dirpath: str) -> None:
     return
 
 
-def convert_to_png(path: str, filename: str) -> str:
+def convert_to_png(filepath: str) -> str:
     """
     Converts the given image to a .png
     :param path: path that the image is located in
     :param filename: title of the file to be converted
     :return: filename (with new extension)
     """
-    new_extension = ".png"
-    current_extension = get_extension(filename)
-    with Image.open(path + filename + current_extension) as im:
+    new_ext = ".png"
+    root = ntpath.splitext(filepath)[0]
+    new_path = root + new_ext
+    with Image.open(filepath) as im:
         rgb_im = im.convert('RGB')
-        rgb_im.save(path + filename + new_extension)
-    return filename + new_extension
+        rgb_im.save(new_path)
+    return new_path
 
 
-def get_extension(s: str) -> str:
+def get_extension(url: str) -> str:
     """
     Gets the extension from the given filepath or url
-    :param s: the url or filepath
-    :return: the lowercase extension of that image including the . or "" on failure
+    :param url: a direct link to an image
+    :return: the directly-linked image's extension
     """
     # split removes query strings from urls
-    return splitext(s.split('?')[0])[1].lower()
+    return ntpath.splitext(url.split('?')[0])
 
 
 def save_image(image, path: str, title: str, extension: str) -> str:

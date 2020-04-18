@@ -50,25 +50,13 @@ def main() -> None:
         if is_skippable(post):
             continue
 
-        index += 1
         post = sanitize_post(post)
-        parsed = True
-
-        # Parse the image link
-        for i, url in enumerate(post.recognized_urls):
-            try:
-                # Download the image(s) and associate it with the current post object
-                downloaded_file_path = download_image(post.new_title, url, image_directory)
-                post.images_downloaded.append(downloaded_file_path)
-                if args.png:
-                    convert_to_png(image_directory, downloaded_file_path)
-            except (ConnectionError, ExtensionUnrecognizedError) as e:
-                print("\n" + e)
-                parsed = False
+        post = parse_urls(post, image_directory)
 
         log_post(post, log_path)
 
-        if post.images_downloaded and parsed:
+        if post.images_downloaded and not post.parsing_failed:
+            index += 1
             post.unsave()
         else:
             log_domain(post.url, domain_log_path, post.images_downloaded)
@@ -84,6 +72,25 @@ def main() -> None:
         print_dict(incompatible_domains)
 
     return
+
+
+def parse_urls(post: Submission, dir: str) -> Submission:
+    """
+    Attempts to download images from the given post's recognized urls to the specified directory
+    """
+    for url in post.recognized_urls:
+        try:
+            downloaded_file_path = download_image(post.new_title, url, dir)
+            post.images_downloaded.append(downloaded_file_path)
+            
+            if args.png:
+                convert_to_png(dir, downloaded_file_path)
+       
+        except (ConnectionError, ExtensionUnrecognizedError) as e:
+            print("\n" + e)
+            post.parsing_failed = True
+
+    return post
 
 
 def attempt_sign_in() -> Optional[praw.Reddit]:
@@ -157,6 +164,7 @@ def sanitize_post(post: Submission) -> Submission:
     """
     post.recognized_urls = find_urls(post.url)
     post.new_title = retitle(post.title)
+    post.parsing_failed = False
     if args.titlecase:
         post.new_title = title_case(post.new_title)
     return post

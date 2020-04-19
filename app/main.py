@@ -14,6 +14,8 @@ from time import strftime
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+URLTuple = Tuple[str, bool]
+
 
 def main() -> None:
     """
@@ -75,7 +77,7 @@ def main() -> None:
     return
 
 
-def is_parsed(url_tuples: List[Tuple[str, bool]]) -> bool:
+def is_parsed(url_tuples: List[URLTuple]) -> bool:
     """
     Determines if every url in the list was parsed correctly
     :param url_tuples: list of tuples
@@ -85,7 +87,7 @@ def is_parsed(url_tuples: List[Tuple[str, bool]]) -> bool:
     return count_parsed(url_tuples) == len(url_tuples)
 
 
-def parse_urls(url_tuples: List[Tuple[str, bool]], title: str, dir: str) -> Submission:
+def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:
     """
     Attempts to download images from the given post's recognized urls to the specified directory
     """
@@ -224,15 +226,15 @@ def print_post(index: int, post: Submission) -> None:
     return
 
 
-def count_parsed(tup_list: List[Tuple[Any, bool]]) -> int:
+def count_parsed(tup_list: List[URLTuple]) -> int:
     """
-    Counts the number of tuples in the given list whose second element evaluates to true
-    :param tup_list: a list of tuples
-    :return: number of tuples in the list whose second element evaluates to True
+    Counts the number of urls that were parsed
+    :param tup_list: a list of url tuples
+    :return: number of tuples in the list who were correctly parsed
     """
     count = 0
-    for _, boolean in tup_list:
-        if boolean:
+    for _, parsed in tup_list:
+        if parsed:
             count += 1
     return count
 

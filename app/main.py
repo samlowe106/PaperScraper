@@ -1,4 +1,4 @@
-from app.strhelpers import *
+from app.strhelpers import retitle, title_case
 from app.filehelpers import convert_to_png, create_directory
 from app.imagehelpers import download_image, ExtensionUnrecognizedError, find_urls
 import argparse
@@ -35,7 +35,6 @@ def main() -> None:
     # Log file path
     log_directory = args.directory + "Logs\\"
     log_path = log_directory + "log.txt"
-    domain_log_path = log_directory + "incompatible.txt"
     create_directory(log_directory)
 
     # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
@@ -80,7 +79,7 @@ def is_parsed(url_tuples: List[Tuple[str, bool]]) -> bool:
     :param url_tuples: list of tuples
     :return: True if the second element of each tuple in the list is True, else False
     """
-    for _, parsed in post.recognized_urls:
+    for _, parsed in url_tuples:
         if not parsed:
             return False
 
@@ -159,7 +158,7 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
                            username=username,
                            password=password)
     # Catch and re-raise error with a more helpful message
-    except OAuthException as e:
+    except OAuthException:
         raise ConnectionError("Username and password unrecognized.")
 
 
@@ -207,35 +206,9 @@ def log_post(post: Submission, file: str) -> None:
     }
 
     with open(file, "a", encoding="utf-8") as logfile:
-        json.dump(post_dict, logfile)
+        dump(post_dict, logfile)
 
     return
-
-
-def log_domain(url: str, file_path: str, domain_dict: Dict[str, int]) -> None:
-    """
-    Logs the domain of an url that wasn't compatible with the program
-    :param url: url that wasn't compatible
-    :param file_path: the path of the log file to be written to
-    :param domain_dict: dictionary mapping each incompatible domain (str) to the number of times it's appeared (int)
-    :return: None
-    """
-    # Establish the post's domain
-    uri = urlparse(url)
-    domain = '{0}://{1}'.format(uri.scheme, uri.netloc)
-
-    # Save that domain to a dictionary
-    if domain in domain_dict.keys():
-        domain_dict[domain] += 1
-    else:
-        domain_dict[domain] = 1
-
-    # Update the log file
-    with open(file_path, "a") as log_file:
-        for domain in domain_dict.keys():
-            log_file.write(domain + " : " + str(domain_dict[domain]) + "\n")
-
-    return None
 
 
 def print_post_info(index: int, post) -> None:

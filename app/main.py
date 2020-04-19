@@ -3,6 +3,7 @@ from app.filehelpers import convert_to_png, create_directory
 from app.imagehelpers import download_image, ExtensionUnrecognizedError, find_urls
 import argparse
 from getpass import getpass
+from json import dump
 from os import chdir
 from os.path import isfile
 from prawcore.exceptions import OAuthException
@@ -10,7 +11,7 @@ import praw
 from praw.models import Submission
 from time import gmtime
 from time import strftime
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 
@@ -51,15 +52,14 @@ def main() -> None:
             continue
 
         post = sanitize_post(post)
-        post = parse_urls(post, image_directory)
+
+        post.recognized_urls = parse_urls(post.recognized_urls, post.new_title, image_directory)
 
         log_post(post, log_path)
 
-        if post.images_downloaded and not post.parsing_failed:
+        if is_parsed(post.recognized_urls):
             index += 1
             post.unsave()
-        else:
-            log_domain(post.url, domain_log_path, post.images_downloaded)
 
         # End if the desired number of posts have had their images downloaded
         if index >= args.limit:
@@ -74,23 +74,39 @@ def main() -> None:
     return
 
 
-def parse_urls(post: Submission, dir: str) -> Submission:
+def is_parsed(url_tuples: List[Tuple[str, bool]]) -> bool:
+    """
+    Determines if every url in the list was parsed correctly
+    :param url_tuples: list of tuples
+    :return: True if the second element of each tuple in the list is True, else False
+    """
+    for _, parsed in post.recognized_urls:
+        if not parsed:
+            return False
+
+    return True
+
+
+def parse_urls(url_tuples: List[Tuple[str, bool]], title: str, dir: str) -> Submission:
     """
     Attempts to download images from the given post's recognized urls to the specified directory
     """
-    for url in post.recognized_urls:
+    for i in range(len(url_tuples)):
+        url, parsed = url_tuples[i]
         try:
-            downloaded_file_path = download_image(post.new_title, url, dir)
-            post.images_downloaded.append(downloaded_file_path)
+            path = download_image(title, url, dir)
+            parsed = True
             
             if args.png:
-                convert_to_png(dir, downloaded_file_path)
+                convert_to_png(path)
        
         except (ConnectionError, ExtensionUnrecognizedError) as e:
             print("\n" + e)
-            post.parsing_failed = True
 
-    return post
+        finally:
+            url_tuples[i] = (url, parsed)
+
+    return url_tuples
 
 
 def attempt_sign_in() -> Optional[praw.Reddit]:
@@ -162,23 +178,36 @@ def sanitize_post(post: Submission) -> Submission:
     :param post: a post object
     :return: the same post with additional new_title and recognized_urls fields
     """
-    post.recognized_urls = find_urls(post.url)
     post.new_title = retitle(post.title)
-    post.parsing_failed = False
     if args.titlecase:
         post.new_title = title_case(post.new_title)
+    
+    # recognized_urls is a List[Tuple[str, bool]] representing an image url associated with
+    #  the given post, and whether the image at that url was downloaded
+    post.recognized_urls = []
+    for url in find_urls(post.url):
+        post.recognized_urls.append(url, False)
+    
     return post
 
 
-def log_post(post: Submission, file_path: str) -> None:
+def log_post(post: Submission, file: str) -> None:
     """
     Writes the given post's title and url to the specified file
     :param post: reddit post object
-    :param file_path: log file path
+    :param file: log file path
     :return: None
     """
-    with open(file_path, "a", encoding="utf-8") as log_file:
-        log_file.write(post.title + " : " + post.url + " : " + str(bool(post.images_downloaded)) + '\n')
+
+    post_dict = {
+        "title"           : post.title,
+        "id"              : post.id,
+        "url"             : post.url,
+        "recognized_urls" : post.recognized_urls
+    }
+
+    with open(file, "a", encoding="utf-8") as logfile:
+        json.dump(post_dict, logfile)
 
     return
 

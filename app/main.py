@@ -11,7 +11,7 @@ import praw
 from praw.models import Submission
 from time import gmtime
 from time import strftime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 
@@ -60,6 +60,8 @@ def main() -> None:
             index += 1
             post.unsave()
 
+        print_post(index, post)
+
         # End if the desired number of posts have had their images downloaded
         if index >= args.limit:
             break
@@ -79,11 +81,8 @@ def is_parsed(url_tuples: List[Tuple[str, bool]]) -> bool:
     :param url_tuples: list of tuples
     :return: True if the second element of each tuple in the list is True, else False
     """
-    for _, parsed in url_tuples:
-        if not parsed:
-            return False
 
-    return True
+    return count_parsed(url_tuples) == len(url_tuples)
 
 
 def parse_urls(url_tuples: List[Tuple[str, bool]], title: str, dir: str) -> Submission:
@@ -211,19 +210,31 @@ def log_post(post: Submission, file: str) -> None:
     return
 
 
-def print_post_info(index: int, post) -> None:
+def print_post(index: int, post: Submission) -> None:
     """
     Prints out information about the specified post
     :param index: the index number of the post
-    :param post: a post object
+    :param post: Reddit post to be printed
     :return: None
     """
     print("\n{0}. {1}".format(index, post.old_title))
     print("   r/" + str(post.subreddit))
     print("   " + post.url)
-    for image in post.downloaded_images:
-        print("   Saved as " + image)
+    print("   Saved {0} / {1} image(s).".format(count_parsed(post.recognized_urls), len(post.recognized_urls)))
     return
+
+
+def count_parsed(tup_list: List[Tuple[Any, bool]]) -> int:
+    """
+    Counts the number of tuples in the given list whose second element evaluates to true
+    :param tup_list: a list of tuples
+    :return: number of tuples in the list whose second element evaluates to True
+    """
+    count = 0
+    for _, boolean in tup_list:
+        if boolean:
+            count += 1
+    return count
 
 
 def print_dict(dictionary: Dict[str, int]) -> None:

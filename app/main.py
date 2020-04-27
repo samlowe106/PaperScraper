@@ -22,7 +22,7 @@ def main() -> None:
     Scrapes and downloads any images from posts in the user's saved posts category on Reddit
     :return: None
     """
-    reddit = attempt_sign_in()
+    reddit = prompt_sign_in()
 
     if reddit is None:
         return
@@ -109,7 +109,7 @@ def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:
     return url_tuples
 
 
-def attempt_sign_in() -> Optional[praw.Reddit]:
+def prompt_sign_in() -> Optional[praw.Reddit]:
     """
     Prompts the user to sign in
     :return: Reddit object

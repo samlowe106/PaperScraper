@@ -1,22 +1,27 @@
 import unittest
 from app.main import count_parsed, is_parsed, sign_in, is_skippable
-from app.filehelpers import create_directory, convert_to_png, save_image
+from app.filehelpers import create_directory, convert_to_png, get_extension, save_image
 from app.imagehelpers import parse_imgur_album, parse_imgur_single, find_urls, download_image
 from app.strhelpers import trim_string, file_title, retitle, shorten, attempt_shorten, title_case
 # https://docs.python.org/3.8/library/unittest.html
 
 
-
 class TestMainFunctions(unittest.TestCase):
-    """
     def test_count_parsed(self):
-        self.assertEqual()
-    """
+        self.assertEqual(0, is_parsed([]))
+        self.assertEqual(1, is_parsed([("url string", True)]))
+        self.assertEqual(3, is_parsed([("url1", True), ("url2", True), ("url3", True)]))
+        self.assertEqual(0, is_parsed([("url1", False)]))
+        self.assertEqual(2, is_parsed([("url1", True), ("url2", True), ("url3", False)]))
 
-    """
+    
     def test_is_parsed(self):
-        self.assertEqual()
-    """
+        self.assertEqual(True, is_parsed([]))
+        self.assertEqual(True, is_parsed([("url string", True)]))
+        self.assertEqual(True, is_parsed([("url1", True), ("url2", True), ("url3", True)]))
+        self.assertEqual(False, is_parsed([("url1", False)]))
+        self.assertEqual(False, is_parsed([("url1", True), ("url2", True), ("url3", False)]))
+    
 
     def test_sign_in(self):
         with self.assertRaises(ConnectionError):

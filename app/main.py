@@ -14,6 +14,7 @@ from time import strftime
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+# Represents a tuple in the form (URL (str), whether the URL was parsed correctly (bool))
 URLTuple = Tuple[str, bool]
 
 

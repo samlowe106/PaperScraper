@@ -78,38 +78,6 @@ def main() -> None:
     return
 
 
-def is_parsed(url_tuples: List[URLTuple]) -> bool:
-    """
-    Determines if every url in the list was parsed correctly
-    :param url_tuples: list of tuples
-    :return: True if the second element of each tuple in the list is True, else False
-    """
-
-    return count_parsed(url_tuples) == len(url_tuples)
-
-
-def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:
-    """
-    Attempts to download images from the given post's recognized urls to the specified directory
-    """
-    for i in range(len(url_tuples)):
-        url, parsed = url_tuples[i]
-        try:
-            path = download_image(title, url, dir)
-            parsed = True
-            
-            if args.png:
-                convert_to_png(path)
-       
-        except (ConnectionError, ExtensionUnrecognizedError) as e:
-            print("\n" + e)
-
-        finally:
-            url_tuples[i] = (url, parsed)
-
-    return url_tuples
-
-
 def prompt_sign_in() -> Optional[praw.Reddit]:
     """
     Prompts the user to sign in
@@ -192,6 +160,28 @@ def sanitize_post(post: Submission) -> Submission:
     return post
 
 
+def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:
+    """
+    Attempts to download images from the given post's recognized urls to the specified directory
+    """
+    for i in range(len(url_tuples)):
+        url, parsed = url_tuples[i]
+        try:
+            path = download_image(title, url, dir)
+            parsed = True
+            
+            if args.png:
+                convert_to_png(path)
+       
+        except (ConnectionError, ExtensionUnrecognizedError) as e:
+            print("\n" + e)
+
+        finally:
+            url_tuples[i] = (url, parsed)
+
+    return url_tuples
+
+
 def log_post(post: Submission, file: str) -> None:
     """
     Writes the given post's title and url to the specified file
@@ -213,18 +203,14 @@ def log_post(post: Submission, file: str) -> None:
     return
 
 
-def print_post(index: int, post: Submission) -> None:
+def is_parsed(url_tuples: List[URLTuple]) -> bool:
     """
-    Prints out information about the specified post
-    :param index: the index number of the post
-    :param post: Reddit post to be printed
-    :return: None
+    Determines if every url in the list was parsed correctly
+    :param url_tuples: list of tuples
+    :return: True if the second element of each tuple in the list is True, else False
     """
-    print("\n{0}. {1}".format(index, post.old_title))
-    print("   r/" + str(post.subreddit))
-    print("   " + post.url)
-    print("   Saved {0} / {1} image(s).".format(count_parsed(post.recognized_urls), len(post.recognized_urls)))
-    return
+
+    return count_parsed(url_tuples) == len(url_tuples)
 
 
 def count_parsed(tup_list: List[URLTuple]) -> int:
@@ -238,6 +224,20 @@ def count_parsed(tup_list: List[URLTuple]) -> int:
         if parsed:
             count += 1
     return count
+
+
+def print_post(index: int, post: Submission) -> None:
+    """
+    Prints out information about the specified post
+    :param index: the index number of the post
+    :param post: Reddit post to be printed
+    :return: None
+    """
+    print("\n{0}. {1}".format(index, post.old_title))
+    print("   r/" + str(post.subreddit))
+    print("   " + post.url)
+    print("   Saved {0} / {1} image(s).".format(count_parsed(post.recognized_urls), len(post.recognized_urls)))
+    return
 
 
 def print_dict(dictionary: Dict[str, int]) -> None:

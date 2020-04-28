@@ -1,5 +1,5 @@
 from app.strhelpers import retitle, title_case
-from app.imagehelpers import convert_file, create_directory, download_image, find_urls, ExtensionNotRecognizedError
+from app.imagehelpers import convert_file, create_directory, download_image, find_urls, get_extension, ExtensionNotRecognizedError, is_recognized, prevent_conflicts
 import argparse
 from getpass import getpass
 from json import dump
@@ -8,6 +8,7 @@ from os.path import isfile
 from prawcore.exceptions import OAuthException
 import praw
 from praw.models import Submission
+from shutil import move
 from time import gmtime
 from time import strftime
 from typing import Any, Dict, List, Optional, Tuple
@@ -165,18 +166,33 @@ def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:
     """
     for i in range(len(url_tuples)):
         url, parsed = url_tuples[i]
-        try:
-            path = download_image(title, url, dir)
-            parsed = path != ""
-            
-            if args.png:
-                convert_file(path, ".png")
-       
-        except (ConnectionError, ExtensionNotRecognizedError) as e:
-            print("\n" + e)
 
-        finally:
-            url_tuples[i] = (url, parsed)
+        extension = get_extension(url)
+
+        tempdir = "temp\\"
+
+        create_directory(tempdir)
+
+        if is_recognized(extension):
+            try:
+                # Save the image to a temp directory
+                download_image(title, url, tempdir)
+
+                # Convert to png if necessary
+                if args.png:
+                    convert_file(tempdir + title + extension, ".png")
+                    extension = ".png"
+
+                # Move to desired directory
+                move(tempdir + title + extension, prevent_conflicts(title, extension, dir))
+            
+                parsed = True
+
+            # Suppress error if download failed
+            except ConnectionError:
+                pass
+        
+        url_tuples[i] = (url, parsed)
 
     return url_tuples
 

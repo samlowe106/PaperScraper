@@ -1,6 +1,5 @@
 from app.strhelpers import retitle, title_case
-from app.filehelpers import convert_to_png, create_directory
-from app.imagehelpers import download_image, ExtensionUnrecognizedError, find_urls
+from app.imagehelpers import convert_file, create_directory, download_image, find_urls, ExtensionNotRecognizedError
 import argparse
 from getpass import getpass
 from json import dump
@@ -168,12 +167,12 @@ def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:
         url, parsed = url_tuples[i]
         try:
             path = download_image(title, url, dir)
-            parsed = True
+            parsed = path != ""
             
             if args.png:
-                convert_to_png(path)
+                convert_file(path, ".png")
        
-        except (ConnectionError, ExtensionUnrecognizedError) as e:
+        except (ConnectionError, ExtensionNotRecognizedError) as e:
             print("\n" + e)
 
         finally:

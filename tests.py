@@ -1,7 +1,6 @@
 import unittest
-from app.main import count_parsed, is_parsed, sign_in, is_skippable
-from app.filehelpers import create_directory, convert_to_png, get_extension, save_image
-from app.imagehelpers import parse_imgur_album, parse_imgur_single, find_urls, download_image
+from app.main import count_parsed, is_parsed, sign_in, is_skippable 
+from app.imagehelpers import create_directory, convert_file, download_image, find_urls, get_extension, parse_imgur_album, parse_imgur_single
 from app.strhelpers import trim_string, file_title, retitle, shorten, attempt_shorten, title_case
 # https://docs.python.org/3.8/library/unittest.html
 
@@ -33,7 +32,7 @@ class TestMainFunctions(unittest.TestCase):
     """
 
 
-class TestFileHelpers(unittest.TestCase):
+class TestImageHelpers(unittest.TestCase):
     """
     def test_create_directory(self):
         self.assertEqual(True, False)
@@ -43,11 +42,7 @@ class TestFileHelpers(unittest.TestCase):
 
     def test_save_images(self):
         self.assertEqual(True, False)
-    """
 
-
-class TestImageHelpers(unittest.TestCase):
-    """
     def test_parse_imgur_album(self):
         self.assertEqual(True, False)
 

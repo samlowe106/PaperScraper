@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from requests import get
 from typing import List
 from os import listdir, makedirs
-from os.path import exists, splitext
+from os.path import basename, exists, splitext
 from PIL import Image
 from typing import Tuple
 import ntpath
@@ -43,20 +43,30 @@ def convert_file(filepath: str, new_ext: str) -> str:
     return new_path
 
 
-def download_image(url: str, path: str, title: str) -> str:
+def get_file_title(filepath: str) -> str:
+    return ntpath.splitext(basename(filepath))[0]
+
+
+def prevent_conflicts(title: str, extension: str, new_dir: str):
+    """
+    """
+    filename = title + extension
+    index = 1
+    while filename in listdir(new_dir):
+        filename = "{0} ({1}).{2}".format(title, index, extension)
+        index += 1
+
+    return filename
+
+
+def download_image(url: str, dir: str, title: str) -> None:
     """
     Saves the specified image to the specified path with the specified title and file extension
     :param url: a direct link to the image to be saved
-    :param path: the path the image should be saved to
+    :param dir: the path the image should be saved to
     :param title: the title the image file should have (sans extension)
-    :return: final filename (with extension) on success, empty string on failure
+    :return: None
     """
-
-    extension = get_extension(url)
-
-    # The file extension was unrecognized
-    if not is_recognized(extension):
-        raise ExtensionNotRecognizedError('Extension "{0}" was not recognized.'.format(extension))
 
     image = get(url)
 
@@ -65,30 +75,15 @@ def download_image(url: str, path: str, title: str) -> str:
         return ConnectionError('Request failed with error {0}.'.format(image.status_code))
 
     # Output path
-    create_directory(path)
+    create_directory(dir)
 
-    # Ensure that there will be no filename conflicts
-    out_file_name = title + extension
-    index = 1
-    while out_file_name in listdir(path):
-        out_file_name = "{0} ({1}).{2}".format(title, index, extension)
-        index += 1
+    filepath = dir + title + get_extension(url)
 
     # Write the file
-    with open(path + out_file_name, "wb") as f:
+    with open(filepath, "wb") as f:
         f.write(image.content)
 
-    # Return the full filepath
-    return path + out_file_name
-
-
-def is_recognized(extension: str) -> bool:
-    """
-    Checks if the specified extension is recognized
-    :param extension: the extension to check
-    :return: True if the extension is recognized, False otherwise
-    """
-    return extension.lower() in recognized_extensions
+    return
 
 
 def find_urls(url: str) -> List[str]:
@@ -127,6 +122,15 @@ def get_extension(url: str) -> str:
     """
     # split removes query strings from urls
     return ntpath.splitext(url.split('?')[0])
+
+
+def is_recognized(extension: str) -> bool:
+    """
+    Checks if the specified extension is recognized
+    :param extension: the extension to check
+    :return: True if the extension is recognized, False otherwise
+    """
+    return extension.lower() in recognized_extensions
 
 
 def parse_imgur_album(album_url: str) -> List[str]:

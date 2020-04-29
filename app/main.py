@@ -1,16 +1,15 @@
 from app.strhelpers import retitle, title_case
 from app.imagehelpers import convert_file, create_directory, download_image, find_urls, get_extension, ExtensionNotRecognizedError, is_recognized, prevent_conflicts
 import argparse
-from getpass import getpass
-from json import dump
-from os import chdir
-from os.path import isfile, join
+import getpass
+import json
+import os
 from prawcore.exceptions import OAuthException
 import praw
+from praw import Reddit
 from praw.models import Submission
-from shutil import move
-from time import gmtime
-from time import strftime
+import shutil
+import time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -30,10 +29,10 @@ def main() -> None:
 
     # Change to specified output directory
     create_directory(args.directory)
-    chdir(args.directory)
+    os.chdir(args.directory)
 
     # Image directory
-    image_directory = strftime("%m-%d-%y", gmtime()) + "\\"
+    image_directory = time.strftime("%m-%d-%y", time.gmtime()) + "\\"
 
     # Log file path
     log_directory = args.directory + "Logs\\"
@@ -80,13 +79,13 @@ def main() -> None:
     return
 
 
-def prompt_sign_in() -> Optional[praw.Reddit]:
+def prompt_sign_in() -> Optional[Reddit]:
     """
     Prompts the user to sign in
     :return: Reddit object
     """
     username = input("Username: ")
-    password = getpass("Password: ")  # Only works through the command line!
+    password = getpass.getpass("Password: ")  # Only works through the command line!
 
     print("Signing in...", end="")
     reddit = None
@@ -100,7 +99,7 @@ def prompt_sign_in() -> Optional[praw.Reddit]:
         return reddit
 
 
-def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
+def sign_in(username: str, password: str) -> Optional[Reddit]:
     """
     Attempts to sign into Reddit
     :param username: The user's username
@@ -109,7 +108,7 @@ def sign_in(username: str, password: str) -> Optional[praw.Reddit]:
     :raises ConnectionException: if username and password were unrecognized
     """
 
-    assert isfile("info.txt"), "info.txt couldn't be found!"
+    assert os.path.isfile("info.txt"), "info.txt couldn't be found!"
 
     with open("info.txt", 'r') as info_file:
         client_id = info_file.readline()
@@ -173,7 +172,7 @@ def download_img_from(url: str, title: str, dir: str, tempdir: str = "temp") -> 
     """
     create_directory(tempdir)
     extension = get_extension(url)
-    temp_path = join(tempdir, title + extension)
+    temp_path = os.path.join(tempdir, title + extension)
 
     # Save the image to a temp directory
     try:
@@ -185,51 +184,14 @@ def download_img_from(url: str, title: str, dir: str, tempdir: str = "temp") -> 
     if args.png:
         convert_file(tempdir, ".png")
         extension = ".png"
-        temp_path = join(tempdir, title + extension)
+        temp_path = os.path.join(tempdir, title + extension)
 
     # Move to desired directory
     final_filename = prevent_conflicts(title, extension, dir)
-    final_filepath = join(dir, final_filename)
-    move(temp_path, final_filepath)
+    final_filepath = os.path.join(dir, final_filename)
+    shutil.move(temp_path, final_filepath)
 
     return True
-
-
-def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:
-    """
-    Attempts to download images from the given post's recognized urls to the specified directory
-    """
-    for i in range(len(url_tuples)):
-        url, parsed = url_tuples[i]
-
-        extension = get_extension(url)
-
-        tempdir = "temp\\"
-
-        create_directory(tempdir)
-
-        if is_recognized(extension):
-            try:
-                # Save the image to a temp directory
-                download_image(title, url, tempdir)
-
-                # Convert to png if necessary
-                if args.png:
-                    convert_file(tempdir + title + extension, ".png")
-                    extension = ".png"
-
-                # Move to desired directory
-                move(tempdir + title + extension, prevent_conflicts(title, extension, dir))
-            
-                parsed = True
-
-            # Suppress error if download failed
-            except ConnectionError:
-                pass
-        
-        url_tuples[i] = (url, parsed)
-
-    return url_tuples
 
 
 def log_post(post: Submission, file: str) -> None:
@@ -248,7 +210,7 @@ def log_post(post: Submission, file: str) -> None:
     }
 
     with open(file, "a", encoding="utf-8") as logfile:
-        dump(post_dict, logfile)
+        json.dump(post_dict, logfile)
 
     return
 
@@ -276,7 +238,7 @@ def count_parsed(tup_list: List[URLTuple]) -> int:
     return count
 
 
-def print_post(index: int, post: Submission) -> None:
+def print_post(index: int, post: praw.models.Submission) -> None:
     """
     Prints out information about the specified post
     :param index: the index number of the post

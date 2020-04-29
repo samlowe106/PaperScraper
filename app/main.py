@@ -4,7 +4,7 @@ import argparse
 from getpass import getpass
 from json import dump
 from os import chdir
-from os.path import isfile
+from os.path import isfile, join
 from prawcore.exceptions import OAuthException
 import praw
 from praw.models import Submission
@@ -55,7 +55,9 @@ def main() -> None:
 
         post = sanitize_post(post)
 
-        post.recognized_urls = parse_urls(post.recognized_urls, post.new_title, image_directory)
+        for i in range(len(post.recognized_urls)):
+            url = post.recognized_urls[i][0]
+            post.recognized_urls[i] = (url, download_img_from(url, post.new_title, image_directory))
 
         log_post(post, log_path)
 
@@ -158,6 +160,39 @@ def sanitize_post(post: Submission) -> Submission:
         post.recognized_urls.append(url, False)
     
     return post
+
+
+def download_img_from(url: str, title: str, dir: str, tempdir: str = "temp") -> bool:
+    """
+    Downloads the directly linked image to the specified directory, and converts to png if desired
+    If there's a file with the same name already in the directory, keeps both files
+    :param url: url directly linking to the image to download
+    :param title: title that the final file should have
+    :param dir: directory that the final file should be saved to
+    :return: True if the file was downloaded correctly, else False 
+    """
+    create_directory(tempdir)
+    extension = get_extension(url)
+    temp_path = join(tempdir, title + extension)
+
+    # Save the image to a temp directory
+    try:
+        download_image(title, url, tempdir)
+    except ConnectionError:
+        return False
+
+    # Convert to png if necessary
+    if args.png:
+        convert_file(tempdir, ".png")
+        extension = ".png"
+        temp_path = join(tempdir, title + extension)
+
+    # Move to desired directory
+    final_filename = prevent_conflicts(title, extension, dir)
+    final_filepath = join(dir, final_filename)
+    move(temp_path, final_filepath)
+
+    return True
 
 
 def parse_urls(url_tuples: List[URLTuple], title: str, dir: str) -> Submission:

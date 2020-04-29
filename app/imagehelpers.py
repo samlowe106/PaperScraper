@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from requests import get
 from typing import List
-from os import listdir, makedirs
+from os import listdir, makedirs, remove
 from os.path import basename, exists, splitext
 from PIL import Image
 from typing import Tuple
@@ -35,11 +35,12 @@ def convert_file(filepath: str, new_ext: str) -> str:
     :param filename: title of the file to be converted
     :return: filename (with new extension)
     """
-    root = ntpath.splitext(filepath)[0]
-    new_path = root + new_ext
+    new_path = ntpath.splitext(filepath)[0] + new_ext
     with Image.open(filepath) as im:
         rgb_im = im.convert('RGB')
         rgb_im.save(new_path)
+        # delete old file
+        remove(filepath)
     return new_path
 
 

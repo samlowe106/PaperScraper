@@ -11,9 +11,6 @@ class ExtensionNotRecognizedError(Exception):
     Raised when a file's extension isn't recognized
     """
 
-# File extensions that this program should recognize
-recognized_extensions = [".png", ".jpg", ".jpeg", ".gif"]
-
 
 def create_directory(dirpath: str) -> None:
     """
@@ -129,7 +126,7 @@ def is_recognized(extension: str) -> bool:
     :param extension: the extension to check
     :return: True if the extension is recognized, False otherwise
     """
-    return extension.lower() in recognized_extensions
+    return extension.lower() in [".png", ".jpg", ".jpeg", ".gif"]
 
 
 def parse_imgur_album(album_url: str) -> List[str]:

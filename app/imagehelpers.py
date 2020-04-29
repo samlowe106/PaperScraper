@@ -1,12 +1,9 @@
 from bs4 import BeautifulSoup
-from requests import get
-from typing import List
-import os
-from os import listdir, makedirs, remove
-from os.path import basename, exists, splitext
-from PIL import Image
-from typing import Tuple
 import ntpath
+import os
+import requests
+from PIL import Image
+from typing import List, Tuple
 
 
 class ExtensionNotRecognizedError(Exception):
@@ -24,8 +21,8 @@ def create_directory(dirpath: str) -> None:
     :param dirpath: name of the directory
     :return: None
     """
-    if not exists(dirpath):
-        makedirs(dirpath)
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
     return
 
 
@@ -41,12 +38,12 @@ def convert_file(filepath: str, new_ext: str) -> str:
         rgb_im = im.convert('RGB')
         rgb_im.save(new_path)
         # delete old file
-        remove(filepath)
+        os.remove(filepath)
     return new_path
 
 
 def get_file_title(filepath: str) -> str:
-    return ntpath.splitext(basename(filepath))[0]
+    return ntpath.splitext(os.path.basename(filepath))[0]
 
 
 def prevent_conflicts(title: str, extension: str, new_dir: str):
@@ -54,7 +51,7 @@ def prevent_conflicts(title: str, extension: str, new_dir: str):
     """
     filename = title + extension
     index = 1
-    while filename in listdir(new_dir):
+    while filename in os.listdir(new_dir):
         filename = "{0} ({1}).{2}".format(title, index, extension)
         index += 1
 
@@ -70,7 +67,7 @@ def download_image(url: str, dir: str, title: str) -> None:
     :return: None
     """
 
-    image = get(url)
+    image = requests.get(url)
 
     # The image page couldn't be reached
     if image.status_code != 200:
@@ -142,7 +139,7 @@ def parse_imgur_album(album_url: str) -> List[str]:
     :return: direct links to each image in the specified album
     """
     # Find all the single image pages referenced by this album
-    album_page = get(album_url)
+    album_page = requests.get(album_url)
     album_soup = BeautifulSoup(album_page.text, "html.parser")
     single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
     # Make a list of the direct links to the image hosted on each single-image page; return the list of all those images
@@ -155,6 +152,6 @@ def parse_imgur_single(url: str) -> str:
     :param url: A single-image imgur page
     :return: A direct link to the image hosted on that page
     """
-    page = get(url)
+    page = requests.get(url)
     soup = BeautifulSoup(page.text, "html.parser")
     return soup.select("link[rel=image_src]")[0]["href"]

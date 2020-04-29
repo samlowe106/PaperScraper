@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from requests import get
 from typing import List
+import os
 from os import listdir, makedirs, remove
 from os.path import basename, exists, splitext
 from PIL import Image
@@ -78,7 +79,7 @@ def download_image(url: str, dir: str, title: str) -> None:
     # Output path
     create_directory(dir)
 
-    filepath = dir + title + get_extension(url)
+    filepath = os.path.join(dir, title + get_extension(url))
 
     # Write the file
     with open(filepath, "wb") as f:

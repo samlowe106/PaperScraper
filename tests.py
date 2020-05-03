@@ -1,9 +1,7 @@
 import os
 import shutil
 import unittest
-from app.main import count_parsed, is_parsed, sign_in, is_skippable 
-from app.imagehelpers import create_directory, convert_file, download_image, find_urls, get_extension, parse_imgur_album, parse_imgur_single
-from app.strhelpers import trim_string, file_title, retitle, shorten, attempt_shorten, title_case
+import app
 # https://docs.python.org/3.8/library/unittest.html
 # https://www.thepythoncode.com/article/extracting-image-metadata-in-python
 
@@ -14,32 +12,43 @@ Unless otherwise stated, NONE of the URLs used for testing should be dead.
 
 class TestMainFunctions(unittest.TestCase):
     def test_count_parsed(self):
-        self.assertEqual(0, is_parsed([]))
-        self.assertEqual(1, is_parsed([("url string", True)]))
-        self.assertEqual(3, is_parsed([("url1", True), ("url2", True), ("url3", True)]))
-        self.assertEqual(0, is_parsed([("url1", False)]))
-        self.assertEqual(2, is_parsed([("url1", True), ("url2", True), ("url3", False)]))
+        self.assertEqual(0, app.submissionhelpers.is_parsed([]))
+        self.assertEqual(1, app.submissionhelpers.is_parsed([("url string", True)]))
+        self.assertEqual(3, app.submissionhelpers.is_parsed([("url1", True), ("url2", True), ("url3", True)]))
+        self.assertEqual(0, app.submissionhelpers.is_parsed([("url1", False)]))
+        self.assertEqual(2, app.submissionhelpers.is_parsed([("url1", True), ("url2", True), ("url3", False)]))
 
     
     def test_is_parsed(self):
-        self.assertEqual(True, is_parsed([]))
-        self.assertEqual(True, is_parsed([("url string", True)]))
-        self.assertEqual(True, is_parsed([("url1", True), ("url2", True), ("url3", True)]))
-        self.assertEqual(False, is_parsed([("url1", False)]))
-        self.assertEqual(False, is_parsed([("url1", True), ("url2", True), ("url3", False)]))
+        self.assertEqual(True, app.submissionhelpers.is_parsed([]))
+        self.assertEqual(True, app.submissionhelpers.is_parsed([("url string", True)]))
+        self.assertEqual(True, app.submissionhelpers.is_parsed([("url1", True), ("url2", True), ("url3", True)]))
+        self.assertEqual(False, app.submissionhelpers.is_parsed([("url1", False)]))
+        self.assertEqual(False, app.submissionhelpers.is_parsed([("url1", True), ("url2", True), ("url3", False)]))
     
 
     def test_sign_in(self):
         with self.assertRaises(ConnectionError):
-            sign_in("", "")
+            app.main.sign_in("", "")
 
     """
     def test_is_skippable(self):
         self.assertEqual(True, False)
     """
 
+    def test_is_recognized(self):
+        self.assertTrue(app.main.is_recognized(".png"))
+        self.assertTrue(app.main.is_recognized(".PnG"))
+        self.assertTrue(app.main.is_recognized(".PNG"))
+        self.assertTrue(app.main.is_recognized(".jpg"))
+        self.assertTrue(app.main.is_recognized(".jpeg"))
+        self.assertTrue(app.main.is_recognized(".png"))
+        self.assertFalse(app.main.is_recognized("bar"))
+        self.assertFalse(app.main.is_recognized(".foo"))
+        self.assertFalse(app.main.is_recognized("arbitrary"))
 
-class TestImageHelpers(unittest.TestCase):
+
+class TestFileHelpers(unittest.TestCase):
     def test_create_directory(self):
         # Establish test dir
         test_dir = "test_dir"
@@ -47,14 +56,14 @@ class TestImageHelpers(unittest.TestCase):
             os.makedirs(test_dir)
         os.chdir(test_dir)
 
-        create_directory("directory1")
+        app.filehelpers.create_directory("directory1")
         self.assertTrue("directory1" in os.listdir(os.getcwd()))
 
         # Creating a second directory with the same name shouldn't do anything
-        create_directory("directory1")
+        app.filehelpers.create_directory("directory1")
         self.assertTrue("directory1" in os.listdir(os.getcwd()))
 
-        create_directory("directory2")
+        app.filehelpers.create_directory("directory2")
         self.assertTrue("directory2" in os.listdir(os.getcwd()))
 
         # Remove test directory
@@ -95,7 +104,7 @@ class TestImageHelpers(unittest.TestCase):
         ]
 
         for i in range(len(urls_sizes)):
-            download_image(urls_sizes[i][0], test_dir, str(i))
+            app.urlhelpers.download_file(urls_sizes[i][0], test_dir, str(i))
             # Assert that the downloaded file is the same size as expected
             self.assertEqual(urls_sizes[i][1], os.path.getsize(os.path.join(test_dir, str(i) + ".jpg")))
 
@@ -103,54 +112,54 @@ class TestImageHelpers(unittest.TestCase):
         shutil.rmtree(test_dir)
 
 
-    def test_get_extension(self):
-        self.assertEqual("", get_extension(""))
-        self.assertEqual("", get_extension("Z:"))
-        self.assertEqual("", get_extension("a"))
-        self.assertEqual("", get_extension("oneword"))
-        self.assertEqual("", get_extension("hi"))
-        self.assertEqual("", get_extension("invalid string"))
-        self.assertEqual("", get_extension("path\\folder"))
-        self.assertEqual("", get_extension("www.website.com/webpage"))
-        self.assertEqual(".jpg", get_extension("C:\\path\\file.jpg"))
-        self.assertEqual(".png", get_extension("J:\\path\\F.PNG"))
-        self.assertEqual(".pdf", get_extension("L:\\paper...jpg.PDF"))
-        self.assertEqual(".xml", get_extension("www.site.com/file.xml?querystring"))
-        self.assertEqual(".foo", get_extension("www.site.com/file.foo?q1?q2"))
-        self.assertEqual(".jpeg", get_extension("www.website.com/file.jpeg"))
+    def test_get_file_extension(self):
+        self.assertEqual("", app.filehelpers.get_file_extension(""))
+        self.assertEqual("", app.filehelpers.get_file_extension("Z:"))
+        self.assertEqual("", app.filehelpers.get_file_extension("a"))
+        self.assertEqual("", app.filehelpers.get_file_extension("oneword"))
+        self.assertEqual("", app.filehelpers.get_file_extension("hi"))
+        self.assertEqual("", app.filehelpers.get_file_extension("invalid string"))
+        self.assertEqual("", app.filehelpers.get_file_extension("path\\folder"))
+        self.assertEqual("", app.filehelpers.get_file_extension("www.website.com/webpage"))
+        self.assertEqual(".jpg", app.filehelpers.get_file_extension("C:\\path\\file.jpg"))
+        self.assertEqual(".png", app.filehelpers.get_file_extension("J:\\path\\F.PNG"))
+        self.assertEqual(".pdf", app.filehelpers.get_file_extension("L:\\paper...jpg.PDF"))
+        self.assertEqual(".xml", app.filehelpers.get_file_extension("www.site.com/file.xml?querystring"))
+        self.assertEqual(".foo", app.filehelpers.get_file_extension("www.site.com/file.foo?q1?q2"))
+        self.assertEqual(".jpeg", app.filehelpers.get_file_extension("www.website.com/file.jpeg"))
 
 
-class TestStringHelpers(unittest.TestCase):
+class TestStrHelpers(unittest.TestCase):
     def test_trim_string(self):
-        self.assertEqual("", trim_string("", ""))
-        self.assertEqual("", trim_string("", "z"))
-        self.assertEqual("", trim_string("aaa", "a"))
-        self.assertEqual("", trim_string("aaaa", "a"))
-        self.assertEqual("", trim_string("baba", "ba"))
-        self.assertEqual("baba", trim_string("baba", "ab"))
-        self.assertEqual("main", trim_string("__main__", "_"))
-        self.assertEqual("words", trim_string("......words....", "."))
-        self.assertEqual("TRING", trim_string("STRING", "S"))
-        self.assertEqual("TRING", trim_string("STRINGS", "S"))
-        self.assertEqual("TSRISNSG", trim_string("STSRISNSGSSSS", "S"))
-        self.assertEqual("azazaza", trim_string("zazazazaz", "z"))
-        self.assertEqual(" be or not to be?", trim_string("to be or not to be?", "to"))
-        self.assertEqual("to be or not to be?", trim_string("  to be or not to be?  ", " "))
+        self.assertEqual("", app.strhelpers.trim_string("", ""))
+        self.assertEqual("", app.strhelpers.trim_string("", "z"))
+        self.assertEqual("", app.strhelpers.trim_string("aaa", "a"))
+        self.assertEqual("", app.strhelpers.trim_string("aaaa", "a"))
+        self.assertEqual("", app.strhelpers.trim_string("baba", "ba"))
+        self.assertEqual("baba", app.strhelpers.trim_string("baba", "ab"))
+        self.assertEqual("main", app.strhelpers.trim_string("__main__", "_"))
+        self.assertEqual("words", app.strhelpers.trim_string("......words....", "."))
+        self.assertEqual("TRING", app.strhelpers.trim_string("STRING", "S"))
+        self.assertEqual("TRING", app.strhelpers.trim_string("STRINGS", "S"))
+        self.assertEqual("TSRISNSG", app.strhelpers.trim_string("STSRISNSGSSSS", "S"))
+        self.assertEqual("azazaza", app.strhelpers.trim_string("zazazazaz", "z"))
+        self.assertEqual(" be or not to be?", app.strhelpers.trim_string("to be or not to be?", "to"))
+        self.assertEqual("to be or not to be?", app.strhelpers.trim_string("  to be or not to be?  ", " "))
         
     def test_file_title(self):
-        self.assertEqual("", file_title(""))
-        self.assertEqual("", file_title("\\"))
-        self.assertEqual("", file_title("/"))
-        self.assertEqual("", file_title(":"))
-        self.assertEqual("", file_title("*"))
-        self.assertEqual("", file_title("?"))
-        self.assertEqual("", file_title("<"))
-        self.assertEqual("", file_title(">"))
-        self.assertEqual("", file_title("|"))
-        self.assertEqual("'", file_title('"'))
-        self.assertEqual("'", file_title("'"))
-        self.assertEqual("valid filename", file_title("valid filename"))
-        self.assertEqual("invalid flename", file_title("invalid? f|lename"))
+        self.assertEqual("", app.strhelpers.file_title(""))
+        self.assertEqual("", app.strhelpers.file_title("\\"))
+        self.assertEqual("", app.strhelpers.file_title("/"))
+        self.assertEqual("", app.strhelpers.file_title(":"))
+        self.assertEqual("", app.strhelpers.file_title("*"))
+        self.assertEqual("", app.strhelpers.file_title("?"))
+        self.assertEqual("", app.strhelpers.file_title("<"))
+        self.assertEqual("", app.strhelpers.file_title(">"))
+        self.assertEqual("", app.strhelpers.file_title("|"))
+        self.assertEqual("'", app.strhelpers.file_title('"'))
+        self.assertEqual("'", app.strhelpers.file_title("'"))
+        self.assertEqual("valid filename", app.strhelpers.file_title("valid filename"))
+        self.assertEqual("invalid flename", app.strhelpers.file_title("invalid? f|lename"))
 
     """
     def test_retitle(self):
@@ -158,51 +167,51 @@ class TestStringHelpers(unittest.TestCase):
     """
 
     def test_shorten(self):
-        self.assertEqual("", shorten("", 0))
-        self.assertEqual("", shorten("", 100))
-        self.assertEqual("", shorten("any string of any length", 0))
-        self.assertEqual("any string", shorten("any string of any length", 10))
-        self.assertEqual("VeryLongOn", shorten("VeryLongOneWordString", 10))
-        self.assertEqual("this string of", shorten("this string of this length", 15))
-        self.assertEqual("ANOTHER multi.word", shorten("ANOTHER multi.word string!!!", 20))
-        self.assertEqual("VeryLongOneWordString", shorten("VeryLongOneWordString", 300))
-        self.assertEqual("any string less than 300", shorten("any string less than 300", 300))
+        self.assertEqual("", app.strhelpers.shorten("", 0))
+        self.assertEqual("", app.strhelpers.shorten("", 100))
+        self.assertEqual("", app.strhelpers.shorten("any string of any length", 0))
+        self.assertEqual("any string", app.strhelpers.shorten("any string of any length", 10))
+        self.assertEqual("VeryLongOn", app.strhelpers.shorten("VeryLongOneWordString", 10))
+        self.assertEqual("this string of", app.strhelpers.shorten("this string of this length", 15))
+        self.assertEqual("ANOTHER multi.word", app.strhelpers.shorten("ANOTHER multi.word string!!!", 20))
+        self.assertEqual("VeryLongOneWordString", app.strhelpers.shorten("VeryLongOneWordString", 300))
+        self.assertEqual("any string less than 300", app.strhelpers.shorten("any string less than 300", 300))
         
 
         with self.assertRaises(IndexError):
-            shorten("", -1)
-            shorten("arbitrary string", -100)
+            app.strhelpers.shorten("", -1)
+            app.strhelpers.shorten("arbitrary string", -100)
 
     def test_attempt_shorten(self):
 
         # TODO: test cases where splitter != " "
-        self.assertEqual("", attempt_shorten("", "", 0))
-        self.assertEqual("", attempt_shorten("", "", 100))
-        self.assertEqual("", attempt_shorten("any string of any length", "9", 0))
-        self.assertEqual("any string", attempt_shorten("any string of this length", " ", 10))
-        self.assertEqual("this string of", attempt_shorten("this string of this length", " ", 15))
-        self.assertEqual("ANOTHER multi.word", attempt_shorten("ANOTHER multi.word string!!!", " ", 20))
-        self.assertEqual("VeryLongOneWordString", attempt_shorten("VeryLongOneWordString", " ",300))
-        self.assertEqual("VeryLongOneWordString", attempt_shorten("VeryLongOneWordString", " ", 10))
-        self.assertEqual("any string less than 300", attempt_shorten("any string less than 300", " ", 300))
+        self.assertEqual("", app.strhelpers.attempt_shorten("", "", 0))
+        self.assertEqual("", app.strhelpers.attempt_shorten("", "", 100))
+        self.assertEqual("", app.strhelpers.attempt_shorten("any string of any length", "9", 0))
+        self.assertEqual("any string", app.strhelpers.attempt_shorten("any string of this length", " ", 10))
+        self.assertEqual("this string of", app.strhelpers.attempt_shorten("this string of this length", " ", 15))
+        self.assertEqual("ANOTHER multi.word", app.strhelpers.attempt_shorten("ANOTHER multi.word string!!!", " ", 20))
+        self.assertEqual("VeryLongOneWordString", app.strhelpers.attempt_shorten("VeryLongOneWordString", " ",300))
+        self.assertEqual("VeryLongOneWordString", app.strhelpers.attempt_shorten("VeryLongOneWordString", " ", 10))
+        self.assertEqual("any string less than 300", app.strhelpers.attempt_shorten("any string less than 300", " ", 300))
         
 
         with self.assertRaises(IndexError):
-            attempt_shorten("", "", -1)
-            attempt_shorten("arbitrary string", " ", -100)
+            app.strhelpers.attempt_shorten("", "", -1)
+            app.strhelpers.attempt_shorten("arbitrary string", " ", -100)
             
     def test_title_case(self):
-        self.assertEqual("", title_case(""))
-        self.assertEqual("!!!", title_case("!!!"))
-        self.assertEqual("1234", title_case("1234"))
-        self.assertEqual("A234", title_case("a234"))
-        self.assertEqual("1word's", title_case("1word's"))
-        self.assertEqual("ALtErNaTiNg CaPs", title_case("ALtErNaTiNg CaPs"))
-        self.assertEqual("UPPERCASE STRING", title_case("UPPERCASE STRING"))
-        self.assertEqual("Lowercase String", title_case("lowercase string"))
-        self.assertEqual("Can't Contractions", title_case("can't contractions"))
-        self.assertEqual("String To Be Capitalized", title_case("string to be capitalized"))
-        self.assertEqual("Could've Should've Would've", title_case("could've Should've would've"))
+        self.assertEqual("", app.strhelpers.title_case(""))
+        self.assertEqual("!!!", app.strhelpers.title_case("!!!"))
+        self.assertEqual("1234", app.strhelpers.title_case("1234"))
+        self.assertEqual("A234", app.strhelpers.title_case("a234"))
+        self.assertEqual("1word's", app.strhelpers.title_case("1word's"))
+        self.assertEqual("ALtErNaTiNg CaPs", app.strhelpers.title_case("ALtErNaTiNg CaPs"))
+        self.assertEqual("UPPERCASE STRING", app.strhelpers.title_case("UPPERCASE STRING"))
+        self.assertEqual("Lowercase String", app.strhelpers.title_case("lowercase string"))
+        self.assertEqual("Can't Contractions", app.strhelpers.title_case("can't contractions"))
+        self.assertEqual("String To Be Capitalized", app.strhelpers.title_case("string to be capitalized"))
+        self.assertEqual("Could've Should've Would've", app.strhelpers.title_case("could've Should've would've"))
 
 
 if __name__ == '__main__':

@@ -1,20 +1,16 @@
-from app.strhelpers import retitle, title_case
-from app.imagehelpers import convert_file, create_directory, download_image, find_urls, get_extension, ExtensionNotRecognizedError, is_recognized, prevent_conflicts
+#from app.strhelpers import retitle, title_case
+#from app.imagehelpers import convert_file, create_directory, download_image, find_urls, prevent_conflicts
+import app
 import argparse
 import getpass
-import json
 import os
 from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
-from praw.models import Submission
 import shutil
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Optional
 from urllib.parse import urlparse
-
-# Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
-URLTuple = Tuple[str, bool]
 
 
 def main() -> None:
@@ -28,12 +24,12 @@ def main() -> None:
         return
 
     # Change to specified output directory
-    create_directory(args.directory)
+    app.filehelpers.create_directory(args.directory)
     os.chdir(args.directory)
 
     # Temp directory
     temp_dir = "temp"
-    create_directory(temp_dir)
+    app.filehelpers.create_directory(temp_dir)
 
     # Image directory
     image_directory = time.strftime("%m-%d-%y", time.gmtime()) + "\\"
@@ -41,7 +37,7 @@ def main() -> None:
     # Log file path
     log_directory = args.directory + "Logs\\"
     log_path = log_directory + "log.txt"
-    create_directory(log_directory)
+    app.filehelpers.create_directory(log_directory)
 
     # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
     incompatible_domains = {}
@@ -53,23 +49,26 @@ def main() -> None:
     for post in saved_posts:
 
         # Move on if the post is just a selfpost or link to a reddit thread
-        if is_skippable(post):
+        if app.submissionhelpers.is_skippable(post):
             continue
 
-        post = sanitize_post(post)
+        post = app.submissionhelpers.sanitize_post(post)
 
         # Attempt to download image from the url and record the result
         for i in range(len(post.recognized_urls)):
             url = post.recognized_urls[i][0]
-            post.recognized_urls[i] = (url, download_img_from(url, post.new_title, image_directory, temp=temp_dir))
+            post.recognized_urls[i] = (url, app.urlhelpers.download_img_from(url,
+                                                                             post.new_title,
+                                                                             image_directory,
+                                                                             temp=temp_dir))
 
-        log_post(post, log_path)
+        app.submissionhelpers.log_post(post, log_path)
 
-        if is_parsed(post.recognized_urls):
+        if app.submissionhelpers.is_parsed(post.recognized_urls):
             index += 1
             post.unsave()
 
-        print_post(index, post)
+        app.submissionhelpers.print_post(index, post)
 
         # End if the desired number of posts have had their images downloaded
         if index >= args.limit:
@@ -81,7 +80,7 @@ def main() -> None:
 
     if incompatible_domains:
         print("\nSeveral domains were unrecognized:")
-        print_dict(incompatible_domains)
+        app.strhelpers.print_dict(incompatible_domains)
 
     return
 
@@ -140,131 +139,13 @@ def sign_in(username: str, password: str) -> Optional[Reddit]:
         raise ConnectionError("Username and password unrecognized.")
 
 
-def is_skippable(post: Submission) -> bool:
+def is_recognized(extension: str) -> bool:
     """
-    Determines if a given reddit post can be skipped or not
-    :param post: a reddit post object
-    :return: True if the given post is a comment, selfpost, or links to another reddit post, else False
+    Checks if the specified extension is recognized
+    :param extension: the extension to check
+    :return: True if the extension is recognized, False otherwise
     """
-    return (not hasattr(post, 'title')) or post.is_self or "https://reddit.com/" in post.url
-
-
-def sanitize_post(post: Submission) -> Submission:
-    """
-    Fixes post's title and finds post's urls
-    :param post: a post object
-    :return: the same post with additional new_title and recognized_urls fields
-    """
-    post.new_title = retitle(post.title)
-    if args.titlecase:
-        post.new_title = title_case(post.new_title)
-    
-    # recognized_urls is a List[URLTuple] which lists all the urls associated with the post and whether
-    #  that url was downloaded or not
-    post.recognized_urls = []
-    for url in find_urls(post.url):
-        post.recognized_urls.append(url, False) # False because no posts have been downloaded yet
-    
-    return post
-
-
-def download_img_from(url: str, title: str, dir: str, png: bool = False, temp: str = "temp") -> bool:
-    """
-    Downloads the linked image, converts it to the specified filetype,
-    and saves to the specified directory. Avoids name conflicts.
-    :param url: url directly linking to the image to download
-    :param title: title that the final file should have
-    :param dir: directory that the final file should be saved to
-    :return: True if the file was downloaded correctly, else False 
-    """
-
-    # Save the image to a temp directory
-    try:
-        download_image(title, url, temp)
-    except ConnectionError:
-        return False
-
-    # Convert to png if necessary
-    if png:
-        convert_file(temp, ".png")
-        extension = ".png"
-        temp_path = os.path.join(temp, title + extension)
-
-    # Move to desired directory
-    final_filename = prevent_conflicts(title, extension, dir)
-    final_filepath = os.path.join(dir, final_filename)
-    shutil.move(temp_path, final_filepath)
-
-    return True
-
-
-def log_post(post: Submission, file: str) -> None:
-    """
-    Writes the given post's title and url to the specified file
-    :param post: reddit post object
-    :param file: log file path
-    :return: None
-    """
-
-    post_dict = {
-        "title"           : post.title,
-        "id"              : post.id,
-        "url"             : post.url,
-        "recognized_urls" : post.recognized_urls
-    }
-
-    with open(file, "a", encoding="utf-8") as logfile:
-        json.dump(post_dict, logfile)
-
-    return
-
-
-def is_parsed(url_tuples: List[URLTuple]) -> bool:
-    """
-    Determines if every url in the list was parsed correctly
-    :param url_tuples: list of tuples
-    :return: True if the second element of each tuple in the list is True, else False
-    """
-    return count_parsed(url_tuples) == len(url_tuples)
-
-
-def count_parsed(tup_list: List[URLTuple]) -> int:
-    """
-    Counts the number of urls that were parsed
-    :param tup_list: a list of url tuples
-    :return: number of tuples in the list who were correctly parsed
-    """
-    count = 0
-    for _, parsed in tup_list:
-        if parsed:
-            count += 1
-    return count
-
-
-def print_post(index: int, post: praw.models.Submission) -> None:
-    """
-    Prints out information about the specified post
-    :param index: the index number of the post
-    :param post: Reddit post to be printed
-    :return: None
-    """
-    print("\n{0}. {1}".format(index, post.old_title))
-    print("   r/" + str(post.subreddit))
-    print("   " + post.url)
-    print("   Saved {0} / {1} image(s).".format(count_parsed(post.recognized_urls), len(post.recognized_urls)))
-    return
-
-
-def print_dict(dictionary: Dict[str, int]) -> None:
-    """
-    Prints keys (str) from a dictionary, sorted by their value (int)
-    :param dictionary: dictionary in the form str : int
-    :return: None
-    """
-
-    for domain in sorted(dictionary.items(), key=lambda x: x[1], reverse=True):
-        print("\t{0}: {1}".format(domain[0], domain[1]))
-    return
+    return extension.lower() in [".png", ".jpg", ".jpeg", ".gif"]
 
 
 if __name__ == "__main__":

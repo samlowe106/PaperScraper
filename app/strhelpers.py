@@ -1,3 +1,6 @@
+from typing import Dict
+
+
 def retitle(s: str) -> str:
     """
     Changes the given string into a visually appealing title-cased filename
@@ -121,3 +124,15 @@ def title_case(s: str) -> str:
             chars.append(char)
 
     return "".join(chars)
+
+
+def print_dict(dictionary: Dict[str, int]) -> None:
+    """
+    Prints keys (str) from a dictionary, sorted by their value (int)
+    :param dictionary: dictionary in the form str : int
+    :return: None
+    """
+
+    for domain in sorted(dictionary.items(), key=lambda x: x[1], reverse=True):
+        print("\t{0}: {1}".format(domain[0], domain[1]))
+    return

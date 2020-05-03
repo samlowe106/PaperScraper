@@ -1,8 +1,15 @@
+import os
+import shutil
 import unittest
 from app.main import count_parsed, is_parsed, sign_in, is_skippable 
 from app.imagehelpers import create_directory, convert_file, download_image, find_urls, get_extension, parse_imgur_album, parse_imgur_single
 from app.strhelpers import trim_string, file_title, retitle, shorten, attempt_shorten, title_case
 # https://docs.python.org/3.8/library/unittest.html
+# https://www.thepythoncode.com/article/extracting-image-metadata-in-python
+
+"""
+Unless otherwise stated, NONE of the URLs used for testing should be dead.
+"""
 
 
 class TestMainFunctions(unittest.TestCase):
@@ -33,10 +40,28 @@ class TestMainFunctions(unittest.TestCase):
 
 
 class TestImageHelpers(unittest.TestCase):
-    """
     def test_create_directory(self):
-        self.assertEqual(True, False)
+        # Establish test dir
+        test_dir = "test_dir"
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
+        os.chdir(test_dir)
 
+        create_directory("directory1")
+        self.assertTrue("directory1" in os.listdir(os.getcwd()))
+
+        # Creating a second directory with the same name shouldn't do anything
+        create_directory("directory1")
+        self.assertTrue("directory1" in os.listdir(os.getcwd()))
+
+        create_directory("directory2")
+        self.assertTrue("directory2" in os.listdir(os.getcwd()))
+
+        # Remove test directory
+        os.chdir("..")
+        shutil.rmtree(test_dir)
+
+    """
     def test_convert_to_png(self):
         self.assertEqual(True, False)
 
@@ -51,10 +76,32 @@ class TestImageHelpers(unittest.TestCase):
 
     def test_find_urls(self):
         self.assertEqual(True, False)
+    """
 
     def test_download_image(self):
-        self.assertEqual(True, False)
-    """
+        # Establish test dir
+        test_dir = "test_dir"
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
+        
+        # List of tuples in the form
+        #  url, expected size (NOT size on disk) in bytes
+        urls_sizes = [("https://i.redd.it/qqgds2i3ueh31.jpg", 2519027),
+                      ("https://i.redd.it/mfqm1x49akgy.jpg", 838598),
+                      ("https://i.redd.it/jh0gfb3ktvkz.jpg", 467577),
+                      ("https://i.imgur.com/ppqan5G.jpg", 2846465),
+                      ("https://i.imgur.com/CS8QhJG.jpg", 3336288),
+                      ("https://i.imgur.com/B6HPXkk.jpg", 958843)
+        ]
+
+        for i in range(len(urls_sizes)):
+            download_image(urls_sizes[i][0], test_dir, str(i))
+            # Assert that the downloaded file is the same size as expected
+            self.assertEqual(urls_sizes[i][1], os.path.getsize(os.path.join(test_dir, str(i) + ".jpg")))
+
+        # Remove test directory
+        shutil.rmtree(test_dir)
+
 
     def test_get_extension(self):
         self.assertEqual("", get_extension(""))

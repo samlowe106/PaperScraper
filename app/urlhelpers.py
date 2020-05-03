@@ -117,9 +117,9 @@ def download_image(url: str, directory: str, title: str) -> None:
         return ConnectionError('Request failed with error {0}.'.format(image.status_code))
 
     # Output path
-    create_directory(directory)
+    app.filehelpers.create_directory(directory)
 
-    filepath = os.path.join(directory, title + get_extension(url))
+    filepath = os.path.join(directory, title + get_url_extension(url))
 
     # Write the file
     with open(filepath, "wb") as f:

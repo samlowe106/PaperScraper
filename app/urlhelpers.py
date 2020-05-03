@@ -83,7 +83,7 @@ def download_img_from(url: str, title: str, dir: str, png: bool = False, temp: s
 
     # Save the image to a temp directory
     try:
-        download_image(title, url, temp)
+        download_file(title, url, temp)
     except ConnectionError:
         return False
 
@@ -101,28 +101,31 @@ def download_img_from(url: str, title: str, dir: str, png: bool = False, temp: s
     return True
 
 
-def download_image(url: str, directory: str, title: str) -> None:
+def download_file(url: str, directory: str, title: str) -> None:
     """
-    Saves the specified image to the specified path with the specified title and file extension
-    :param url: a direct link to the image to be saved
-    :param directory: the path the image should be saved to
-    :param title: the title the image file should have (sans extension)
+    Saves the file on the linked page to the specified path with the specified title and file extension
+    :param url: a direct link to the page to be saved
+    :param directory: the path the page should be saved to
+    :param title: the title the page file should have (sans extension)
     :return: None
     """
 
-    image = requests.get(url)
+    r = requests.get(url, {'Content-type': 'content_type_value'})
+    
+    # The page page couldn't be reached
+    if r.status_code != 200:
+        return ConnectionError('Request failed with error {0}.'.format(r.status_code))
 
-    # The image page couldn't be reached
-    if image.status_code != 200:
-        return ConnectionError('Request failed with error {0}.'.format(image.status_code))
+    content_type = r.headers["Content-type"]
+    extension = "." + content_type[(content_type.find("/") + 1):]
 
     # Output path
     app.filehelpers.create_directory(directory)
 
-    filepath = os.path.join(directory, title + get_url_extension(url))
+    filepath = os.path.join(directory, title + extension)
 
     # Write the file
     with open(filepath, "wb") as f:
-        f.write(image.content)
+        f.write(r.content)
 
     return

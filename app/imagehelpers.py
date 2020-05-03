@@ -40,15 +40,26 @@ def convert_file(filepath: str, new_ext: str) -> str:
 
 
 def get_file_title(filepath: str) -> str:
+    """
+    Gets the title of a file without the extension or root
+    :param filepath: the path to the file
+    :return: the title of the file
+    """
     return ntpath.splitext(os.path.basename(filepath))[0]
 
 
-def prevent_conflicts(title: str, extension: str, new_dir: str):
+def prevent_conflicts(title: str, extension: str, directory: str):
     """
+    Generates a filename based on the specified title that does not conflict with any of the
+    filenames in the specified directory
+    :param title: the desired title of the file
+    :param extension: the extension of the file
+    :param directory: the directory to check the file's filename against
+    :return: a filename that will not have any name conflicts in the specified directory
     """
     filename = title + extension
     index = 1
-    while filename in os.listdir(new_dir):
+    while filename in os.listdir(directory):
         filename = "{0} ({1}).{2}".format(title, index, extension)
         index += 1
 

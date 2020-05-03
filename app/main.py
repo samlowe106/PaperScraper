@@ -13,7 +13,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-# Represents a tuple in the form (URL (str), whether the URL was parsed correctly (bool))
+# Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
 URLTuple = Tuple[str, bool]
 
 
@@ -30,6 +30,10 @@ def main() -> None:
     # Change to specified output directory
     create_directory(args.directory)
     os.chdir(args.directory)
+
+    # Temp directory
+    temp_dir = "temp"
+    create_directory(temp_dir)
 
     # Image directory
     image_directory = time.strftime("%m-%d-%y", time.gmtime()) + "\\"
@@ -54,9 +58,10 @@ def main() -> None:
 
         post = sanitize_post(post)
 
+        # Attempt to download image from the url and record the result
         for i in range(len(post.recognized_urls)):
             url = post.recognized_urls[i][0]
-            post.recognized_urls[i] = (url, download_img_from(url, post.new_title, image_directory))
+            post.recognized_urls[i] = (url, download_img_from(url, post.new_title, image_directory, temp=temp_dir))
 
         log_post(post, log_path)
 
@@ -71,6 +76,8 @@ def main() -> None:
             break
 
     """ End-of-program cleanup """
+
+    os.rmdir(temp_dir)
 
     if incompatible_domains:
         print("\nSeveral domains were unrecognized:")
@@ -152,39 +159,36 @@ def sanitize_post(post: Submission) -> Submission:
     if args.titlecase:
         post.new_title = title_case(post.new_title)
     
-    # recognized_urls is a List[Tuple[str, bool]] representing an image url associated with
-    #  the given post, and whether the image at that url was downloaded
+    # recognized_urls is a List[URLTuple] which lists all the urls associated with the post and whether
+    #  that url was downloaded or not
     post.recognized_urls = []
     for url in find_urls(post.url):
-        post.recognized_urls.append(url, False)
+        post.recognized_urls.append(url, False) # False because no posts have been downloaded yet
     
     return post
 
 
-def download_img_from(url: str, title: str, dir: str, tempdir: str = "temp") -> bool:
+def download_img_from(url: str, title: str, dir: str, png: bool = False, temp: str = "temp") -> bool:
     """
-    Downloads the directly linked image to the specified directory, and converts to png if desired
-    If there's a file with the same name already in the directory, keeps both files
+    Downloads the linked image, converts it to the specified filetype,
+    and saves to the specified directory. Avoids name conflicts.
     :param url: url directly linking to the image to download
     :param title: title that the final file should have
     :param dir: directory that the final file should be saved to
     :return: True if the file was downloaded correctly, else False 
     """
-    create_directory(tempdir)
-    extension = get_extension(url)
-    temp_path = os.path.join(tempdir, title + extension)
 
     # Save the image to a temp directory
     try:
-        download_image(title, url, tempdir)
+        download_image(title, url, temp)
     except ConnectionError:
         return False
 
     # Convert to png if necessary
-    if args.png:
-        convert_file(tempdir, ".png")
+    if png:
+        convert_file(temp, ".png")
         extension = ".png"
-        temp_path = os.path.join(tempdir, title + extension)
+        temp_path = os.path.join(temp, title + extension)
 
     # Move to desired directory
     final_filename = prevent_conflicts(title, extension, dir)
@@ -221,7 +225,6 @@ def is_parsed(url_tuples: List[URLTuple]) -> bool:
     :param url_tuples: list of tuples
     :return: True if the second element of each tuple in the list is True, else False
     """
-
     return count_parsed(url_tuples) == len(url_tuples)
 
 

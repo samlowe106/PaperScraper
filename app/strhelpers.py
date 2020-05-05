@@ -1,18 +1,19 @@
 from typing import Dict
+import os
 
-
-def retitle(s: str) -> str:
+def retitle(s: str, title: bool = False) -> str:
     """
-    Changes the given string into a visually appealing title-cased filename
+    Strips certain punctuation from the start and end of the given string, and optionally titlecases it
     :param s: the string to be improved
-    :return: a clean, valid file title
+    :param title: True if the string should be in title case
+    :return: a string without certain punctuation at the start or end
     """
 
     for punctuation in [".", " ", ","]:
         s = trim_string(s, punctuation)
 
-    s = file_title(s)
-    s = shorten(s)
+    if title:
+        s = title_case(s)
 
     return s
 
@@ -37,74 +38,31 @@ def trim_string(s1: str, s2: str) -> str:
     return s1
 
 
-def file_title(s: str) -> str:
-    """
-    Removes characters that Windows doesn't allow in filenames from the specified string
-
-    Note: might be worth looking at Django's slugify function which implements a similar functionality
-    https://docs.djangoproject.com/en/3.0/_modules/django/utils/text/#slugify
-    :param s: string to remove characters from
-    :return: the given string without invalid characters
-    """
-    s = s.replace('"', "'")
-    for invalid_char in ["\\", "/", ":", "*", "?", "<", ">", "|"]:
-        s = s.replace(invalid_char, "")
-    return s
-
-
 def shorten(s: str, max_length: int = 250) -> str:
     """
-    Shortens s to be no longer than the first sentence. Truncates words if possible,
-    but truncates characters when necessary
+    Shortens s to be shorter than the specified maximum length, truncating at a
+    word if possible. Appends an ellipsis if possible.
     :param s: string to be shortened
     :param max_length: the maximum character length that s can be (defaults to 250)
     :return: s
     :raises IndexError: if max_length is less than 0
     """
-
-    if (not isinstance(max_length, int)) and max_length < 0:
-        raise IndexError("Argument max_length must be a positive integer, not %d" % max_length)
-
-    shortened_words = attempt_shorten(s, ' ', max_length)
-    # If the attempt to shorten s using words fails, truncate s
-    if len(shortened_words) < max_length:
-        return shortened_words
-    else:
-        return s[:max_length]
-
-
-def attempt_shorten(s: str, splitter: str, max_length: int = 250) -> str:
-    """
-    Attempts to shorten s by splitting it up into its constituent sections (words, sentences, lines, etc. depending on
-    how splitter is specified) and removing trailing sections until it's below the max character length.
-    :param s: the string that this function is attempting to shorten
-    :param splitter: the string that we'll use to separate one section of s from another
-    :param max_length: the maximum length we should attempt to shorten s to
-    :return: the version of s that is (or is the closest to being) below the specified max_length
-    :raises IndexError: if max_length is less than 0
-    """
-
-    if max_length < 0:
-        raise IndexError("Argument max_length must be a positive integer, not %d" % max_length)
-
-    # if splitter == ".", we're splitting s up into its constituent sentences (a section = sentence)
-    # if splitter == " ", we're splitting s up into its constituent words (a sections = word)
-
-    while len(s) > max_length:
-        constituents = s.split(splitter)
-        constituent_count = len(constituents)
-
-        # If s consists of more than one section, shorten s by removing the last section
-        if constituent_count > 1:
-            s = splitter.join(constituents[:(constituent_count - 1)])
-
-        # If s consists of only one section, it can't be split up any more
-        else:
-            # This version of s will be more than max_length characters
-            return s
-
-    # This version of s will be less than max_length characters
-    return s
+    if len(s) > max_length:
+        i = max_length
+        while True:
+            # Return a shortened version of s with ellipsis at the end
+            if s[i] == ' ' and len(s + "...") < max_length:
+                return s[:i] + "..."
+            # Truncating at each word doesn't work, so truncate at a character
+            elif i == 0:
+                if max_length > 3:
+                    # Only adding an ellipsis if doing so wouldn't
+                    #  cause the shortened s to surpass max length
+                    return s[:(max_length - 3)] + "..."
+                else:
+                    return s[:max_length]
+            else:
+                i -= 1
 
 
 def title_case(s: str) -> str:
@@ -124,15 +82,3 @@ def title_case(s: str) -> str:
             chars.append(char)
 
     return "".join(chars)
-
-
-def print_dict(dictionary: Dict[str, int]) -> None:
-    """
-    Prints keys (str) from a dictionary, sorted by their value (int)
-    :param dictionary: dictionary in the form str : int
-    :return: None
-    """
-
-    for domain in sorted(dictionary.items(), key=lambda x: x[1], reverse=True):
-        print("\t{0}: {1}".format(domain[0], domain[1]))
-    return

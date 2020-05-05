@@ -1,4 +1,5 @@
-import app
+import app.strhelpers
+import app.urlhelpers
 import json
 from praw.models import Submission
 from typing import Dict, List, Tuple
@@ -22,14 +23,14 @@ def sanitize_post(post: Submission, titlecase: bool = False) -> Submission:
     :param post: a post object
     :return: the same post with additional new_title and recognized_urls fields
     """
-    post.new_title = app.strhelpers.retitle(post.title)
+    post.new_title = strhelpers.retitle(post.title)
     if titlecase:
-        post.new_title = app.strhelpers.title_case(post.new_title)
+        post.new_title = strhelpers.title_case(post.new_title)
     
     # recognized_urls is a List[URLTuple] which lists all the urls associated with the post and whether
     #  that url was downloaded or not
     post.recognized_urls = []
-    for url in app.urlhelpers.find_urls(post.url):
+    for url in urlhelpers.find_urls(post.url):
         post.recognized_urls.append(url, False) # False because no posts have been downloaded yet
     
     return post

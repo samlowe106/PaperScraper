@@ -50,18 +50,26 @@ def download_image(url: str, title: str, directory: str, png: bool = False, temp
 
 
 def get_extension(r: Response) -> str:
-
+    """
+    Gets the extension of the content in the specified response
+    :param r: valid request object
+    :return: the filetype of the content stored in that request, in lowercase
+    """
     return r.headers["Content-type"].split("/")[1].lower()
 
 
-def write_file(r: Response, filepath: str) -> bool:
+def write_file(r: Response, filepath: str) -> None:
     """
+    Writes the content in the specified response to the specified filepath
+    :param r: valid response object
+    :param filepath: filepath to write the response content to
+    :
     """
     # Write the file
     with open(filepath, "wb") as f:
         f.write(r.content)
 
-    return True
+    return
 
 
 def find_urls(r: Response) -> List[str]:

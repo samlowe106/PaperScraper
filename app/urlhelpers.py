@@ -1,5 +1,6 @@
 import app
 from bs4 import BeautifulSoup
+import json
 import os
 import requests
 import shutil
@@ -21,13 +22,24 @@ def find_urls(url: str) -> List[str]:
     if app.main.is_recognized(extension):
         return [url]
 
-    # Imgur albums
-    elif "imgur.com/a/" in url:
-        return parse_imgur_album(url)
+    # Imgur
+    elif "imgur.com" in url and not url.endswith("/gallery/"):
+        # Albums    
+        if "/a/" in url:
+            return parse_imgur_album(url)
 
-    # Imgur single-image pages
-    elif "imgur.com" in url:
-        return [parse_imgur_single(url)]
+        # Galleries (might be albums or singles)
+        elif "/gallery/" in url:
+            data = requests.get(url + ".json")
+            gallery_dict = json.loads(data.content)
+            if gallery_dict["data"]["image"]["is_album"]:
+                return parse_imgur_album(url)
+            else:
+                return [parse_imgur_single(url)]
+
+        # Single-image page
+        else:
+            return [parse_imgur_single(url)]
 
     # Unrecognized pages
     else:
@@ -41,9 +53,10 @@ def get_url_extension(url: str) -> str:
     :return: the file extension of the linked page
     """
     # https://stackoverflow.com/a/32651400
+    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
     r = requests.get(url, {'Content-type': 'content_type_value'})
-    content_type = r.headers["Content-type"]
-    return "." + content_type[(content_type.find("/") + 1):]
+    mime_type = r.headers["Content-type"]
+    return "." + mime_type.split("/")[1]
 
 
 def parse_imgur_album(album_url: str) -> List[str]:

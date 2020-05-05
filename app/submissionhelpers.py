@@ -1,5 +1,5 @@
-import app.strhelpers
-import app.urlhelpers
+import app.strhelpers as strhelpers
+import app.urlhelpers as urlhelpers
 import json
 from praw.models import Submission
 from typing import Dict, List, Tuple

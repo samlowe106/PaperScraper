@@ -3,10 +3,17 @@
 .vscode
 
 # Client ID/Secret File
-app/info.txt
+info.txt
 
 # Output folder
-app/Output
+Output
 
 # Virtual Environment
 venv
+
+# __pycache__ folders
+__pycache__
+app/__pycache__
+
+# Testing directory
+test_dir

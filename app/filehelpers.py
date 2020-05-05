@@ -1,6 +1,7 @@
-import ntpath
+import app.strhelpers
 import os
 from PIL import Image
+
 
 def create_directory(directory: str) -> None:
     """
@@ -13,7 +14,7 @@ def create_directory(directory: str) -> None:
     return
 
 
-def convert_file(filepath: str, new_ext: str) -> str:
+def convert(filepath: str, new_ext: str = ".png") -> str:
     """
     Converts the given image to the specified new extension
     :param path: path that the image is located in
@@ -28,26 +29,8 @@ def convert_file(filepath: str, new_ext: str) -> str:
         os.remove(filepath)
     return new_path
 
-
-def get_file_extension(filepath: str) -> str:
-    """
-    Gets the file extension from a filepath
-    :param filepath: the path to the file
-    :return: the specified file's extension
-    """
-    return os.path.splitext(filepath)[1]
-
-
-def get_file_title(filepath: str) -> str:
-    """
-    Gets the title of a file without the extension or root
-    :param filepath: the path to the file
-    :return: the title of the file
-    """
-    return os.path.splitext(os.path.basename(filepath))[0]
-
-
-def prevent_conflicts(title: str, extension: str, directory: str):
+    
+def prevent_collisions(title: str, extension: str, directory: str):
     """
     Generates a filename based on the specified title that does not conflict with any of the
     filenames in the specified directory
@@ -63,3 +46,25 @@ def prevent_conflicts(title: str, extension: str, directory: str):
         index += 1
 
     return filename
+
+
+def remove_invalid(s: str) -> str:
+    """
+    Removes characters that Windows doesn't allow in filenames from the specified string
+    :param s: string to remove characters from
+    :return: the given string without invalid characters
+    """
+    s = s.replace('"', "'")
+    for invalid_char in ["\\", "/", ":", "*", "?", "<", ">", "|"]:
+        s = s.replace(invalid_char, "")
+    return s
+
+
+def file_title(directory: str, title: str, extension: str) -> str:
+    """
+    """
+    title = remove_invalid(title)
+    title = app.strhelpers.shorten(title)
+    title = prevent_collisions(title, extension, directory)
+
+    return title

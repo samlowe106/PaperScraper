@@ -1,17 +1,25 @@
-#from app.strhelpers import retitle, title_case
-#from app.imagehelpers import convert_file, create_directory, download_image, find_urls, prevent_conflicts
-import app
+import app.urlhelpers as urlhelpers
+import app.filehelpers as filehelpers
+import app.strhelpers as strhelpers
 import argparse
 from datetime import datetime
 import getpass
+import io
+import json
 import os
 from prawcore.exceptions import OAuthException
+from PIL import Image
 import praw
 from praw import Reddit
+import requests
 import shutil
 import time
-from typing import Optional
+from typing import List, Optional, Tuple
 from urllib.parse import urlparse
+
+
+# Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
+URLTuple = Tuple[str, bool]
 
 
 def main() -> None:
@@ -25,12 +33,12 @@ def main() -> None:
         return
 
     # Change to specified output directory
-    app.filehelpers.create_directory(args.directory)
+    filehelpers.create_directory(args.directory)
     os.chdir(args.directory)
 
     # Temp directory
     temp_dir = "temp"
-    app.filehelpers.create_directory(temp_dir)
+    filehelpers.create_directory(temp_dir)
 
     # Image directory
     if args.dmy:
@@ -41,7 +49,7 @@ def main() -> None:
     # Log file path
     log_directory = os.path.join(args.directory, "Logs")
     log_path = os.path.join(log_directory, "log.txt")
-    app.filehelpers.create_directory(log_directory)
+    filehelpers.create_directory(log_directory)
 
     # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
     incompatible_domains = {}
@@ -52,32 +60,34 @@ def main() -> None:
     index = 0
     for post in saved_posts:
 
-        # Move on if the post is just a selfpost or link to a reddit thread
-        if app.submissionhelpers.is_skippable(post):
+        # If download failed, move on
+        r = requests.get(post.url, headers={'Content-type': 'content_type_value'})
+        if r.status_code != 200:
             continue
 
-        post = app.submissionhelpers.sanitize_post(post)
+        recognized_urls = urlhelpers.find_urls(r)
+        if recognized_urls:
 
-        # Attempt to download image from the url and record the result
-        for i in range(len(post.recognized_urls)):
-            url = post.recognized_urls[i][0]
-            post.recognized_urls[i] = (url, app.urlhelpers.download_img_from(url,
-                                                                             post.new_title,
-                                                                             image_directory,
-                                                                             temp=temp_dir))
+            title = strhelpers.retitle(post.title)
+            url_tuples = []
 
-        if not args.nolog:
-            app.submissionhelpers.log_post(post, log_path)
+            # Download all found images and keep track of status
+            for url in recognized_urls:
+                status = urlhelpers.download_image(url, title, image_directory, png=args.png)
+                url_tuples.append((url, status))
 
-        if app.submissionhelpers.is_parsed(post.recognized_urls):
-            index += 1
+            # Log post
+            if not args.nolog:
+                log(post.title, post.id, post.url, url_tuples, log_path)
+
             post.unsave()
+            index += 1
 
-        app.submissionhelpers.print_post(index, post)
+            print_post(index, post.title, str(post.subreddit), post.url, url_tuples)
 
-        # End if the desired number of posts have had their images downloaded
-        if index >= args.limit:
-            break
+            # End if the desired number of posts have had their images downloaded
+            if index >= args.limit:
+                break
 
     """ End-of-program cleanup """
 
@@ -85,7 +95,8 @@ def main() -> None:
 
     if incompatible_domains:
         print("\nSeveral domains were unrecognized:")
-        app.strhelpers.print_dict(incompatible_domains)
+        for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
+            print("\t{0}: {1}".format(domain[0], domain[1]))
 
     return
 
@@ -142,6 +153,63 @@ def sign_in(username: str, password: str) -> Optional[Reddit]:
     # Catch and re-raise error with a more helpful message
     except OAuthException:
         raise ConnectionError("Username and password unrecognized.")
+
+
+def is_parsed(url_tuples: List[URLTuple]) -> bool:
+    """
+    Determines if every url in the list was parsed correctly
+    :param url_tuples: list of tuples
+    :return: True if the second element of each tuple in the list is True, else False
+    """
+    return count_parsed(url_tuples) == len(url_tuples)
+
+
+def count_parsed(tup_list: List[URLTuple]) -> int:
+    """
+    Counts the number of urls that were parsed
+    :param tup_list: a list of url tuples
+    :return: number of tuples in the list who were correctly parsed
+    """
+    count = 0
+    for _, parsed in tup_list:
+        if parsed:
+            count += 1
+    return count
+
+
+def log(title: str, id: str, url: str, url_tuples: List[URLTuple], file: str) -> None:
+    """
+    Writes the given post's title and url to the specified file
+    :param post: reddit post object
+    :param file: log file path
+    :return: None
+    """
+
+    post_dict = {
+        "title"           : title,
+        "id"              : id,
+        "url"             : url,
+        "recognized_urls" : url_tuples
+    }
+
+    with open(file, "a", encoding="utf-8") as logfile:
+        json.dump(post_dict, logfile)
+
+    return
+
+
+def print_post(index: int, old_title: str, subreddit: str, url: str, url_tuples: List[URLTuple]) -> None:
+    """
+    Prints out information about the specified post
+    :param index: the index number of the post
+    :param post: Reddit post to be printed
+    :return: None
+    """
+    print("\n{0}. {1}".format(index, old_title))
+    print("   r/" + subreddit)
+    print("   " + url)
+    print("   Saved {0} / {1} image(s).".format(count_parsed(url_tuples), len(url_tuples)))
+    return
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 import app
 from bs4 import BeautifulSoup
 import json
+import main
 import os
 import requests
 import shutil
@@ -19,7 +20,7 @@ def find_urls(url: str) -> List[str]:
 
     # If the image in the url has a recognized file extension, this is a direct link to an image
     # (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
-    if app.main.is_recognized(extension):
+    if main.is_recognized(extension):
         return [url]
 
     # Imgur

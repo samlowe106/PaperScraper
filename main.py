@@ -239,9 +239,6 @@ if __name__ == "__main__":
                         action='store_true',
                         help="represent dates in day-month-year format")
 
-    
-    
-    
     """
     NOT YET IMPLEMENTED
     

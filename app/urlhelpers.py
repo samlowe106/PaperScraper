@@ -63,7 +63,7 @@ def write_file(r: Response, filepath: str) -> None:
     Writes the content in the specified response to the specified filepath
     :param r: valid response object
     :param filepath: filepath to write the response content to
-    :
+    :return: None
     """
     # Write the file
     with open(filepath, "wb") as f:

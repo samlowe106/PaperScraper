@@ -20,7 +20,7 @@ def find_urls(url: str) -> List[str]:
 
     # If the image in the url has a recognized file extension, this is a direct link to an image
     # (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
-    if main.is_recognized(extension):
+    if is_recognized(extension):
         return [url]
 
     # Imgur
@@ -46,6 +46,15 @@ def find_urls(url: str) -> List[str]:
     else:
         return []
 
+
+def is_recognized(extension: str, recognized: List[str] = [".png", ".jpg", ".jpeg", ".gif"]) -> bool:
+    """
+    Checks if the specified extension is recognized
+    :param extension: the extension to check
+    :return: True if the extension is recognized, False otherwise
+    """
+    return extension.lower() in recognized
+    
 
 def get_url_extension(url: str) -> str:
     """

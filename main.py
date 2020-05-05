@@ -144,15 +144,6 @@ def sign_in(username: str, password: str) -> Optional[Reddit]:
         raise ConnectionError("Username and password unrecognized.")
 
 
-def is_recognized(extension: str) -> bool:
-    """
-    Checks if the specified extension is recognized
-    :param extension: the extension to check
-    :return: True if the extension is recognized, False otherwise
-    """
-    return extension.lower() in [".png", ".jpg", ".jpeg", ".gif"]
-
-
 if __name__ == "__main__":
 
     # region Argument Parsing

@@ -20,7 +20,7 @@ def convert_file(filepath: str, new_ext: str) -> str:
     :param filename: title of the file to be converted
     :return: filename (with new extension)
     """
-    new_path = ntpath.splitext(filepath)[0] + new_ext
+    new_path = os.path.splitext(filepath)[0] + new_ext
     with Image.open(filepath) as im:
         rgb_im = im.convert('RGB')
         rgb_im.save(new_path)
@@ -44,7 +44,7 @@ def get_file_title(filepath: str) -> str:
     :param filepath: the path to the file
     :return: the title of the file
     """
-    return ntpath.splitext(os.path.basename(filepath))[0]
+    return os.path.splitext(os.path.basename(filepath))[0]
 
 
 def prevent_conflicts(title: str, extension: str, directory: str):

@@ -1,21 +1,15 @@
-import app.urlhelpers as urlhelpers
-import app.filehelpers as filehelpers
-import app.strhelpers as strhelpers
+from app import filehelpers, strhelpers, urlhelpers
 import argparse
 from datetime import datetime
 import getpass
-import io
 import json
 import os
 from prawcore.exceptions import OAuthException
-from PIL import Image
 import praw
 from praw import Reddit
 import requests
-import shutil
 import time
 from typing import List, Optional, Tuple
-from urllib.parse import urlparse
 
 
 # Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
@@ -60,12 +54,13 @@ def main() -> None:
     index = 0
     for post in saved_posts:
 
-        # If download failed, move on
+        # Attempt download
         r = requests.get(post.url, headers={'Content-type': 'content_type_value'})
         if r.status_code != 200:
             continue
 
         recognized_urls = urlhelpers.find_urls(r)
+        
         if recognized_urls:
 
             title = strhelpers.retitle(post.title)

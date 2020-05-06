@@ -19,31 +19,22 @@ def download_image(url: str, title: str, directory: str, png: bool = False, temp
     :return: True if the file was downloaded correctly, else False 
     """
 
-    # Save the image to a temp directory
     r = requests.get(url)
-    
     if r.status_code != 200:
         return False
-
     extension = get_extension(r)
-
+    
+    # Save the image to a temp directory
     temp_filepath = os.path.join(temp_dir, title + extension)
-
     write_file(r, temp_filepath)
 
     # Convert to png if necessary
     if png:
         extension = ".png"
-        app.filehelpers.convert(temp_filepath, extension)
-        # Reassign temp_filepath with new extension
-        temp_filepath = os.path.join(temp_dir, title + extension)
+        temp_filepath = app.filehelpers.convert(temp_filepath, extension)
 
-    # Move to desired directory
-    final_filename = app.filehelpers.prevent_collisions(title, extension, directory)
-    final_filepath = os.path.join(directory, final_filename)
-    shutil.move(temp_filepath, final_filepath)
-    
-    # Remove temp file
+    # Move to desired directory and delete temp file
+    shutil.move(temp_filepath, app.filehelpers.prevent_collisions(title, extension, directory))
     os.remove(temp_filepath)
 
     return True

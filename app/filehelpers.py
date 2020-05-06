@@ -37,7 +37,7 @@ def prevent_collisions(title: str, extension: str, directory: str):
     :param title: the desired title of the file
     :param extension: the extension of the file
     :param directory: the directory to check the file's filename against
-    :return: a filename that will not have any name conflicts in the specified directory
+    :return: a unique filepath that will not conflict with any of the other files in the directory
     """
     filename = title + extension
     index = 1
@@ -45,7 +45,7 @@ def prevent_collisions(title: str, extension: str, directory: str):
         filename = "{0} ({1}).{2}".format(title, index, extension)
         index += 1
 
-    return filename
+    return os.path.join(directory, filename)
 
 
 def remove_invalid(s: str) -> str:

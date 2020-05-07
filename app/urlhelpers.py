@@ -46,7 +46,7 @@ def get_extension(r: Response) -> str:
     :param r: valid request object
     :return: the filetype of the content stored in that request, in lowercase
     """
-    return r.headers["Content-type"].split("/")[1].lower()
+    return "." + r.headers["Content-type"].split("/")[1].lower()
 
 
 def write_file(r: Response, filepath: str) -> None:

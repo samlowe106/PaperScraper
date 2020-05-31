@@ -33,9 +33,8 @@ def download_image(url: str, title: str, directory: str, png: bool = False, temp
         extension = ".png"
         temp_filepath = app.filehelpers.convert(temp_filepath, extension)
 
-    # Move to desired directory and delete temp file
+    # Move to desired directory
     shutil.move(temp_filepath, app.filehelpers.prevent_collisions(title, extension, directory))
-    os.remove(temp_filepath)
 
     return True
 

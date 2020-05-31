@@ -63,6 +63,8 @@ def shorten(s: str, max_length: int = 250) -> str:
                     return s[:max_length]
             else:
                 i -= 1
+    else:
+        return s
 
 
 def title_case(s: str) -> str:

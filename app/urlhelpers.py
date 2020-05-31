@@ -56,7 +56,7 @@ def write_file(r: Response, filepath: str) -> None:
     :param filepath: filepath to write the response content to
     :return: None
     """
-    app.filehelpers.create_directory(os.path.basename(filepath))
+    app.filehelpers.create_directory(os.path.dirname(filepath))
     # Write the file
     with open(filepath, "wb") as f:
         f.write(r.content)

@@ -56,6 +56,7 @@ def write_file(r: Response, filepath: str) -> None:
     :param filepath: filepath to write the response content to
     :return: None
     """
+    app.filehelpers.create_directory(os.path.basename(filepath))
     # Write the file
     with open(filepath, "wb") as f:
         f.write(r.content)
@@ -108,7 +109,7 @@ def recognized(extension: str) -> bool:
     :param extension: the extension to check
     :return: True if the extension is recognized, False otherwise
     """
-    return extension in [".png", ".jpg", ".jpeg", ".gif"]
+    return extension.lower() in [".png", ".jpg", ".jpeg", ".gif"]
 
 
 def parse_imgur_album(album_url: str) -> List[str]:

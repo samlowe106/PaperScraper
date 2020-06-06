@@ -26,23 +26,24 @@ def main() -> None:
     if reddit is None:
         return
 
-    # Change to specified output directory
-    filehelpers.create_directory(args.directory)
-    os.chdir(args.directory)
-
     # Temp directory
     temp_dir = "temp"
     filehelpers.create_directory(temp_dir)
 
+    # Change to specified output directory
+    filehelpers.create_directory(args.directory)
+
     # Image directory
     if args.dmy:
-        image_directory = datetime.now.strftime("%d-%m-%y", datetime.now())
+        image_directory = os.path.join(args.directory,
+                                       datetime.now.strftime("%d-%m-%y", datetime.now()))
     else:
-        image_directory = datetime.now.strftime("%m-%d-%y", datetime.now())
+        image_directory = os.path.join(args.directory,
+                                       datetime.now.strftime("%m-%d-%y", datetime.now()))
 
     # Log file path
-    log_directory = os.path.join(args.directory, "Logs")
-    log_path = os.path.join(log_directory, "log.txt")
+    log_directory = "Logs"
+    log_path = os.path.join("Logs", "log.txt")
     filehelpers.create_directory(log_directory)
 
     # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
@@ -71,13 +72,11 @@ def main() -> None:
                 status = urlhelpers.download_image(url, title, image_directory, png=args.png)
                 url_tuples.append((url, status))
 
-            # Log post
             if not args.nolog:
                 log(post.title, post.id, post.url, url_tuples, log_path)
 
             post.unsave()
             index += 1
-
             print_post(index, post.title, str(post.subreddit), post.url, url_tuples)
 
             # End if the desired number of posts have had their images downloaded

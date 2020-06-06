@@ -46,7 +46,8 @@ def main() -> None:
     log_path = os.path.join("Logs", "log.txt")
     filehelpers.create_directory(log_directory)
 
-    # Dictionary of domains incompatible with the program in the form domain (str) : number of appearances (int)
+    # Dictionary of domains incompatible with the program
+    #  in the form domain (str) : number of appearances (int)
     incompatible_domains = {}
 
     # Retrieve user's saved posts
@@ -192,7 +193,8 @@ def log(title: str, id: str, url: str, url_tuples: List[URLTuple], file: str) ->
     return
 
 
-def print_post(index: int, old_title: str, subreddit: str, url: str, url_tuples: List[URLTuple]) -> None:
+def print_post(index: int, old_title: str, subreddit: str, url: str,
+               url_tuples: List[URLTuple]) -> None:
     """
     Prints out information about the specified post
     :param index: the index number of the post
@@ -210,7 +212,8 @@ if __name__ == "__main__":
 
     # region Argument Parsing
 
-    parser = argparse.ArgumentParser(description="Scrapes images from the user's saved posts on Reddit")
+    parser = argparse.ArgumentParser(
+        description="Scrapes images from the user's saved posts on Reddit")
     parser.add_argument("-l",
                         "--limit",
                         type=int,

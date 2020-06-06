@@ -42,7 +42,7 @@ def prevent_collisions(title: str, extension: str, directory: str):
     filename = title + extension
     index = 1
     while filename in os.listdir(directory):
-        filename = "{0} ({1}).{2}".format(title, index, extension)
+        filename = "{0} ({1}){2}".format(title, index, extension)
         index += 1
 
     return os.path.join(directory, filename)

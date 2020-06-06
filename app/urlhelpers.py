@@ -79,7 +79,10 @@ def find_urls(r: Response) -> List[str]:
         return [r.url]
 
     # Imgur
+
     elif "imgur.com" in r.url and not r.url.endswith("/gallery/"):
+
+
         # Albums    
         if "/a/" in r.url:
             return parse_imgur_album(r.url)
@@ -89,9 +92,11 @@ def find_urls(r: Response) -> List[str]:
             data = requests.get(r.url + ".json")
             gallery_dict = json.loads(data.content)
             if gallery_dict["data"]["image"]["is_album"]:
-                return parse_imgur_album(r.url)
+                imgur_root, album_id = r.url.split("gallery")
+                return parse_imgur_album(imgur_root + "a" + album_id)
             else:
-                return [parse_imgur_single(r.url)]
+                raise NotImplementedError("No rule for parsing single-image gallery: " + r.url)
+                #return [parse_imgur_single(r.url)]
 
         # Single-image page
         else:

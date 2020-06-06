@@ -3,6 +3,11 @@ PaperScraper is a Python script that downloads images from the user's saved cate
 
 Posts linking directly to an image or imgur page will be downloaded and unsaved; all other posts will be ignored.
 
+## Summary
+
+   - [Usage](#usage)
+   - [License](#license)
+
 ## Usage
 
 1. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit

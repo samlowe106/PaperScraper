@@ -21,27 +21,18 @@ def main() -> None:
     Scrapes and downloads any images from posts in the user's saved posts category on Reddit
     :return: None
     """
+    read_client_info()
+
     reddit = prompt_sign_in()
 
     if reddit is None:
+        print("Username and password unrecognized.")
         return
 
-    # Temp directory
+    # Establish directories
     temp_dir = "temp"
     filehelpers.create_directory(temp_dir)
-
-    # Change to specified output directory
     filehelpers.create_directory(args.directory)
-
-    # Image directory
-    if args.dmy:
-        image_directory = os.path.join(args.directory,
-                                       datetime.now.strftime("%d-%m-%y", datetime.now()))
-    else:
-        image_directory = os.path.join(args.directory,
-                                       datetime.now.strftime("%m-%d-%y", datetime.now()))
-
-    # Log file path
     log_directory = "Logs"
     log_path = os.path.join("Logs", "log.txt")
     filehelpers.create_directory(log_directory)
@@ -70,7 +61,7 @@ def main() -> None:
 
             # Download all found images and keep track of status
             for url in recognized_urls:
-                status = urlhelpers.download_image(url, title, image_directory, png=args.png)
+                status = urlhelpers.download_image(url, title, args.directory, png=args.png)
                 url_tuples.append((url, status))
 
             if not args.nolog:
@@ -102,18 +93,15 @@ def prompt_sign_in() -> Optional[Reddit]:
     :return: Reddit object
     """
     username = input("Username: ")
+    if not username:
+        return None
+    
     password = getpass.getpass("Password: ")  # Only works through the command line!
+    if not password:
+        return None
 
     print("Signing in...", end="")
-    reddit = None
-
-    try:
-        reddit = sign_in(username, password)
-        print("signed in as {0}.\n".format(reddit.user.me()))
-    except ConnectionError as e:
-        print(str(e).lower() + "\n")
-    finally:
-        return reddit
+    return sign_in(username, password)
 
 
 def sign_in(username: str, password: str) -> Optional[Reddit]:
@@ -124,20 +112,7 @@ def sign_in(username: str, password: str) -> Optional[Reddit]:
     :return: reddit object if successful, else None
     :raises ConnectionException: if username and password were unrecognized
     """
-
-    assert os.path.isfile("info.txt"), "info.txt couldn't be found!"
-
-    with open("info.txt", 'r') as info_file:
-        client_id = info_file.readline()
-        client_secret = info_file.readline()
-
-    # praw returns an invalid reddit instance if the  client id or client secret are ""
-    assert client_id, "Client ID is blank!"
-    assert client_secret, "Client Secret is blank!"
-
-    # praw stack overflows if both username and password are ""
-    if not (username and password and client_id and client_secret):
-        raise ConnectionError("Username and password unrecognized.")
+    client_id, client_secret = read_client_info()
 
     try:
         return praw.Reddit(client_id=client_id,
@@ -147,7 +122,23 @@ def sign_in(username: str, password: str) -> Optional[Reddit]:
                            password=password)
     # Catch and re-raise error with a more helpful message
     except OAuthException:
-        raise ConnectionError("Username and password unrecognized.")
+        return None
+
+
+def read_client_info(filepath: str = "info.txt") -> Tuple[str, str]:
+    """
+    Reads the client ID and client secret from the specified file
+    :param filepath: filepath of the file to read the client id and secret from
+    :return: tuple containing the client ID and secret in that order
+    """
+    assert os.path.isfile(filepath), filepath + " couldn't be found!"
+    with open(filepath, 'r') as info_file:
+        client_id = info_file.readline()
+        client_secret = info_file.readline()
+    # praw returns an invalid reddit instance if the  client id or client secret are ""
+    assert client_id, "Client ID is blank!"
+    assert client_secret, "Client Secret is blank!"
+    return client_id, client_secret
 
 
 def is_parsed(url_tuples: List[URLTuple]) -> bool:
@@ -232,9 +223,6 @@ if __name__ == "__main__":
                         "--png",
                         action='store_true',
                         help="convert .jpg/.jpeg files to .png files")
-    parser.add_argument("--dmy",
-                        action='store_true',
-                        help="represent dates in day-month-year format")
 
     """
     NOT YET IMPLEMENTED

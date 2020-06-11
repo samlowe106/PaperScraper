@@ -1,6 +1,5 @@
 from app import filehelpers, strhelpers, urlhelpers
 import argparse
-from datetime import datetime
 import getpass
 import json
 import os
@@ -8,7 +7,6 @@ from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
 import requests
-import time
 from typing import List, Optional, Tuple
 
 

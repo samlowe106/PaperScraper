@@ -136,7 +136,7 @@ def read_client_info(filepath: str = "info.txt") -> Tuple[str, str]:
     # praw returns an invalid reddit instance if the  client id or client secret are ""
     assert client_id, "Client ID is blank!"
     assert client_secret, "Client Secret is blank!"
-    return client_id, client_secret
+    return (client_id, client_secret)
 
 
 def is_parsed(url_tuples: List[URLTuple]) -> bool:

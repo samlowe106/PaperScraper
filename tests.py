@@ -10,6 +10,22 @@ import unittest
 
 """ Unless otherwise stated, NONE of the URLs used for testing should be dead. """
 
+TEST_DIR_NAME = "test_dir"
+
+def mk_testdir():
+    # Establish test dir
+    if not os.path.exists(TEST_DIR_NAME):
+        os.makedirs(TEST_DIR_NAME)
+    os.chdir(TEST_DIR_NAME)
+    return
+
+
+def rm_testdir():
+    # Remove test directory
+    os.chdir("..")
+    shutil.rmtree(TEST_DIR_NAME)
+    return
+
 
 class TestMainFunctions(unittest.TestCase):
 
@@ -17,10 +33,6 @@ class TestMainFunctions(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             main.sign_in("", "")
 
-    """
-    def test_is_skippable(self):
-        self.assertEqual(True, False)
-    """
 
     def test_count_parsed(self):
         self.assertEqual(0, main.count_parsed([]))
@@ -40,12 +52,9 @@ class TestMainFunctions(unittest.TestCase):
 
 class TestFileHelpers(unittest.TestCase):
     
+
     def test_create_directory(self):
-        # Establish test dir
-        test_dir = "test_dir"
-        if not os.path.exists(test_dir):
-            os.makedirs(test_dir)
-        os.chdir(test_dir)
+        mk_testdir() # lol
 
         app.filehelpers.create_directory("directory1")
         self.assertTrue("directory1" in os.listdir(os.getcwd()))
@@ -57,13 +66,34 @@ class TestFileHelpers(unittest.TestCase):
         app.filehelpers.create_directory("directory2")
         self.assertTrue("directory2" in os.listdir(os.getcwd()))
 
-        # Remove test directory
-        os.chdir("..")
-        shutil.rmtree(test_dir)
+        rm_testdir()
 
 
     def test_prevent_collisions(self):
-        pass
+        mk_testdir()
+
+        open("myfile.txt", 'a').close()
+        self.assertEqual(os.path.join(os.getcwd, "myfile (1).txt"),
+                                      app.filehelpers.prevent_collisions("myfile", ".txt", os.getcwd()))
+
+        open("myfile (1).txt", 'a').close()
+        self.assertEqual(os.path.join(os.getcwd, "myfile (2).txt"),
+                         app.filehelpers.prevent_collisions("myfile", ".txt", os.getcwd()))
+
+        open("f" 'a').close()
+        self.assertEqual(os.path.join(os.getcwd, "f (1)"),
+                         app.filehelpers.prevent_collisions("f", "", os.getcwd()))
+
+        open("UPPER", 'a').close()
+        self.assertEqual(os.path.join(os.getcwd, "f (1)"),
+                                      app.filehelpers.prevent_collisions("UPPER", "", os.getcwd()))
+    
+        open(".fileext", 'a').close()
+        self.assertEqual(os.path.join(os.getcwd, " (1).fileext"),
+                                      app.filehelpers.prevent_collisions("", ".fileext", os.getcwd()))
+
+        rm_testdir()
+
 
     """
     def test_convert_file(self):
@@ -111,22 +141,22 @@ class TestStrHelpers(unittest.TestCase):
         self.assertEqual(True, False)
     """
 
-    """ TODO: UPDATE
     def test_shorten(self):
-        self.assertEqual("", app.strhelpers.shorten("", 0))
-        self.assertEqual("", app.strhelpers.shorten("", 100))
-        self.assertEqual("", app.strhelpers.shorten("any string of any length", 0))
-        self.assertEqual("any str...", app.strhelpers.shorten("any string of any length", 10))
-        self.assertEqual("VeryLon...", app.strhelpers.shorten("VeryLongOneWordString", 10))
-        self.assertEqual("this string of", app.strhelpers.shorten("this string of this length", 15))
-        self.assertEqual("ANOTHER multi.word", app.strhelpers.shorten("ANOTHER multi.word string!!!", 20))
-        self.assertEqual("VeryLongOneWordString", app.strhelpers.shorten("VeryLongOneWordString", 300))
-        self.assertEqual("any string less than 300", app.strhelpers.shorten("any string less than 300", 300))
-
+        self.assertEqual("", app.strhelpers.shorten("any string", 0))
+        self.assertEqual("any", app.strhelpers.shorten("any string", 3))
+        self.assertEqual("any", app.strhelpers.shorten("any string", 4))
+        self.assertEqual("any", app.strhelpers.shorten("any string", 5))
+        self.assertEqual("any...", app.strhelpers.shorten("any string", 6))
+        self.assertEqual(" ", app.strhelpers.shorten(" ", 1))
+        self.assertEqual("a", app.strhelpers.shorten("aaa", 1))
+        self.assertEqual("hello...", app.strhelpers.shorten("hello world!", 8))
+        self.assertEqual("hello al", app.strhelpers.shorten("hello al", 8))
+        self.assertEqual("he...", app.strhelpers.shorten("hello al", 5))
+        self.assertEqual("veryl...", app.strhelpers.shorten("verylongword", 8))
+        
         with self.assertRaises(IndexError):
             app.strhelpers.shorten("", -1)
             app.strhelpers.shorten("arbitrary string", -100)
-        """
 
 
     def test_title_case(self):
@@ -153,6 +183,7 @@ class TestURLHelpers(unittest.TestCase):
         self.assertTrue(app.urlhelpers.recognized(".jpg"))
         self.assertTrue(app.urlhelpers.recognized(".jpeg"))
         self.assertTrue(app.urlhelpers.recognized(".gif"))
+
         self.assertFalse(app.urlhelpers.recognized("bar"))
         self.assertFalse(app.urlhelpers.recognized(".foo"))
         self.assertFalse(app.urlhelpers.recognized("arbitrary"))

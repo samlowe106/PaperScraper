@@ -16,7 +16,7 @@ __pycache__
 app/__pycache__
 
 # Testing directory
-test_dir
+app/tests/test_dir
 
 # Note file
 notes.txt

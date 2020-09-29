@@ -1,7 +1,6 @@
-import app
+import app.helpers.parsers
 from bs4 import BeautifulSoup
 import json
-import main
 import os
 import requests
 import shutil
@@ -61,81 +60,3 @@ def write_file(r: Response, filepath: str) -> None:
         f.write(r.content)
 
     return
-
-
-def find_urls(r: Response) -> List[str]:
-    """
-    Attempts to find images on a linked page
-    Currently supports directly linked images and imgur pages
-    :param url: a link to a webpage
-    :return: a list of direct links to images found on that webpage
-    """
-
-    extension = get_extension(r)
-
-    # If the image in the url has a recognized file extension, this is a direct link to an image
-    # (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
-    if recognized(extension):
-        return [r.url]
-
-    # Imgur
-
-    elif "imgur.com" in r.url and not r.url.endswith("/gallery/"):
-
-
-        # Albums    
-        if "/a/" in r.url:
-            return parse_imgur_album(r.url)
-
-        # Galleries (might be albums or singles)
-        elif "/gallery/" in r.url:
-            data = requests.get(r.url + ".json")
-            gallery_dict = json.loads(data.content)
-            if gallery_dict["data"]["image"]["is_album"]:
-                imgur_root, album_id = r.url.split("gallery")
-                return parse_imgur_album(imgur_root + "a" + album_id)
-            else:
-                raise NotImplementedError("No rule for parsing single-image gallery: " + r.url)
-                #return [parse_imgur_single(r.url)]
-
-        # Single-image page
-        else:
-            return [parse_imgur_single(r.url)]
-
-    # Unrecognized pages
-    else:
-        return []
-
-
-def recognized(extension: str) -> bool:
-    """
-    Checks if the specified extension is recognized
-    :param extension: the extension to check
-    :return: True if the extension is recognized, False otherwise
-    """
-    return extension.lower() in [".png", ".jpg", ".jpeg", ".gif"]
-
-
-def parse_imgur_album(album_url: str) -> List[str]:
-    """
-    Scrapes the specified imgur album for direct links to each image
-    :param album_url: url of an imgur album
-    :return: direct links to each image in the specified album
-    """
-    # Find all the single image pages referenced by this album
-    album_page = requests.get(album_url)
-    album_soup = BeautifulSoup(album_page.text, "html.parser")
-    single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
-    # Make a list of the direct links to the image hosted on each single-image page; return the list of all those images
-    return [parse_imgur_single(link) for link in single_images]
-
-
-def parse_imgur_single(url: str) -> str:
-    """
-    Scrapes regular imgur page for a direct link to the image displayed on that page
-    :param url: A single-image imgur page
-    :return: A direct link to the image hosted on that page
-    """
-    page = requests.get(url)
-    soup = BeautifulSoup(page.text, "html.parser")
-    return soup.select("link[rel=image_src]")[0]["href"]

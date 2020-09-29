@@ -1,4 +1,4 @@
-from app import filehelpers, strhelpers, urlhelpers
+from app.helpers import filehelpers, strhelpers, urlhelpers, parsers
 import argparse
 import getpass
 import json
@@ -50,7 +50,7 @@ def main() -> None:
         if r.status_code != 200:
             continue
 
-        recognized_urls = urlhelpers.find_urls(r)
+        recognized_urls = parsers.find_urls(r)
         
         if recognized_urls:
 

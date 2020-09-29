@@ -1,4 +1,4 @@
-import app.strhelpers
+import app.helpers.strings
 import os
 from PIL import Image
 
@@ -64,7 +64,7 @@ def file_title(directory: str, title: str, extension: str) -> str:
     """
     """
     title = remove_invalid(title)
-    title = app.strhelpers.shorten(title)
+    title = app.helpers.strings.shorten(title)
     title = prevent_collisions(title, extension, directory)
 
     return title

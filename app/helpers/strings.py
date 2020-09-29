@@ -47,6 +47,7 @@ def shorten(s: str, max_length: int = 250) -> str:
     :return: s
     :raises IndexError: if max_length is less than 0
     """
+    # TODO: refactor?
     if len(s) > max_length:
         i = max_length
         while True:

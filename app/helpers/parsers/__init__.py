@@ -1,5 +1,8 @@
 from app.helpers.parsers.imgur import ImgurParser
 from app.helpers.parsers.single_image import SingleImageParser
+from typing import List
+from requests.models import Response
+
 
 parser_list = [SingleImageParser(), ImgurParser()]
 

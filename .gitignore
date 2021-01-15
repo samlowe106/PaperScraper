@@ -13,10 +13,11 @@ venv
 
 # __pycache__ folders
 __pycache__
-app/__pycache__
+app/helpers/__pycache__
+app/helpers/parsers/__pycache__
 
 # Testing directory
-test_dir
+app/tests/test_dir
 
 # Note file
 notes.txt

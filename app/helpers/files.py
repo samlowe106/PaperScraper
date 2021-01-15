@@ -1,4 +1,4 @@
-import app.strhelpers
+import app.helpers.strings
 import os
 from PIL import Image
 
@@ -30,7 +30,7 @@ def convert(filepath: str, new_ext: str = ".png") -> str:
     return new_path
 
     
-def prevent_collisions(title: str, extension: str, directory: str):
+def prevent_collisions(title: str, extension: str, directory: str) -> str:
     """
     Generates a filename based on the specified title that does not conflict with any of the
     filenames in the specified directory
@@ -62,9 +62,15 @@ def remove_invalid(s: str) -> str:
 
 def file_title(directory: str, title: str, extension: str) -> str:
     """
+    Creates a valid filename based on the given title string. The created filename will not conflict with
+    any of the existing files in the specified directory
+    :param directory: the directory that the filename should be tailored for
+    :param title: the string that the created filename should be based on
+    :param extension: the extension of the file
+    :return: a valid filename that will not conflict with any file in the specified directory
     """
     title = remove_invalid(title)
-    title = app.strhelpers.shorten(title)
+    title = app.helpers.strings.shorten(title)
     title = prevent_collisions(title, extension, directory)
 
     return title

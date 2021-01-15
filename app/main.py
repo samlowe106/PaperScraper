@@ -1,4 +1,4 @@
-from app import filehelpers, strhelpers, urlhelpers
+from app.helpers import filehelpers, strhelpers, urlhelpers, parsers
 import argparse
 import getpass
 import json
@@ -50,25 +50,20 @@ def main() -> None:
         if r.status_code != 200:
             continue
 
-        recognized_urls = urlhelpers.find_urls(r)
+        # Find and download images, keeping track of the result
+        url_tuples = [(url, download(url, post.title)) for url in parsers.find_urls(r)]
         
-        if recognized_urls:
+        if url_tuples:
 
-            title = strhelpers.retitle(post.title)
-            url_tuples = []
-
-            # Download all found images and keep track of status
-            for url in recognized_urls:
-                status = urlhelpers.download_image(url, title, args.directory, png=args.png)
-                url_tuples.append((url, status))
+            index += 1
 
             if not args.nolog:
                 log(post.title, post.id, post.url, url_tuples, log_path)
 
-            post.unsave()
-            index += 1
             print_post(index, post.title, str(post.subreddit), post.url, url_tuples)
 
+            post.unsave()
+            
             # End if the desired number of posts have had their images downloaded
             if index >= args.limit:
                 break
@@ -83,6 +78,16 @@ def main() -> None:
             print("\t{0}: {1}".format(domain[0], domain[1]))
 
     return
+
+
+def download(url: str, title: str) -> bool:
+    """
+    Helper function. Downloads image and saves it with the specified title
+    :param url: url of the single-image page to scrape the image from
+    :param title: title for the image
+    :return: True on success, False on failure
+    """
+    return urlhelpers.download_image(url, strhelpers.retitle(title), args.directory, png=args.png)
 
 
 def prompt_sign_in() -> Optional[Reddit]:

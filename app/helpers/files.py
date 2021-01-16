@@ -22,10 +22,9 @@ def convert(filepath: str, new_ext: str = ".png") -> str:
     """
     new_path = os.path.splitext(filepath)[0] + new_ext
     with Image.open(filepath) as im:
-        rgb_im = im.convert('RGB')
-        rgb_im.save(new_path)
-        # delete old file
-        os.remove(filepath)
+        im.convert('RGB').save(new_path)
+    # delete old file
+    os.remove(filepath)
     return new_path
 
     
@@ -68,8 +67,6 @@ def file_title(directory: str, title: str, extension: str) -> str:
     :param extension: the extension of the file
     :return: a valid filename that will not conflict with any file in the specified directory
     """
-    title = remove_invalid(title)
-    title = app.helpers.strings.shorten(title)
-    title = prevent_collisions(title, extension, directory)
-
-    return title
+    return prevent_collisions(app.helpers.strings.shorten(remove_invalid(title)),
+                               extension,
+                               directory)

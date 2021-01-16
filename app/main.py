@@ -77,8 +77,6 @@ def main() -> None:
         for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
             print("\t{0}: {1}".format(domain[0], domain[1]))
 
-    return
-
 
 def download(url: str, title: str) -> bool:
     """
@@ -184,8 +182,6 @@ def log(title: str, id: str, url: str, url_tuples: List[URLTuple], file: str) ->
     with open(file, "a", encoding="utf-8") as logfile:
         json.dump(post_dict, logfile)
 
-    return
-
 
 def print_post(index: int, old_title: str, subreddit: str, url: str,
                url_tuples: List[URLTuple]) -> None:
@@ -199,7 +195,6 @@ def print_post(index: int, old_title: str, subreddit: str, url: str,
     print("   r/" + subreddit)
     print("   " + url)
     print("   Saved {0} / {1} image(s).".format(count_parsed(url_tuples), len(url_tuples)))
-    return
 
 
 if __name__ == "__main__":

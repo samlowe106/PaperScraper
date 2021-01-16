@@ -11,7 +11,6 @@ def create_directory(directory: str) -> None:
     """
     if not os.path.exists(directory):
         os.makedirs(directory)
-    return
 
 
 def convert(filepath: str, new_ext: str = ".png") -> str:

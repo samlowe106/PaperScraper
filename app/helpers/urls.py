@@ -58,5 +58,3 @@ def write_file(r: Response, filepath: str) -> None:
     # Write the file
     with open(filepath, "wb") as f:
         f.write(r.content)
-
-    return

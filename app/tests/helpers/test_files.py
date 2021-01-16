@@ -1,33 +1,30 @@
-import helpers.files
+from helpers.files import *
 import os
 import shutil
 
+def sandbox(function, test_dir: str = "test_dir"):
+    """
+    Executes function in test_dir (making that directory if it doesn't already exist)
+    then deletes test_dir
+    """
+    def makedirs(*args, **kwargs):
+        # Establish test dir
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
+        os.chdir(test_dir)
+        
+        # Execute the function
+        result = function(*args, **kwargs)
 
-TEST_DIR_NAME = "test_dir"
+        # Remove test_dir
+        os.chdir("..")
+        shutil.rmtree(test_dir)
 
-def mk_testdir():
-    # Establish test dir
-    if not os.path.exists(TEST_DIR_NAME):
-        os.makedirs(TEST_DIR_NAME)
-    os.chdir(TEST_DIR_NAME)
-    return
+        return result
+    return makedirs
 
-
-def rm_testdir():
-    # Remove test directory
-    os.chdir("..")
-    shutil.rmtree(TEST_DIR_NAME)
-    return
-
-"""
-# Remove test directory
-shutil.rmtree(output_dir)
-shutil.rmtree("temp")
-"""
-
-
+@sandbox
 def test_create_directory(self):
-    mk_testdir() # lol
 
     helpers.files.create_directory("directory1")
     self.assertTrue("directory1" in os.listdir(os.getcwd()))
@@ -39,33 +36,29 @@ def test_create_directory(self):
     helpers.files.create_directory("directory2")
     self.assertTrue("directory2" in os.listdir(os.getcwd()))
 
-    rm_testdir()
 
-
+@sandbox
 def test_prevent_collisions(self):
-    mk_testdir()
 
     open("myfile.txt", 'a').close()
     self.assertEqual(os.path.join(os.getcwd, "myfile (1).txt"),
-                                    helpers.files.prevent_collisions("myfile", ".txt", os.getcwd()))
+                     helpers.files.prevent_collisions("myfile", ".txt", os.getcwd()))
 
     open("myfile (1).txt", 'a').close()
     self.assertEqual(os.path.join(os.getcwd, "myfile (2).txt"),
-                        helpers.files.prevent_collisions("myfile", ".txt", os.getcwd()))
+                     helpers.files.prevent_collisions("myfile", ".txt", os.getcwd()))
 
     open("f" 'a').close()
     self.assertEqual(os.path.join(os.getcwd, "f (1)"),
-                        helpers.files.prevent_collisions("f", "", os.getcwd()))
+                     helpers.files.prevent_collisions("f", "", os.getcwd()))
 
     open("UPPER", 'a').close()
     self.assertEqual(os.path.join(os.getcwd, "f (1)"),
-                                    helpers.files.prevent_collisions("UPPER", "", os.getcwd()))
+                     helpers.files.prevent_collisions("UPPER", "", os.getcwd()))
 
     open(".fileext", 'a').close()
     self.assertEqual(os.path.join(os.getcwd, " (1).fileext"),
-                                    helpers.files.prevent_collisions("", ".fileext", os.getcwd()))
-
-    rm_testdir()
+                     helpers.files.prevent_collisions("", ".fileext", os.getcwd()))
 
 
 """

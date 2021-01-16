@@ -1,4 +1,4 @@
-import helpers.urls
+from helpers.urls import *
 import os
 import requests
 

@@ -1,4 +1,4 @@
-import helpers.strings
+from helpers.strings import *
 
 
 def test_trim_string(self):

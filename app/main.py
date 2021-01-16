@@ -93,16 +93,10 @@ def prompt_sign_in() -> Optional[Reddit]:
     Prompts the user to sign in
     :return: Reddit object
     """
-    username = input("Username: ")
-    if not username:
-        return None
-    
-    password = getpass.getpass("Password: ")  # Only works through the command line!
-    if not password:
-        return None
-
-    print("Signing in...", end="")
-    return sign_in(username, password)
+    # getpass only works through the command line!
+    if (username := input("Username: ")) and (password := getpass.getpass("Password: ")):
+        print("Signing in...", end="")
+        return sign_in(username, password)
 
 
 def sign_in(username: str, password: str) -> Optional[Reddit]:
@@ -157,11 +151,8 @@ def count_parsed(tup_list: List[URLTuple]) -> int:
     :param tup_list: a list of url tuples
     :return: number of tuples in the list who were correctly parsed
     """
-    count = 0
-    for _, parsed in tup_list:
-        if parsed:
-            count += 1
-    return count
+    return len(filter(lambda _, parsed: parsed, tup_list))
+    # return sum(1 for x in filter(lambda _, parsed: parsed, tup_list))
 
 
 def log(title: str, id: str, url: str, url_tuples: List[URLTuple], file: str) -> None:

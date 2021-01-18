@@ -26,15 +26,15 @@ class ImgurParser:
         """
         # Albums    
         if "/a/" in r.url:
-            return _parse_album(r.url)
+            return self._parse_album(r.url)
 
         # Galleries (might be albums or singles)
         elif "/gallery/" in r.url:
-            return _parse_gallery(r.url)
+            return self._parse_gallery(r.url)
 
         # Single-image page
         else:
-            return {_parse_single(r.url)}
+            return {self._parse_single(r.url)}
 
 
     def _parse_album(self, album_url: str) -> Set[str]:
@@ -49,7 +49,7 @@ class ImgurParser:
         single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
         # Make a list of the direct links to the image hosted on each single-image page;
         #  return the list of all those images
-        return {_parse_single(link) for link in single_images}
+        return {self._parse_single(link) for link in single_images}
 
 
     def _parse_gallery(self, url: str) -> Set[str]:
@@ -62,7 +62,7 @@ class ImgurParser:
         
         if gallery_dict["data"]["image"]["is_album"]:
             imgur_root, album_id = url.split("gallery")
-            return _parse_album(imgur_root + "a" + album_id)
+            return self._parse_album(imgur_root + "a" + album_id)
         
         raise NotImplementedError("No rule for parsing single-image gallery:\n" + url)
         #return [parse_imgur_single(r.url)]

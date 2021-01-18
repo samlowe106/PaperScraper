@@ -2,7 +2,7 @@ import app.helpers.files
 from bs4 import BeautifulSoup
 import requests
 import json
-from typing import List
+from typing import Set
 from requests.models import Response
 
 
@@ -22,9 +22,9 @@ class SingleImageParser:
         return app.helpers.files.get_extension(r).lower() in [".png", ".jpg", ".jpeg", ".gif"]
 
 
-    def parse(self, r: Response) -> List[str]:
+    def parse(self, r: Response) -> Set[str]:
         """
         :param r: A web page that has been recognized by this parser
         :returns: A list of all scrapeable urls found in the given webpage
         """
-        return [r.url]
+        return {r.url}

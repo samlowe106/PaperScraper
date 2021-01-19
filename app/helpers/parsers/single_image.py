@@ -1,4 +1,4 @@
-import app.helpers.files
+import helpers.urls
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -19,7 +19,7 @@ class SingleImageParser:
         """
         # If the image in the url has a recognized file extension, this is a direct link to an image
         #  (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
-        return app.helpers.files.get_extension(r).lower() in [".png", ".jpg", ".jpeg", ".gif"]
+        return helpers.urls.get_extension(r).lower() in [".png", ".jpg", ".jpeg", ".gif"]
 
 
     def parse(self, r: Response) -> Set[str]:

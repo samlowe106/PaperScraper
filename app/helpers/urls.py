@@ -1,4 +1,4 @@
-import app.helpers.parsers
+import helpers.parsers
 from bs4 import BeautifulSoup
 import json
 import os
@@ -30,10 +30,10 @@ def download_image(url: str, title: str, directory: str, png: bool = False, temp
     # Convert to png if necessary
     if png:
         extension = ".png"
-        temp_filepath = app.filehelpers.convert(temp_filepath, extension)
+        temp_filepath = helpers.files.convert(temp_filepath, extension)
 
     # Move to desired directory
-    shutil.move(temp_filepath, app.filehelpers.prevent_collisions(title, extension, directory))
+    shutil.move(temp_filepath, helpers.files.prevent_collisions(title, extension, directory))
 
     return True
 
@@ -54,7 +54,7 @@ def write_file(r: Response, filepath: str) -> None:
     :param filepath: filepath to write the response content to
     :return: None
     """
-    app.filehelpers.create_directory(os.path.dirname(filepath))
+    helpers.files.create_directory(os.path.dirname(filepath))
     # Write the file
     with open(filepath, "wb") as f:
         f.write(r.content)

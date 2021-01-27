@@ -1,4 +1,4 @@
-from utils import filehelpers, strhelpers, urlhelpers, parsers
+from utils import files, strings, urls, parsers
 import argparse
 import getpass
 import json
@@ -29,11 +29,11 @@ def main() -> None:
 
     # Establish directories
     temp_dir = "temp"
-    filehelpers.create_directory(temp_dir)
-    filehelpers.create_directory(args.directory)
+    files.create_directory(temp_dir)
+    files.create_directory(args.directory)
     log_directory = "Logs"
     log_path = os.path.join("Logs", "log.txt")
-    filehelpers.create_directory(log_directory)
+    files.create_directory(log_directory)
 
     # Dictionary of domains incompatible with the program
     #  in the form domain (str) : number of appearances (int)
@@ -85,7 +85,7 @@ def download(url: str, title: str) -> bool:
     :param title: title for the image
     :return: True on success, False on failure
     """
-    return urlhelpers.download_image(url, strhelpers.retitle(title), args.directory, png=args.png)
+    return urls.download_image(url, strings.retitle(title), args.directory, png=args.png)
 
 
 def prompt_sign_in() -> Optional[Reddit]:

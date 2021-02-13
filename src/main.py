@@ -1,12 +1,12 @@
-from utils import files, strings, urls, parsers
+from utils import files, strings
+from utils.submission_wrapper import SubmissionWrapper
 import argparse
 import getpass
-import json
 import os
 from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
-import requests
+
 from typing import List, Optional, Tuple
 
 
@@ -14,78 +14,58 @@ from typing import List, Optional, Tuple
 URLTuple = Tuple[str, bool]
 
 
+temp_dir = "temp"
+log_directory = "Logs"
+log_path = os.path.join("Logs", "log.txt")
+
+
 def main() -> None:
     """
     Scrapes and downloads any images from posts in the user's saved posts category on Reddit
-    :return: None
     """
     read_client_info()
 
-    reddit = prompt_sign_in()
-
-    if reddit is None:
+    if (reddit := prompt_sign_in()) is None:
         print("Username and password unrecognized.")
         return
 
-    # Establish directories
-    temp_dir = "temp"
     files.create_directory(temp_dir)
-    files.create_directory(args.directory)
-    log_directory = "Logs"
-    log_path = os.path.join("Logs", "log.txt")
+    files.create_directory(args.directory)    
     files.create_directory(log_directory)
 
-    # Dictionary of domains incompatible with the program
-    #  in the form domain (str) : number of appearances (int)
-    incompatible_domains = {}
-
-    # Retrieve user's saved posts
-    saved_posts = reddit.redditor(str(reddit.user.me())).saved()
-
     index = 0
-    for post in saved_posts:
+    for post in reddit.user.me().saved():
 
-        # Attempt download
-        r = requests.get(post.url, headers={'Content-type': 'content_type_value'})
-        if r.status_code != 200:
-            continue
-
-        # Find and download images, keeping track of the result
-        url_tuples = [(url, download(url, post.title)) for url in parsers.find_urls(r)]
+        post = SubmissionWrapper(post, args.directory, args.png)
         
-        if url_tuples:
+        if post.url_tuples:
 
             index += 1
 
             if not args.nolog:
-                log(post.title, post.id, post.url, url_tuples, log_path)
+                post.log(log_path)
 
-            print_post(index, post.title, str(post.subreddit), post.url, url_tuples)
+            post.print_self(index)
 
             post.unsave()
             
             # End if the desired number of posts have had their images downloaded
             if index >= args.limit:
                 break
+    
+    cleanup()
 
+
+def cleanup():
     """ End-of-program cleanup """
-
     os.rmdir(temp_dir)
 
+    """
     if incompatible_domains:
         print("\nSeveral domains were unrecognized:")
         for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
             print("\t{0}: {1}".format(domain[0], domain[1]))
-
-
-def download(url: str, title: str) -> bool:
     """
-    Helper function. Downloads image and saves it with the specified title
-    :param url: url of the single-image page to scrape the image from
-    :param title: title for the image
-    :return: True on success, False on failure
-    """
-    return urls.download_image(url, strings.retitle(title), args.directory, png=args.png)
 
 
 def prompt_sign_in() -> Optional[Reddit]:
@@ -134,58 +114,6 @@ def read_client_info(filepath: str = "info.txt") -> Tuple[str, str]:
     assert client_id, "Client ID is blank!"
     assert client_secret, "Client Secret is blank!"
     return (client_id, client_secret)
-
-
-def is_parsed(url_tuples: List[URLTuple]) -> bool:
-    """
-    Determines if every url in the list was parsed correctly
-    :param url_tuples: list of tuples
-    :return: True if the second element of each tuple in the list is True, else False
-    """
-    return count_parsed(url_tuples) == len(url_tuples)
-
-
-def count_parsed(tup_list: List[URLTuple]) -> int:
-    """
-    Counts the number of urls that were parsed
-    :param tup_list: a list of url tuples
-    :return: number of tuples in the list who were correctly parsed
-    """
-    return len(filter(lambda _, parsed: parsed, tup_list))
-    # return sum(1 for x in filter(lambda _, parsed: parsed, tup_list))
-
-
-def log(title: str, id: str, url: str, url_tuples: List[URLTuple], file: str) -> None:
-    """
-    Writes the given post's title and url to the specified file
-    :param post: reddit post object
-    :param file: log file path
-    :return: None
-    """
-
-    post_dict = {
-        "title"           : title,
-        "id"              : id,
-        "url"             : url,
-        "recognized_urls" : url_tuples
-    }
-
-    with open(file, "a", encoding="utf-8") as logfile:
-        json.dump(post_dict, logfile)
-
-
-def print_post(index: int, old_title: str, subreddit: str, url: str,
-               url_tuples: List[URLTuple]) -> None:
-    """
-    Prints out information about the specified post
-    :param index: the index number of the post
-    :param post: Reddit post to be printed
-    :return: None
-    """
-    print("\n{0}. {1}".format(index, old_title))
-    print("   r/" + subreddit)
-    print("   " + url)
-    print("   Saved {0} / {1} image(s).".format(count_parsed(url_tuples), len(url_tuples)))
 
 
 if __name__ == "__main__":

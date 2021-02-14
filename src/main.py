@@ -6,7 +6,6 @@ import os
 from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
-
 from typing import List, Optional, Tuple
 
 
@@ -110,8 +109,6 @@ def read_client_info(filepath: str = "info.txt") -> Tuple[str, str]:
     :return: tuple containing the client ID and secret in that order
     :raises: FileNotFoundError, ValueError
     """
-
-    
 
 
 if __name__ == "__main__":

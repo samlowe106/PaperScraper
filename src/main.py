@@ -28,21 +28,20 @@ def main() -> None:
         print("Unrecognized username or password.")
         return
 
-    files.create_directory(temp_dir)
-    files.create_directory(args.directory)    
-    files.create_directory(log_directory)
+    for path in [temp_dir, args.directory, log_directory]:
+        files.create_directory(path)
 
     index = 0
     for post in reddit.user.me().saved():
 
         post = SubmissionWrapper(post, args.directory, args.png)
         
-        if post.url_tuples:
+        if not args.nolog:
+            post.log(log_path)
+
+        if post.count_parsed() > 0:
 
             index += 1
-
-            if not args.nolog:
-                post.log(log_path)
 
             post.print_self(index)
 

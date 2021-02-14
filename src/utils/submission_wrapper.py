@@ -42,8 +42,7 @@ class SubmissionWrapper:
 
     def is_parsed(self) -> bool:
         """
-        Determines if every url associated with the submission was parsed correctly
-        :return: True if the second element of each tuple in the list is True, else False
+        :return: True if every url associated with the submission was parsed correctly, else False
         """
         return self.count_parsed() == len(self.url_tuples)
 
@@ -51,20 +50,16 @@ class SubmissionWrapper:
     def log(self, file: str) -> None:
         """
         Writes the given post's title and url to the specified file
-        :param post: reddit post object
         :param file: log file path
-        :return: None
         """
 
-        post_dict = {
-            "title"           : self.submission.title,
-            "id"              : self.submission.id,
-            "url"             : self.submission.url,
-            "recognized_urls" : self.url_tuples
-        }
-
         with open(file, "a", encoding="utf-8") as logfile:
-            json.dump(post_dict, logfile)
+            json.dump({    
+                           "title"           : self.submission.title,
+                           "id"              : self.submission.id,
+                           "url"             : self.submission.url,
+                           "recognized_urls" : self.url_tuples
+                       }, logfile)
 
 
     def print_self(self, index: int) -> None:
@@ -73,10 +68,10 @@ class SubmissionWrapper:
         :param index: the index number of the post
         :return: None
         """
-        print(f"\n{index}. {self.submission.title}")
-        print(f"   r/{self.submission.subreddit}")
-        print(f"   {self.submission.url}")
-        print(f"   Saved {self.count_parsed()} / {len(self.url_tuples)} image(s).")
+        print(f"\n{index}. {self.submission.title}" \
+              f"   r/{self.submission.subreddit}" \
+              f"   {self.submission.url}" \
+              f"   Saved {self.count_parsed()} / {len(self.url_tuples)} image(s).")
 
     
     def unsave(self):

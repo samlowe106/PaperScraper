@@ -25,13 +25,10 @@ def trim_string(s1: str, s2: str) -> str:
     :param s2: the string that will be removed from the start and end of s1
     :return: s1 without any instances of s2 at either the start or end
     """
-
-    if s2:  # if s2 == "" these loops won't terminate
-        # Remove any preceding instances of s2 from s1
+    if s2: # ensure termination
         while s1.startswith(s2):
             s1 = s1.lstrip(s2)
 
-        # Remove any trailing instances of s2 from s1
         while s1.endswith(s2):
             s1 = s1.rstrip(s2)
 
@@ -47,25 +44,14 @@ def shorten(s: str, max_length: int = 250) -> str:
     :return: s
     :raises IndexError: if max_length is less than 0
     """
-    # TODO: refactor?
-    if len(s) > max_length:
-        i = max_length
-        while True:
-            # Return a shortened version of s with ellipsis at the end
-            if s[i] == ' ' and len(s + "...") < max_length:
-                return s[:i] + "..."
-            # Truncating at each word doesn't work, so truncate at a character
-            elif i == 0:
-                if max_length > 3:
-                    # Only adding an ellipsis if doing so wouldn't
-                    #  cause the shortened s to surpass max length
-                    return s[:(max_length - 3)] + "..."
-                else:
-                    return s[:max_length]
-            else:
-                i -= 1
-    else:
+    if len(s) <= max_length:
         return s
+
+    while len(s := s.rsplit(' ', 1)[0]) + 3 > max_length and ' ' in s:
+        # Second condition ensures that there's more than one word, and that the loop terminates
+        pass
+    
+    return s + '...'
 
 
 def title_case(s: str) -> str:
@@ -75,7 +61,7 @@ def title_case(s: str) -> str:
     :param s: the string to be title-cased
     :return: s in title case
     """
-    # Using ''.join() is faster than using += to accumulate a string within a loop
+    # Using ''.join() is faster than using += to accumulate a string
     # https://google.github.io/styleguide/pyguide.html#310-strings
 
     return "".join([char.upper() if (i == 0 or s[i - 1] == ' ') else char for i, char in enumerate(s)])

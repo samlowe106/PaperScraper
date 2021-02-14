@@ -1,4 +1,3 @@
-from typing import Dict
 import os
 
 def retitle(s: str, title: bool = False) -> str:

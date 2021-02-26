@@ -72,28 +72,13 @@ def sign_in(filepath: str) -> Optional[Reddit]:
     :param filepath: Path to the text file containing the client ID and client secret
     :return: reddit object if successful, else None
     """
-    try:
-        with open(filepath, 'r') as info_file:
-            client_id = info_file.readline()
-            client_secret = info_file.readline()
-    except FileNotFoundError:
-        print(f"The client info file couldn't be found at {filepath}")
-        return
-    
-    # praw returns an invalid reddit instance if the  client id or client secret are ""
-    if not client_id:
-        print("Client ID is blank!")
-        return
-    if not client_secret:
-        print("Client Secret is blank!")
-        return
 
     # getpass only works through the command line!
     if (username := input("Username: ")) and (password := getpass.getpass("Password: ")):
         print("Signing in...", end="")
         try:
-            return praw.Reddit(client_id=client_id,
-                            client_secret=client_secret,
+            return praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
+                            client_secret=os.environ.get("CLIENT_SECRET"),
                             user_agent='PaperScraper',
                             username=username,
                             password=password)

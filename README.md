@@ -21,7 +21,7 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 5. Fill out the app's info, choosing script as the app type
 
-6. Configure your Python environment variables, adding the Client ID as "CLIENT_ID" and Client Secret as "CLIENT_SECRET"
+6. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
 
 ## Usage
 

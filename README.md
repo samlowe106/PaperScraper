@@ -5,10 +5,11 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 ## Summary
 
+   - [Installation](#installation)
    - [Usage](#usage)
    - [License](#license)
 
-## Usage
+## Installation
 
 1. Clone this repository: ``` git clone https://github.com/samlowe106/PaperScraper.git ```
 
@@ -20,12 +21,14 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 5. Fill out the app's info, choosing script as the app type
 
-6. In PaperScraper's app directory, create a file named ```info.txt```
+6. Configure your Python environment variables, adding the Client ID as "CLIENT_ID" and Client Secret as "CLIENT_SECRET"
 
-7. Put the client ID in the first line and the client secret in the second line
+## Usage
 
-8. Launch PaperScraper from the command prompt (PaperScraper uses getpass, so it's incompatible with Python consoles like those in PyCharm)
+PaperScraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from a system command prompt, like the Terminal or Command Line.
+
+PaperScraper also comes with a handful of flags, which can be found by running PaperScraper with the `--help` flag. 
 
 ## License
 
-PaperScraper is licensed under the [MIT](https://github.com/samlowe106/PaperScraper/blob/master/LICENSE) license.
+PaperScraper is licensed under the [MIT license.](https://github.com/samlowe106/PaperScraper/blob/master/LICENSE)

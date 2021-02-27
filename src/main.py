@@ -6,27 +6,21 @@ import os
 from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 
-# Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
-URLTuple = Tuple[str, bool]
-
-temp_dir = "temp"
 log_directory = "Logs"
 log_path = os.path.join("Logs", "log.txt")
 
 
 def main() -> None:
-    """
-    Scrapes and downloads any images from posts in the user's saved posts category on Reddit
-    """
+    """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
 
     if (reddit := sign_in()) is None:
         print("Unrecognized username or password.")
         return
 
-    for path in [temp_dir, args.directory, log_directory]:
+    for path in [args.directory, log_directory]:
         files.create_directory(path)
 
     index = 0
@@ -48,20 +42,6 @@ def main() -> None:
             # End if the desired number of posts have had their images downloaded
             if index >= args.limit:
                 break
-    
-    cleanup()
-
-
-def cleanup():
-    """ End-of-program cleanup """
-    os.rmdir(temp_dir)
-
-    """
-    if incompatible_domains:
-        print("\nSeveral domains were unrecognized:")
-        for domain in sorted(incompatible_domains.items(), key=lambda x: x[1], reverse=True):
-            print("\t{0}: {1}".format(domain[0], domain[1]))
-    """
 
 
 def sign_in() -> Optional[Reddit]:
@@ -130,11 +110,12 @@ if __name__ == "__main__":
                         "--sort",
                         action='store_false',
                         help="sort images into folders by subreddit")
-
+    """
+    
     parser.add_argument("--nolog",
                         action='store_true',
                         help="disable logging")
-    """
+    
 
     args = parser.parse_args()
 

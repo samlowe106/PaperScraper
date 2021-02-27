@@ -1,2 +1,26 @@
-/info.txt
-/.idea
+# IDE-specific
+.idea
+.vscode
+
+# Client ID/Secret File
+info.txt
+
+# Output folder
+Output
+
+# Virtual Environment
+venv
+
+# __pycache__ folders
+__pycache__
+app/helpers/__pycache__
+app/helpers/parsers/__pycache__
+
+# Testing directory
+app/tests/test_dir
+
+# Note file
+notes.txt
+
+# TODO file
+todo

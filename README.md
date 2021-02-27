@@ -17,17 +17,9 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 3. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
 
-4. Click "create app"
+4. (Work in progress!)
 
-5. Fill out the app's info, choosing script as the app type
-
-6. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
-
-## Usage
-
-PaperScraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from a system command prompt, like the Terminal or Command Line.
-
-PaperScraper also comes with a handful of flags, which can be found by running PaperScraper with the `--help` flag. 
+5. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
 
 ## License
 

@@ -12,11 +12,9 @@ from typing import List, Optional, Tuple
 # Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
 URLTuple = Tuple[str, bool]
 
-
 temp_dir = "temp"
 log_directory = "Logs"
 log_path = os.path.join("Logs", "log.txt")
-info_path = "info.txt"
 
 
 def main() -> None:
@@ -24,7 +22,7 @@ def main() -> None:
     Scrapes and downloads any images from posts in the user's saved posts category on Reddit
     """
 
-    if (reddit := sign_in(info_path)) is None:
+    if (reddit := sign_in()) is None:
         print("Unrecognized username or password.")
         return
 
@@ -66,7 +64,7 @@ def cleanup():
     """
 
 
-def sign_in(filepath: str) -> Optional[Reddit]:
+def sign_in() -> Optional[Reddit]:
     """
     Attempts to sign into Reddit
     :param filepath: Path to the text file containing the client ID and client secret

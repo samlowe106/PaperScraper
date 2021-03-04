@@ -1,8 +1,7 @@
-import os
-
 def retitle(s: str, title: bool = False) -> str:
     """
-    Strips certain punctuation from the start and end of the given string, and optionally titlecases it
+    Strips certain punctuation from the start and end of the given string,
+    and optionally titlecases it
     :param s: the string to be improved
     :param title: True if the string should be in title case
     :return: a string without certain punctuation at the start or end
@@ -49,7 +48,7 @@ def shorten(s: str, max_length: int = 250) -> str:
     while len(s := s.rsplit(' ', 1)[0]) + 3 > max_length and ' ' in s:
         # Second condition ensures that there's more than one word, and that the loop terminates
         pass
-    
+
     return s + '...'
 
 
@@ -63,4 +62,5 @@ def title_case(s: str) -> str:
     # Using ''.join() is faster than using += to accumulate a string
     # https://google.github.io/styleguide/pyguide.html#310-strings
 
-    return "".join([char.upper() if (i == 0 or s[i - 1] == ' ') else char for i, char in enumerate(s)])
+    return "".join([char.upper() if (i == 0 or s[i - 1] == ' ')
+                   else char for i, char in enumerate(s)])

@@ -1,8 +1,9 @@
 import json
-import requests
-from utils import parsers, strings, urls
-from praw.models import Submission
 from typing import Tuple
+import requests
+from requests.models import Response
+from praw.models import Submission
+from utils import parsers, strings, urls
 
 
 # Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
@@ -10,27 +11,32 @@ URLTuple = Tuple[str, bool]
 
 
 class SubmissionWrapper:
+    """Wraps Submission objects to provide extra functionality"""
 
-    url_tuples = []
+    response: Response = None
+    url_tuples: URLTuple = []
 
-    def __init__(self, submission: Submission, directory: str, png: bool):
+    def __init__(self, submission: Submission, directory: str):
         self.submission = submission
-        
+
         r = requests.get(self.submission.url, headers={'Content-type': 'content_type_value'})
-        
+
         if r.status_code == 200:
-            self.url_tuples = [(url, self.download(url, self.submission.title, directory, png))
+            self.response = r
+            # downloading happens here
+            self.url_tuples = [(url, self.download(url, directory))
                                for url in parsers.find_urls(r)]
 
 
-    def download(self, url: str, title: str, directory: str, png: bool) -> bool:
+    def download(self, url: str, directory: str) -> bool:
         """
         Downloads image and saves it with the specified title
         :param url: url of the single-image page to scrape the image from
         :param title: title for the image
         :return: True on success, False on failure
         """
-        return urls.download_image(url, strings.retitle(title), directory, png=png)
+        return urls.download_image(url, strings.retitle(self.submission.title), directory)
+
 
     def count_parsed(self) -> int:
         """
@@ -54,7 +60,7 @@ class SubmissionWrapper:
         """
 
         with open(file, "a", encoding="utf-8") as logfile:
-            json.dump({    
+            json.dump({
                            "title"           : self.submission.title,
                            "id"              : self.submission.id,
                            "url"             : self.submission.url,
@@ -73,9 +79,7 @@ class SubmissionWrapper:
               f"   {self.submission.url}" \
               f"   Saved {self.count_parsed()} / {len(self.url_tuples)} image(s).")
 
-    
+
     def unsave(self):
-        """
-        Unsaves the submission associated with this post
-        """
+        """ Unsaves the submission associated with this post """
         self.submission.unsave()

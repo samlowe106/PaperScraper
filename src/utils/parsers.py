@@ -1,12 +1,13 @@
-import utils.urls
-from bs4 import BeautifulSoup
-import requests
 import json
 from typing import List, Set
+from bs4 import BeautifulSoup
+import requests
 from requests.models import Response
+import utils.urls
 
 
 class SingleImageParser:
+    """Parses direct links to single images"""
 
     def __init__(self):
         return
@@ -31,10 +32,11 @@ class SingleImageParser:
 
 
 class ImgurParser:
+    """Parses imgur images, including albums and galleries"""
 
     def __init__(self):
         return
-        
+
 
     def recognizes(self, r: Response) -> bool:
         """
@@ -49,7 +51,7 @@ class ImgurParser:
         :param r: A web page that has been recognized by this parser
         :returns: A list of all scrapeable urls found in the given webpage
         """
-        # Albums    
+        # Albums
         if "/a/" in r.url:
             return self._parse_album(r.url)
 
@@ -71,7 +73,8 @@ class ImgurParser:
         # Find all the single image pages referenced by this album
         album_page = requests.get(album_url)
         album_soup = BeautifulSoup(album_page.text, "html.parser")
-        single_images = ["https://imgur.com/" + div["id"] for div in album_soup.select("div[class=post-images] > div[id]")]
+        single_images = ["https://imgur.com/" + div["id"]
+                         for div in album_soup.select("div[class=post-images] > div[id]")]
         # Make a list of the direct links to the image hosted on each single-image page;
         #  return the list of all those images
         return {self._parse_single(link) for link in single_images}
@@ -84,11 +87,11 @@ class ImgurParser:
         """
         data = requests.get(url + ".json")
         gallery_dict = json.loads(data.content)
-        
+
         if gallery_dict["data"]["image"]["is_album"]:
             imgur_root, album_id = url.split("gallery")
             return self._parse_album(imgur_root + "a" + album_id)
-        
+
         raise NotImplementedError("No rule for parsing single-image gallery:\n" + url)
         #return [parse_imgur_single(r.url)]
 
@@ -103,8 +106,8 @@ class ImgurParser:
         soup = BeautifulSoup(page.text, "html.parser")
         return soup.select("link[rel=image_src]")[0]["href"]
 
+PARSER_LIST = [SingleImageParser(), ImgurParser()]
 
-parser_list = [SingleImageParser(), ImgurParser()]
 
 def find_urls(r: Response) -> List[str]:
     """
@@ -113,8 +116,8 @@ def find_urls(r: Response) -> List[str]:
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
-    
-    for parser in parser_list:
+
+    for parser in PARSER_LIST:
         if parser.recognizes(r):
             return parser.parse(r)
 

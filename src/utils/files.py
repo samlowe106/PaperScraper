@@ -70,3 +70,20 @@ def file_title(directory: str, title: str, extension: str) -> str:
     return prevent_collisions(utils.strings.shorten(remove_invalid(title)),
                               extension,
                               directory)
+
+
+def sandbox(function, directory):
+    """
+    Executes function in test_dir (making that directory if it doesn't already exist)
+    then deletes test_dir
+    """
+    def makedirs(*args, **kwargs):
+        create_directory(directory):
+        os.chdir(test_dir)
+        
+        result = function(*args, **kwargs)
+
+        os.chdir("..")
+        shutil.rmtree(directory)
+        return result
+    return makedirs

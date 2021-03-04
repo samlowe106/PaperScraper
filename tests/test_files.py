@@ -2,28 +2,8 @@ from src.utils import files
 import os
 import shutil
 
-def sandbox(function, test_dir: str = "test_dir"):
-    """
-    Executes function in test_dir (making that directory if it doesn't already exist)
-    then deletes test_dir
-    """
-    def makedirs(*args, **kwargs):
-        # Establish test dir
-        if not os.path.exists(test_dir):
-            os.makedirs(test_dir)
-        os.chdir(test_dir)
-        
-        # Execute the function
-        result = function(*args, **kwargs)
 
-        # Remove test_dir
-        os.chdir("..")
-        shutil.rmtree(test_dir)
-
-        return result
-    return makedirs
-
-@sandbox
+@files.sandbox("test_dir")
 def test_create_directory(self):
 
     files.create_directory("directory1")
@@ -37,7 +17,7 @@ def test_create_directory(self):
     self.assertTrue("directory2" in os.listdir(os.getcwd()))
 
 
-@sandbox
+@files.sandbox("test_dir")
 def test_prevent_collisions(self):
 
     open("myfile.txt", 'a').close()

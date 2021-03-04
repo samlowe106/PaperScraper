@@ -28,19 +28,19 @@ def convert(filepath: str, new_ext: str = ".png") -> str:
     return new_path
 
     
-def prevent_collisions(title: str, extension: str, directory: str) -> str:
+def prevent_collisions(filepath: str, directory: str) -> str:
     """
     Generates a filename based on the specified title that does not conflict with any of the
     filenames in the specified directory
-    :param title: the desired title of the file
-    :param extension: the extension of the file
+    :param filepath: the current path of the file
     :param directory: the directory to check the file's filename against
     :return: a unique filepath that will not conflict with any of the other files in the directory
     """
-    filename = title + extension
+    name = os.path.split(os.path.splitext(filename))[1]
+    extension = os.path.splitext(filename)[1]
     index = 1
     while filename in os.listdir(directory):
-        filename = "{0} ({1}){2}".format(title, index, extension)
+        filename = f"{name} ({index}){extension}"
         index += 1
 
     return os.path.join(directory, filename)

@@ -1,6 +1,7 @@
-import utils.strings
+from collections.abc import Callable
 import os
-from PIL import Image
+import shutil
+import utils.strings
 
 
 def create_directory(directory: str) -> None:
@@ -13,21 +14,6 @@ def create_directory(directory: str) -> None:
         os.makedirs(directory)
 
 
-def convert(filepath: str, new_ext: str = ".png") -> str:
-    """
-    Converts the given image to the specified new extension
-    :param path: path that the image is located in
-    :param filename: title of the file to be converted
-    :return: filename (with new extension)
-    """
-    new_path = os.path.splitext(filepath)[0] + new_ext
-    with Image.open(filepath) as im:
-        im.convert('RGB').save(new_path)
-    # delete old file
-    os.remove(filepath)
-    return new_path
-
-    
 def prevent_collisions(filepath: str, directory: str) -> str:
     """
     Generates a filename based on the specified title that does not conflict with any of the
@@ -36,10 +22,10 @@ def prevent_collisions(filepath: str, directory: str) -> str:
     :param directory: the directory to check the file's filename against
     :return: a unique filepath that will not conflict with any of the other files in the directory
     """
-    name = os.path.split(os.path.splitext(filename))[1]
-    extension = os.path.splitext(filename)[1]
+    name = os.path.split(os.path.splitext(filepath))[1]
+    extension = os.path.splitext(filepath)[1]
     index = 1
-    while filename in os.listdir(directory):
+    while filepath in os.listdir(directory):
         filename = f"{name} ({index}){extension}"
         index += 1
 
@@ -58,32 +44,30 @@ def remove_invalid(s: str) -> str:
     return s
 
 
-def file_title(directory: str, title: str, extension: str) -> str:
+def file_title(directory: str, title: str) -> str:
     """
-    Creates a valid filename based on the given title string. The created filename will not conflict with
-    any of the existing files in the specified directory
+    Creates a valid filename based on the given title string. The created filename
+    will not conflict with any of the existing files in the specified directory
     :param directory: the directory that the filename should be tailored for
     :param title: the string that the created filename should be based on
-    :param extension: the extension of the file
     :return: a valid filename that will not conflict with any file in the specified directory
     """
     return prevent_collisions(utils.strings.shorten(remove_invalid(title)),
-                              extension,
                               directory)
 
 
-def sandbox(function, directory):
+def sandbox(directory: str) -> Callable:
     """
-    Executes function in test_dir (making that directory if it doesn't already exist)
-    then deletes test_dir
+    Executes function in the specified directory (making that directory if it doesn't already exist)
+    then deletes that directory
     """
-    def makedirs(*args, **kwargs):
-        create_directory(directory):
-        os.chdir(test_dir)
-        
-        result = function(*args, **kwargs)
-
-        os.chdir("..")
-        shutil.rmtree(directory)
-        return result
-    return makedirs
+    def wrapper(function: Callable):
+        def makedirs(*args, **kwargs):
+            create_directory(directory)
+            os.chdir(directory)
+            result = function(*args, **kwargs)
+            os.chdir("..")
+            shutil.rmtree(directory)
+            return result
+        return makedirs
+    return wrapper

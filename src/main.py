@@ -1,16 +1,15 @@
-from utils import files, strings
-from utils.submission_wrapper import SubmissionWrapper
 import argparse
 import getpass
 import os
+from typing import Optional
 from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
-from typing import Optional, Tuple
+from utils import files
+from utils.submission_wrapper import SubmissionWrapper
 
-
-log_directory = "Logs"
-log_path = os.path.join("Logs", "log.txt")
+LOG_DIRECTORY = "Logs"
+LOG_PATH = os.path.join("Logs", "log.txt")
 
 
 def main() -> None:
@@ -20,25 +19,18 @@ def main() -> None:
         print("Unrecognized username or password.")
         return
 
-    for path in [args.directory, log_directory]:
+    for path in [args.directory, LOG_DIRECTORY]:
         files.create_directory(path)
 
     index = 0
     for post in reddit.user.me().saved():
-
-        post = SubmissionWrapper(post, args.directory, args.png)
-        
+        post = SubmissionWrapper(post, args.directory)
         if not args.nolog:
-            post.log(log_path)
-
+            post.log(LOG_PATH)
         if post.count_parsed() > 0:
-
             index += 1
-
             post.print_self(index)
-
             post.unsave()
-            
             # End if the desired number of posts have had their images downloaded
             if index >= args.limit:
                 break
@@ -50,27 +42,18 @@ def sign_in() -> Optional[Reddit]:
     :param filepath: Path to the text file containing the client ID and client secret
     :return: reddit object if successful, else None
     """
-
     # getpass only works through the command line!
     if (username := input("Username: ")) and (password := getpass.getpass("Password: ")):
         print("Signing in...", end="")
         try:
             return praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
-                            client_secret=os.environ.get("CLIENT_SECRET"),
-                            user_agent='PaperScraper',
-                            username=username,
-                            password=password)
+                               client_secret=os.environ.get("CLIENT_SECRET"),
+                               user_agent='PaperScraper',
+                               username=username,
+                               password=password)
         except OAuthException:
-            return
-
-
-def read_client_info(filepath: str = "info.txt") -> Tuple[str, str]:
-    """
-    Reads the client ID and client secret from the specified file
-    :param filepath: filepath of the file to read the client id and secret from
-    :return: tuple containing the client ID and secret in that order
-    :raises: FileNotFoundError, ValueError
-    """
+            pass
+    return None
 
 
 if __name__ == "__main__":
@@ -93,14 +76,8 @@ if __name__ == "__main__":
                         "--titlecase",
                         action='store_true',
                         help="saves filenames in title case")
-    parser.add_argument("-p",
-                        "--png",
-                        action='store_true',
-                        help="convert .jpg/.jpeg files to .png files")
 
-    """
-    NOT YET IMPLEMENTED
-    
+    """ NOT YET IMPLEMENTED
     parser.add_argument("-n",
                         "--name",
                         action='store_false',
@@ -111,11 +88,11 @@ if __name__ == "__main__":
                         action='store_false',
                         help="sort images into folders by subreddit")
     """
-    
+
     parser.add_argument("--nolog",
                         action='store_true',
                         help="disable logging")
-    
+
 
     args = parser.parse_args()
 

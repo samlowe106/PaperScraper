@@ -1,40 +1,24 @@
-import utils.files
-from bs4 import BeautifulSoup
-import json
 import os
 import requests
-import shutil
-from typing import List
 from requests.models import Response
+import utils.files
 
 
-def download_image(url: str, title: str, directory: str, png: bool = False, temp_dir: str = "temp") -> bool:
+def download_image(url: str, title: str, directory: str) -> bool:
     """
     Downloads the linked image, converts it to the specified filetype,
     and saves to the specified directory. Avoids name conflicts.
     :param url: url directly linking to the image to download
     :param title: title that the final file should have
-    :param dir: directory that the final file should be saved to
-    :return: True if the file was downloaded correctly, else False 
+    :param temp_dir: directory that the final file should be saved to
+    :return: True if the file was downloaded correctly, else False
     """
-
     r = requests.get(url)
+
     if r.status_code != 200:
         return False
-    extension = get_extension(r)
-    
-    # Save the image to a temp directory
-    temp_filepath = os.path.join(temp_dir, title + extension)
-    write_file(r, temp_filepath)
 
-    # Convert to png if necessary
-    if png:
-        extension = ".png"
-        temp_filepath = utils.files.convert(temp_filepath, extension)
-
-    # Move to desired directory
-    shutil.move(temp_filepath, utils.files.prevent_collisions(title, extension, directory))
-
+    write_file(r, os.path.join(directory, title + get_extension(r)))
     return True
 
 

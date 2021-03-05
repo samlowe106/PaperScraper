@@ -1,3 +1,6 @@
+import os
+
+
 def retitle(s: str, title: bool = False) -> str:
     """
     Strips certain punctuation from the start and end of the given string,
@@ -64,3 +67,26 @@ def title_case(s: str) -> str:
 
     return "".join([char.upper() if (i == 0 or s[i - 1] == ' ')
                    else char for i, char in enumerate(s)])
+
+
+def remove_invalid(s: str) -> str:
+    """
+    Removes characters that Windows doesn't allow in filenames from the specified string
+    :param s: string to remove characters from
+    :return: the given string without invalid characters
+    """
+    s = s.replace('"', "'")
+    for invalid_char in ["\\", "/", ":", "*", "?", "<", ">", "|"]:
+        s = s.replace(invalid_char, "")
+    return s
+
+
+def file_title(directory: str, title: str) -> str:
+    """
+    Creates a valid filename based on the given title string. The created filename
+    will not conflict with any of the existing files in the specified directory
+    :param directory: the directory that the filename should be tailored for
+    :param title: the string that the created filename should be based on
+    :return: a valid filename that will not conflict with any file in the specified directory
+    """
+    return prevent_collisions(shorten(remove_invalid(title)), directory)

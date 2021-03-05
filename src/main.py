@@ -5,7 +5,6 @@ from typing import Optional
 from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
-from utils import files
 from utils.submission_wrapper import SubmissionWrapper
 
 LOG_DIRECTORY = "Logs"
@@ -20,11 +19,12 @@ def main() -> None:
         return
 
     for path in [args.directory, LOG_DIRECTORY]:
-        files.create_directory(path)
+        os.makedirs(path, exist_ok=True)
 
     index = 0
     for post in reddit.user.me().saved():
-        post = SubmissionWrapper(post, args.directory)
+        post = SubmissionWrapper(post)
+        post.download_all(args.directory)
         if not args.nolog:
             post.log(LOG_PATH)
         if post.count_parsed() > 0:

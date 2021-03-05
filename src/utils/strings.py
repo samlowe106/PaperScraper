@@ -48,6 +48,8 @@ def shorten(s: str, max_length: int = 250) -> str:
     if len(s) <= max_length:
         return s
 
+    # TODO: Might be missing a case
+
     while len(s := s.rsplit(' ', 1)[0]) + 3 > max_length and ' ' in s:
         # Second condition ensures that there's more than one word, and that the loop terminates
         pass
@@ -81,12 +83,10 @@ def remove_invalid(s: str) -> str:
     return s
 
 
-def file_title(directory: str, title: str) -> str:
+def file_title(title: str) -> str:
     """
-    Creates a valid filename based on the given title string. The created filename
-    will not conflict with any of the existing files in the specified directory
-    :param directory: the directory that the filename should be tailored for
+    Creates a valid, aesthetically pleasing filename based on the given title string
     :param title: the string that the created filename should be based on
-    :return: a valid filename that will not conflict with any file in the specified directory
+    :return: a valid filename
     """
-    return prevent_collisions(shorten(remove_invalid(title)), directory)
+    return shorten(retitle(remove_invalid(title)))

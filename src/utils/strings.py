@@ -48,11 +48,13 @@ def shorten(s: str, max_length: int = 250) -> str:
     if len(s) <= max_length:
         return s
 
-    # TODO: Might be missing a case
-
     while len(s := s.rsplit(' ', 1)[0]) + 3 > max_length and ' ' in s:
         # Second condition ensures that there's more than one word, and that the loop terminates
         pass
+
+    # truncating at a word failed, just truncate at a character
+    if len(s) > max_length:
+        s = s[:(max_length - 3)]
 
     return s + '...'
 

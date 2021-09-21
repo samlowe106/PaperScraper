@@ -1,4 +1,65 @@
-from src.utils import parsers
+from src.model.parsers import *
+from typing import List, Tuple
+
+
+# https://www.reddit.com/r/wallpaper/comments/obzf75/3840x2160_steam_summer_sale_2021_wallpapers/
+# reddit added image albums
+
+single_image_parser = SingleImageParser()
+imgur_parser = ImgurParser()
+
+unrecognizable = []
+
+imgur_singles = []
+imgur_albums = []
+imgur_gallaries = []
+
+reddit_singles = []
+artstation_singles = []
+deviantart_singles = []
+single_image_recognizable = imgur_singles + reddit_singles + artstation_singles + deviantart_singles
+
+flickr_recognizable = []
+flickr_unrecognizable = []
+
+gfycat_recognizable = []
+gfycat_unrecognizable = []
+
+imgur_recognizable = imgur_singles + imgur_albums + imgur_gallaries
+imgur_unrecognizable = flickr_recognizable + gfycat_recognizable
+
+single_image_unrecognizable = imgur_albums + flickr_recognizable + gfycat_recognizable
+
+
+def test_parser_recognizes(self, parser: IParser, expected_recognizable: List[Response], expected_unrecognizable: List[Response]):
+    for url in expected_recognizable:
+        self.assertTrue(imgur_parser.recognizes())
+
+    for string in expected_unrecognizable + unrecognizable:
+        self.assertFalse(imgur_parser.recognizes(string))
+
+
+def test_parser_parses(self, parser: IParser, responses_expected: Tuple[Response, Set[str]]):
+    for r, expected in responses_expected:
+        self.assertEqual(expected, parser.parse(r))
+
+
+
+def test_SingleImageParser(self):
+    pass
+
+
+def test_ImgurParser(self):
+    test_parser_recognizes(self, imgur_parser, imgur_singles + imgur_albums + imgur_gallaries, imgur_unrecognizable)
+    test_parser_parses(self, imgur_parser, )
+    
+    
+
+def test_FlickrParser(self):
+    pass
+
+
+
 
 """
 def test_recognized(self):

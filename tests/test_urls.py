@@ -1,31 +1,28 @@
-from src.utils import urls
-import os
-import requests
-import shutil
+from src.model import urls
+import unittest
 
 """ Unless otherwise stated, none of the URLs used for testing should be dead. """
 
-def sandbox(function, test_dir: str = "test_dir"):
-    """
-    Executes function in test_dir (making that directory if it doesn't already exist)
-    then deletes test_dir
-    """
-    def makedirs(*args, **kwargs):
-        # Establish test dir
-        if not os.path.exists(test_dir):
-            os.makedirs(test_dir)
-        os.chdir(test_dir)
-        
-        # Execute the function
-        result = function(*args, **kwargs)
 
-        # Remove test_dir
-        os.chdir("..")
-        shutil.rmtree(test_dir)
+class TestURLS(unittest.TestCase):
 
-        return result
-    return makedirs
 
+    def test_determine_name(self):
+        pass
+
+
+    def test_download(self):
+        pass
+
+
+    def test_get_extension(self):
+        pass
+
+
+    def test_sandbox(self):
+        pass
+
+"""
 
 def test_get_extension(self):
     url_extension = [
@@ -83,3 +80,4 @@ def test_download_image(self):
     
     urls.download_image("https://i.imgur.com/B6HPXkk.jpg", "f", output_dir, png=True)
     self.assertTrue(os.path.isfile(os.path.join(output_dir, "f.png")))
+"""

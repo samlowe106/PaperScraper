@@ -5,7 +5,7 @@ from typing import Optional
 from prawcore.exceptions import OAuthException
 import praw
 from praw import Reddit
-from utils.submission_wrapper import SubmissionWrapper
+from .model.submission_wrapper import SubmissionWrapper
 
 LOG_DIRECTORY = "Logs"
 LOG_PATH = os.path.join("Logs", "log.txt")
@@ -14,7 +14,8 @@ LOG_PATH = os.path.join("Logs", "log.txt")
 def main() -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
 
-    if (reddit := sign_in()) is None:
+    reddit = sign_in()
+    if reddit is None:
         print("Unrecognized username or password.")
         return
 
@@ -42,8 +43,9 @@ def sign_in() -> Optional[Reddit]:
     :param filepath: Path to the text file containing the client ID and client secret
     :return: reddit object if successful, else None
     """
-    # getpass only works through the command line!
-    if (username := input("Username: ")) and (password := getpass.getpass("Password: ")):
+    username = input("Username: ")
+    password = getpass.getpass("Password: ") # getpass only works through the command line!
+    if (username and password):
         print("Signing in...", end="")
         try:
             return praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
@@ -78,10 +80,13 @@ if __name__ == "__main__":
                         help="saves filenames in title case")
 
     """ NOT YET IMPLEMENTED
-    parser.add_argument("-n",
-                        "--name",
-                        action='store_false',
-                        help="append OP's name to the filename")
+
+    parser.add_argument("-f",
+                        "--file",
+                        type=str,
+                        default=None,
+                        help="settings file")
+
 
     parser.add_argument("-s",
                         "--sort",

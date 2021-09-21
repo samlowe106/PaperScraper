@@ -1,12 +1,40 @@
 import json
-from typing import List, Set
+from typing import Set
 from bs4 import BeautifulSoup
 import requests
 from requests.models import Response
-import utils.urls
+from . import urls
 
 
-class SingleImageParser:
+class IParser:
+    """
+    """
+
+    def recognizes(self, r: Response) -> bool:
+        """
+        :param r: A webpage
+        :returns: True if this parser recognizes the given response, else false
+        """
+        return False
+
+    def try_parse(self, r: Response) -> Set[str]:
+        """
+        :param r: A web page that has been recognized by this parser
+        :returns: A list of all scrapeable urls found in the given webpage
+        """
+        if not self.recognizes(r):
+            return set()
+
+        return self._parse(r)
+        
+    def _parse(self, r: Response) -> Set[str]:
+        """
+        Parses the given response.
+        """
+        raise NotImplementedError("parse() has not yet been implemented for this parser")
+
+
+class SingleImageParser(IParser):
     """Parses direct links to single images"""
 
     def __init__(self):
@@ -20,10 +48,10 @@ class SingleImageParser:
         """
         # If the image in the url has a recognized file extension, this is a direct link to an image
         #  (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
-        return utils.urls.get_extension(r).lower() in [".png", ".jpg", ".jpeg", ".gif"]
+        return urls.get_extension(r).lower() in [".png", ".jpg", ".jpeg", ".gif"]
 
 
-    def parse(self, r: Response) -> Set[str]:
+    def _parse(self, r: Response) -> Set[str]:
         """
         :param r: A web page that has been recognized by this parser
         :returns: A list of all scrapeable urls found in the given webpage
@@ -31,8 +59,8 @@ class SingleImageParser:
         return {r.url}
 
 
-class ImgurParser:
-    """Parses imgur images, including albums and galleries"""
+class ImgurParser(IParser):
+    """Parses imgur images, albums, and galleries"""
 
     def __init__(self):
         return
@@ -43,10 +71,10 @@ class ImgurParser:
         :param r: A webpage
         :returns: True if this parser recognizes the given response, else false
         """
-        return "imgur.com" in r.url and not r.url.endswith("/gallery/")
+        return "imgur.com" in r.url # and not r.url.endswith("/gallery/")
 
 
-    def parse(self, r: Response) -> Set[str]:
+    def _parse(self, r: Response) -> Set[str]:
         """
         :param r: A web page that has been recognized by this parser
         :returns: A list of all scrapeable urls found in the given webpage
@@ -106,19 +134,47 @@ class ImgurParser:
         soup = BeautifulSoup(page.text, "html.parser")
         return soup.select("link[rel=image_src]")[0]["href"]
 
+
+class FlickrParser(IParser):
+    """Parses flickr links"""
+
+    def __init__(self):
+        raise NotImplementedError("Class is not yet implemented!")
+
+    """
+    def recognizes(self, r: Response) -> bool:
+        return False
+
+    def try_parse(self, r: Response) -> 
+
+    def _parse(self, r: Response) -> Set[str]:
+        return set()
+    """
+
+
+class GfycatParser(IParser):
+    """Parses gfycat links"""
+
+    def __init__(self):
+        raise NotImplementedError("Class is not yet implemented!")
+
+    """
+    def recognizes(self, r: Response) -> bool:
+        return False
+
+    def parse(self, r: Response) -> Set[str]:
+        return set()
+    """
+
+
 PARSER_LIST = [SingleImageParser(), ImgurParser()]
 
 
-def find_urls(r: Response) -> List[str]:
+def find_urls(r: Response) -> Set[str]:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
-
-    for parser in PARSER_LIST:
-        if parser.recognizes(r):
-            return parser.parse(r)
-
-    return []
+    return {url for url in parser.try_parse(r) for parser in PARSER_LIST}

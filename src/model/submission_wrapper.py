@@ -24,17 +24,19 @@ class SubmissionWrapper:
 
     def __init__(self, submission: Submission):
         self.submission = submission
-        self.original_title = submission.title
+        self.title = submission.title
         self.subreddit = str(submission.subreddit)
         self.url = submission.url
-        self.author = submission.author
-        self.title = strings.file_title(self.submission.title)
+        self.author = str(submission.author)
+        self.file_title = strings.file_title(self.submission.title)
 
-        r = requests.get(self.submission.url, headers={'Content-type': 'content_type_value'})
+        self.response = requests.get(self.submission.url,
+                                     headers={'Content-type': 'content_type_value'})
 
-        if r.status_code == 200:
-            self.response = r
+        if self.response.status_code == 200:
             self.urls = parsers.find_urls(self.response)
+        else:
+            self.urls = []
 
 
     def download_all(self, directory: str, title: str = None) -> List[URLTuple]:
@@ -85,9 +87,7 @@ class SubmissionWrapper:
 
 
     def fully_parsed(self) -> bool:
-        """
-        :return: True if urls were found and each one was parsed, else False
-        """
+        """ :return: True if urls were found and each one was parsed, else False """
         return self.url_tuples and self.count_parsed() == len(self.url_tuples)
 
 
@@ -111,19 +111,39 @@ class SubmissionWrapper:
         :param index: the index number of the post
         :return: None
         """
+        return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
+        """
         return f"{self.original_title}" \
                f"\n   r/{self.subreddit}" \
                f"\n   {self.url}" \
                f"\n   Saved {self.count_parsed()} / {len(self.url_tuples)} image(s) so far."
+        """
 
 
     def unsave(self) -> None:
-        """ Unsaves the submission associated with this post """
+        """ Unsaves this submission """
         self.submission.unsave()
 
 
-    #TODO: move elsewhere?
     def format(self, template: str, token="%") -> str:
+        """
+        Formats a string based on the given template.
+        
+        Each possible specifier is given below:
+
+        t: current title
+        T: current title in Title Case
+        s: subreddit
+        a: author
+        u: submission's url
+        p: number of parsed urls
+        f: number of found urls
+        (token): the token
+
+        :param template: the template to base the output string on
+        :param token: the token that prefixes each specifier
+        :return: the formatted string
+        """
         specifier_found = False
         string_list = []
 
@@ -133,12 +153,22 @@ class SubmissionWrapper:
                 # Each of these cases represents a different token (%t, %s, etc)
                 if char == 't':
                     string_list += self.title
+                elif char == 'T':
+                    string_list += strings.title_case(self.title)
                 elif char == 's':
                     string_list += self.subreddit
-                elif char == 'o':
+                elif char == 'a':
                     string_list += self.author
+                elif char == 'u':
+                    string_list += self.url
+                elif char == 'p':
+                    string_list += self.count_parsed()
+                elif char == 'f':
+                    string_list += len(self.url_tuples)
+                elif char == token:
+                    string_list += token                
                 else:
-                    # None of the above cases were satisfied, so this string must be malformed
+                    # None of the above cases were satisfied, so this template must be malformed
                     raise ValueError("The given string contains a malformed specifier:\n"
                                     + template
                                     + "\n" + i*" " + "^")

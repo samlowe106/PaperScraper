@@ -31,18 +31,6 @@ def test_convert_file(self):
 
 
 def test_remove_invalid(self):
-    self.assertEqual("", files.remove_invalid(""))
-    self.assertEqual("", files.remove_invalid("\\"))
-    self.assertEqual("", files.remove_invalid("/"))
-    self.assertEqual("", files.remove_invalid(":"))
-    self.assertEqual("", files.remove_invalid("*"))
-    self.assertEqual("", files.remove_invalid("?"))
-    self.assertEqual("", files.remove_invalid("<"))
-    self.assertEqual("", files.remove_invalid(">"))
-    self.assertEqual("", files.remove_invalid("|"))
-    self.assertEqual("'", files.remove_invalid('"'))
-    self.assertEqual("'", files.remove_invalid("'"))
-    self.assertEqual("valid filename", files.remove_invalid("valid filename"))
-    self.assertEqual("invalid flename", files.remove_invalid("invalid? f|lename"))
+
     
 """

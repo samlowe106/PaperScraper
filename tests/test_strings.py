@@ -3,6 +3,9 @@ import unittest
 
 
 class TestStrings(unittest.TestCase):
+    """
+    # TODO
+    """
 
 
     def test_retitle(self):
@@ -59,7 +62,19 @@ class TestStrings(unittest.TestCase):
 
 
     def test_remove_invalid(self):
-        pass
+        self.assertEqual("", strings.remove_invalid(""))
+        self.assertEqual("", strings.remove_invalid("\\"))
+        self.assertEqual("", strings.remove_invalid("/"))
+        self.assertEqual("", strings.remove_invalid(":"))
+        self.assertEqual("", strings.remove_invalid("*"))
+        self.assertEqual("", strings.remove_invalid("?"))
+        self.assertEqual("", strings.remove_invalid("<"))
+        self.assertEqual("", strings.remove_invalid(">"))
+        self.assertEqual("", strings.remove_invalid("|"))
+        self.assertEqual("'", strings.remove_invalid('"'))
+        self.assertEqual("'", strings.remove_invalid("'"))
+        self.assertEqual("valid filename", strings.remove_invalid("valid filename"))
+        self.assertEqual("invalid flename", strings.remove_invalid("invalid? f|lename"))
 
 
     def test_file_title(self):

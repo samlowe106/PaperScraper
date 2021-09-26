@@ -23,7 +23,6 @@ class TestURLS(unittest.TestCase):
         pass
 
 """
-
 def test_get_extension(self):
     url_extension = [
         ("https://cdnb.artstation.com/p/assets/images/images/026/326/667/large/eddie-mendoza-last-train.jpg?1588487140", ".jpeg"),

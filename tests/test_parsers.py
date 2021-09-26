@@ -32,30 +32,35 @@ single_image_unrecognizable = imgur_albums + flickr_recognizable + gfycat_recogn
 
 
 def test_parser_recognizes(self, parser: IParser, expected_recognizable: List[Response], expected_unrecognizable: List[Response]):
+    """
     for url in expected_recognizable:
         self.assertTrue(imgur_parser.recognizes())
 
     for string in expected_unrecognizable + unrecognizable:
         self.assertFalse(imgur_parser.recognizes(string))
+    """
 
 
 def test_parser_parses(self, parser: IParser, responses_expected: Tuple[Response, Set[str]]):
+    # TODO
     for r, expected in responses_expected:
         self.assertEqual(expected, parser.parse(r))
 
 
 
 def test_SingleImageParser(self):
+    # TODO
     pass
 
 
 def test_ImgurParser(self):
     test_parser_recognizes(self, imgur_parser, imgur_singles + imgur_albums + imgur_gallaries, imgur_unrecognizable)
-    test_parser_parses(self, imgur_parser, )
+    # test_parser_parses(self, imgur_parser, )
     
     
 
 def test_FlickrParser(self):
+    # TODO
     pass
 
 

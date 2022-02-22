@@ -9,6 +9,7 @@ class TestStrings(unittest.TestCase):
 
 
     def test_retitle(self):
+        # TODO
         pass
 
 
@@ -78,4 +79,5 @@ class TestStrings(unittest.TestCase):
 
 
     def test_file_title(self):
+        # TODO
         pass

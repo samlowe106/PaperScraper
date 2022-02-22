@@ -6,20 +6,23 @@ from typing import List, Tuple
 
 
 class TestSubmissionWrapper(unittest.TestCase):
+    """ """
 
-    posts_wrappers: List[Tuple(Submission, SubmissionWrapper)] = []
+    urls = ["https://www.reddit.com/r/ImaginaryFutureWar/comments/pvum2y/mech_sketch_by_daryl_mandryk/",
+            "https://www.reddit.com/r/ImaginaryWorlds/comments/pv8b3p/fantasy_dreaming_by_michal_kv%C3%A1%C4%8D/",
+            ]
 
-    def __init__(self):
-        # urls of reddit posts
-        urls: List[str] = []
-        for url in urls:
+    def initialize_posts_wrappers(self) -> List[Tuple(Submission, SubmissionWrapper)]:
+        posts_wrappers = []
+        for url in self.urls:
             post = Submission(url)
             wrapper = SubmissionWrapper(post)
-            self.posts_wrappers.append((post, wrapper))
-    
+            posts_wrappers.append((post, wrapper))
+        return posts_wrappers
+        
 
     def test_fields(self):
-        for post, wrapper in self.posts_wrappers:
+        for post, wrapper in self.initialize_posts_wrappers():
             self.assertEqual(post.title, wrapper.title)
             self.assertEqual(str(post.subreddit), wrapper.subreddit)
             self.assertEqual(post.url, wrapper.url)
@@ -27,23 +30,27 @@ class TestSubmissionWrapper(unittest.TestCase):
 
 
     def test_download_all(self):
+        # TODO
         pass
 
 
     def test_download_image(self):
+        # TODO
         pass
 
 
     def test_count_parsed(self):
+        # TODO
         pass
 
 
     def test_fully_parsed(self):
+        # TODO
         pass
 
 
     def test_log(self):
-        
+        # TODO
         with open("expected_log.json") as expected_log:
             json.dump({
                         "title"           : "",
@@ -57,12 +64,18 @@ class TestSubmissionWrapper(unittest.TestCase):
                     self.assertEqual(expected, actual)
 
 
-    def test_print_self(self):
-        pass
-
-
     def test_unsave(self):
-        pass
+
+        # log in
+
+        for url in self.urls:
+            # save the post 
+            pass
+
+        for post, wrapper in self.initialize_posts_wrappers():
+            wrapper.unsave()
+            self.assertFalse(post.saved()) # double check this method
+
 
     
     def test_format(self):
@@ -73,4 +86,5 @@ class TestSubmissionWrapper(unittest.TestCase):
         
 
     def test_str(self):
+        # TODO
         pass

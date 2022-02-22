@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<h1>PaperScraper</h1>
+{% endblock %}
+
+{% block body %}
+<table>
+    {for sw in submission_wrappers}
+    <tr> </tr> <!-- TODO -->
+
+        { for image in sw.images } <!-- TODO: double check -->
+            <!-- TODO: Output images -->
+
+        <!-- TODO: Output other fields -->
+
+</table>
+
+
+{% endblock %}

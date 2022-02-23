@@ -7,10 +7,10 @@
 {% block body %}
 
 {% if submission_wrappers|length < args.limit %}
-<label for="file">Progress:</label>
-<progress id="file" value="{{ (i / args.limit) * 100 }}" max="{{ 100 }}"> {{ submission_wrappers|length }} / {{ args.limit }} posts </progress>
+    <label for="file">Progress:</label>
+    <progress id="file" value="{{ (i / args.limit) * 100 }}" max="{{ 100 }}"> {{ submission_wrappers|length }} / {{ args.limit }} posts </progress>
 {% else %}
-<h3>Done!</h3>
+    <h3>Done!</h3>
 {% endif %}
 
 <table>

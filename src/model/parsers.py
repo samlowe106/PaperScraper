@@ -8,26 +8,27 @@ from . import urls
 
 class IParser:
     """
+    An interface representing the functionality implemented by a website HTML parser
     """
 
-    def recognizes(self, r: Response) -> bool:
+    def recognizes(self, response: Response) -> bool:
         """
         :param r: A webpage
         :returns: True if this parser recognizes the given response, else false
         """
         return False
 
-    def try_parse(self, r: Response) -> Set[str]:
+    def try_parse(self, response: Response) -> Set[str]:
         """
         :param r: A web page that has been recognized by this parser
         :returns: A list of all scrapeable urls found in the given webpage
         """
-        if not self.recognizes(r):
+        if not self.recognizes(response):
             return set()
 
-        return self._parse(r)
-        
-    def _parse(self, r: Response) -> Set[str]:
+        return self._parse(response)
+
+    def _parse(self, response: Response) -> Set[str]:
         """
         Parses the given response.
         """
@@ -41,22 +42,22 @@ class SingleImageParser(IParser):
         return
 
 
-    def recognizes(self, r: Response) -> bool:
+    def recognizes(self, response: Response) -> bool:
         """
         :param r: A webpage
         :returns: True if this parser recognizes the given response, else false
         """
         # If the image in the url has a recognized file extension, this is a direct link to an image
         #  (Should match artstation, i.imgur.com, i.redd.it, and other direct pages)
-        return urls.get_extension(r).lower() in [".png", ".jpg", ".jpeg", ".gif"]
+        return urls.get_extension(response).lower() in [".png", ".jpg", ".jpeg", ".gif"]
 
 
-    def _parse(self, r: Response) -> Set[str]:
+    def _parse(self, response: Response) -> Set[str]:
         """
         :param r: A web page that has been recognized by this parser
         :returns: A list of all scrapeable urls found in the given webpage
         """
-        return {r.url}
+        return {response.url}
 
 
 class ImgurParser(IParser):
@@ -66,30 +67,30 @@ class ImgurParser(IParser):
         return
 
 
-    def recognizes(self, r: Response) -> bool:
+    def recognizes(self, response: Response) -> bool:
         """
         :param r: A webpage
         :returns: True if this parser recognizes the given response, else false
         """
-        return "imgur.com" in r.url # and not r.url.endswith("/gallery/")
+        return "imgur.com" in response.url # and not r.url.endswith("/gallery/")
 
 
-    def _parse(self, r: Response) -> Set[str]:
+    def _parse(self, response: Response) -> Set[str]:
         """
         :param r: A web page that has been recognized by this parser
         :returns: A list of all scrapeable urls found in the given webpage
         """
         # Albums
-        if "/a/" in r.url:
-            return self._parse_album(r.url)
+        if "/a/" in response.url:
+            return self._parse_album(response.url)
 
         # Galleries (might be albums or singles)
-        elif "/gallery/" in r.url:
-            return self._parse_gallery(r.url)
+        elif "/gallery/" in response.url:
+            return self._parse_gallery(response.url)
 
         # Single-image page
         else:
-            return {self._parse_single(r.url)}
+            return {self._parse_single(response.url)}
 
 
     def _parse_album(self, album_url: str) -> Set[str]:
@@ -145,7 +146,7 @@ class FlickrParser(IParser):
     def recognizes(self, r: Response) -> bool:
         return False
 
-    def try_parse(self, r: Response) -> 
+    def try_parse(self, r: Response) ->
 
     def _parse(self, r: Response) -> Set[str]:
         return set()
@@ -177,4 +178,4 @@ def find_urls(r: Response) -> Set[str]:
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
-    return {url for url in parser.try_parse(r) for parser in PARSER_LIST}
+    return {url for url in [parser.try_parse(r) for parser in PARSER_LIST]}

@@ -36,8 +36,8 @@ class SubmissionWrapper:
 
         for i, url in enumerate(self.urls_filepaths.keys()):
             filename = self.base_file_title if i == 0 else f'{self.base_file_title} ({i})'
-            # TODO: this returns a bool!
-            self.urls_filepaths[url] = urls.download(url, os.path.join(directory, filename))
+            destination = os.path.join(directory, filename)
+            self.urls_filepaths[url] = destination if urls.download(url, destination) else ""
 
 
     def download_image(self, url: str, directory: str) -> bool:

@@ -1,5 +1,6 @@
 from getpass import getpass
 from typing import Any, Dict
+from shutil import make_archive
 from flask import Flask, render_template, request, send_file
 from ..model import SubmissionWrapper
 
@@ -9,9 +10,9 @@ class View():
     Interface representing a way to interact with PaperScraper
     """
 
-    def get_run_info(self, args : Dict[str, Any]) -> Dict[str, str]:
+    def get_run_info(self, args : Dict[str, Any]) -> Dict[str, Any]:
         """
-        Gets parameters about this run
+        Gets parameters about this run, based on the given args
         """
 
     def show_results(self, output_directory: str):
@@ -39,12 +40,11 @@ class TerminalView(View):
         return
 
 
-    def get_run_info(self, args) -> Dict[str, str]:
+    def get_run_info(self, args) -> Dict[str, Any]:
         """
         Gets parameters about this run
         """
         args["password"] = getpass("Password: ")
-
         return args
 
 
@@ -65,7 +65,15 @@ class FlaskWebView():
 
     def __init__(self) -> None:
         self.submission_wrappers = []
+        self.output_path: str = None
         self.app.run()
+
+
+    def show_results(self, output_directory: str):
+        """
+        Displays information about the downloaded files at the end of the run
+        """
+        self.output_path = make_archive("paperscraper_output", "zip", output_directory)
 
 
     @app.route('/', methods=["POST", "GET"])
@@ -80,8 +88,7 @@ class FlaskWebView():
         """
         Pushes the zip file to the user
         """
-        path = ""
-        return send_file(path, as_attachment=True)
+        return send_file(self.output_path, as_attachment=True)
 
 
     @app.route('/', methods=["POST", "GET"])
@@ -96,11 +103,10 @@ class FlaskWebView():
         :param message: message to show the user
         :param error: whether the message is an error message or not
         """
-
         return render_template('index.html')
 
 
-    def get_run_info(self, _) -> Dict[str, any]:
+    def get_run_info(self, _) -> Dict[str, Any]:
         """
         Gets parameters about this run
         """

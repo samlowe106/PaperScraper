@@ -1,4 +1,4 @@
-def retitle(s: str, title: bool = False) -> str:
+def retitle(string: str, title: bool = False) -> str:
     """
     Strips certain punctuation from the start and end of the given string,
     and optionally titlecases it
@@ -8,29 +8,29 @@ def retitle(s: str, title: bool = False) -> str:
     """
 
     for punctuation in [".", " ", ","]:
-        s = trim_string(s, punctuation)
+        string = trim_string(string, punctuation)
 
-    return title_case(s) if title else s
+    return title_case(string) if title else string
 
 
-def trim_string(s1: str, s2: str) -> str:
+def trim_string(string1: str, string2: str) -> str:
     """
     Removes any preceding or trailing instances of s2 from s1
     :param s1: the string from which preceding or trailing instances of s2 will be removed
     :param s2: the string that will be removed from the start and end of s1
     :return: s1 without any instances of s2 at either the start or end
     """
-    if s2: # loops won't terminate if s2 is empty
-        while s1.startswith(s2):
-            s1 = s1.lstrip(s2)
+    if string2: # loops won't terminate if string2 is empty
+        while string1.startswith(string2):
+            string1 = string1.lstrip(string2)
 
-        while s1.endswith(s2):
-            s1 = s1.rstrip(s2)
+        while string1.endswith(string2):
+            string1 = string1.rstrip(string2)
 
-    return s1
+    return string1
 
 
-def shorten(s: str, max_length: int = 250) -> str:
+def shorten(string: str, max_length: int = 250) -> str:
     """
     Shortens s to be shorter than the specified maximum length, truncating at a
     word if possible. Appends an ellipsis if possible.
@@ -39,44 +39,42 @@ def shorten(s: str, max_length: int = 250) -> str:
     :return: s
     :raises IndexError: if max_length is less than 0
     """
-    if len(s) <= max_length:
-        return s
+    if len(string) <= max_length:
+        return string
 
     #TODO: refactor, shouldn't have mutation in while condition
-    while len(s := s.rsplit(' ', 1)[0]) + 3 > max_length and ' ' in s:
+    while len(string := string.rsplit(' ', 1)[0]) + 3 > max_length and ' ' in string:
         # Second condition ensures that there's more than one word, and that the loop terminates
         pass
 
     # truncating at a word failed, just truncate at a character
-    if len(s) > max_length:
-        s = s[:(max_length - 3)]
+    if len(string) > max_length:
+        string = string[:(max_length - 3)]
 
-    return s + '...'
+    return string + '...'
 
 
-def title_case(s: str) -> str:
+def title_case(string: str) -> str:
     """
     Capitalizes the first character and all characters immediately after spaces in the given string
     (the string.title() method additionally capitalizes characters after punctuation)
     :param s: the string to be title-cased
     :return: s in title case
     """
-    # Using ''.join() is faster than using += to accumulate a string
-    # https://google.github.io/styleguide/pyguide.html#310-strings
-
-    return "".join([char.upper() if (i == 0 or s[i - 1] == ' ') else char for i, char in enumerate(s)])
+    return "".join([char.upper() if (i == 0 or string[i - 1] == ' ')
+                   else char for i, char in enumerate(string)])
 
 
-def remove_invalid(s: str) -> str:
+def remove_invalid(string: str) -> str:
     """
     Removes characters that Windows doesn't allow in filenames from the specified string
     :param s: string to remove characters from
     :return: the given string without invalid characters
     """
-    s = s.replace('"', "'")
+    string = string.replace('"', "'")
     for invalid_char in ["\\", "/", ":", "*", "?", "<", ">", "|"]:
-        s = s.replace(invalid_char, "")
-    return s
+        string = string.replace(invalid_char, "")
+    return string
 
 
 def file_title(title: str) -> str:

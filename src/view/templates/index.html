@@ -6,8 +6,37 @@
 
 {% block body %}
 <form action="/" method="POST">
-    <input type="text" name="idk" id="idk">
-    <!-- TODO: -->
+
+    <input type="text" name="username" id="username" autofocus required>
+    <label for="username"> Username </label><br>
+
+    <input type="password" name="password" id="password" required>
+    <label for="password"> Password </label><br>
+
+    <details>
+        <summary>Additional Settings</summary>
+
+        <input type="range" name="limit" id="limit" min="1" max="1000" value="1000" required>
+        <label for="limit"> Number of posts to download </label><br>
+
+        <input type="checkbox" id="organize" name="organize">
+        <label for="organize"> Organize images into folders by subreddit </label><br>
+
+        <input type="checkbox" id="unsave" name="unsave" checked>
+        <label for="unsave"> Unsave posts if all images were downloaded </label><br>
+
+        <input type="text" name="title" id="title" value="%T posted by %a to %s" required>
+        <label for="username"> Format the file title <abbr title="t: post title
+            %T: post title in Title Case
+            %s: subreddit
+            %a: author
+            %u: submission's url
+            %p: number of parsed urls
+            %f: number of found urls
+            %%: %">(help)</abbr></label><br>
+    </details>
+
     <input type="submit" value="Start">
+
 </form>
 {% endblock %}

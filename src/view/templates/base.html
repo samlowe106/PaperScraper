@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <link rel="stylesheet" href="{{ url_for('static'), filename='css/main.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
         {% block head %}{% endblock %}
     </head>
     <body>
         {% block body %}{% endblock %}
+        <footer style="padding-bottom: 3rem">
+            <p><strong>PaperScraper</strong> was made by <a href="https://github.com/samlowe106">Sam Lowe</a>.</p>
+        </footer>
     </body>
 </html>

@@ -1,45 +1,30 @@
 import json
 import os
-from typing import List, Tuple
+from typing import Dict
 import requests
-from requests.models import Response
 from praw.models import Submission
 from . import parsers, strings, urls
-
-# Represents a tuple in the form (URL (str), whether the URL was correctly downloaded (bool))
-URLTuple = Tuple[str, bool]
 
 
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
 
-    response: Response = None
-    urls: List[str] = []
-    url_tuples: List[URLTuple] = []
-    title = ""
-    original_title = ""
-    subreddit = ""
-    url = ""
-    author = ""
-
     def __init__(self, submission: Submission):
         self.submission = submission
+
+        # relevant to user
         self.title = submission.title
         self.subreddit = str(submission.subreddit)
         self.url = submission.url
         self.author = str(submission.author)
-        self.file_title = strings.file_title(self.submission.title)
 
-        self.response = requests.get(self.submission.url,
-                                     headers={'Content-type': 'content_type_value'})
-
-        if self.response.status_code == 200:
-            self.urls = parsers.find_urls(self.response)
-        else:
-            self.urls = []
+        # relevant to parsing
+        self.base_file_title = strings.file_title(self.submission.title)
+        self.response = requests.get(self.submission.url, headers={'Content-type': 'content_type_value'})
+        self.urls_filepaths = {url : "" for url in parsers.find_urls(self.response)} if self.response.status_code == 200 else []
 
 
-    def download_all(self, directory: str, title: str = None) -> List[URLTuple]:
+    def download_all(self, directory: str, title: str = None) -> Dict[str, str]:
         """
         Downloads all urls and bundles them with their results
         :param directory: directory in which to download each file
@@ -48,14 +33,11 @@ class SubmissionWrapper:
         """
         if title is None:
             title = self.title
-        
-        results = [urls.download(url, os.path.join(directory, self.title)) if i == 0
-                   else urls.download(url, os.path.join(directory, f'{self.title} ({i})'))
-                   for i, url in enumerate(self.urls)]
 
-        self.url_tuples = list(zip(urls, results))
-
-        return self.url_tuples
+        for i, url in enumerate(self.urls_filepaths.keys()):
+            filename = self.base_file_title if i == 0 else f'{self.base_file_title} ({i})'
+            # TODO: this returns a bool!
+            self.urls_filepaths[url] = urls.download(url, os.path.join(directory, filename))
 
 
     def download_image(self, url: str, directory: str) -> bool:
@@ -83,12 +65,12 @@ class SubmissionWrapper:
         Counts the number of urls that were parsed
         :return: number of tuples that were correctly parsed
         """
-        return [result for _, result in self.url_tuples].count(True)
+        return [bool(filepath) for filepath in self.urls_filepaths.values()].count(True)
 
 
     def fully_parsed(self) -> bool:
         """ :return: True if urls were found and each one was parsed, else False """
-        return self.url_tuples and self.count_parsed() == len(self.url_tuples)
+        return self.urls_filepaths and self.count_parsed() == len(self.urls_filepaths)
 
 
     def log(self, file: str) -> None:
@@ -101,7 +83,7 @@ class SubmissionWrapper:
                            "title"           : self.submission.title,
                            "id"              : self.submission.id,
                            "url"             : self.submission.url,
-                           "recognized_urls" : self.url_tuples
+                           "recognized_urls" : self.urls_filepaths
                        }, logfile)
 
 
@@ -112,12 +94,7 @@ class SubmissionWrapper:
         :return: None
         """
         return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
-        """
-        return f"{self.original_title}" \
-               f"\n   r/{self.subreddit}" \
-               f"\n   {self.url}" \
-               f"\n   Saved {self.count_parsed()} / {len(self.url_tuples)} image(s) so far."
-        """
+
 
 
     def unsave(self) -> None:
@@ -128,7 +105,7 @@ class SubmissionWrapper:
     def format(self, template: str, token="%") -> str:
         """
         Formats a string based on the given template.
-        
+
         Each possible specifier is given below:
 
         t: current title
@@ -147,43 +124,30 @@ class SubmissionWrapper:
         specifier_found = False
         string_list = []
 
+        specifier_map = {
+            't' : self.title,
+            'T' : strings.title_case(self.title),
+            's' : self.subreddit,
+            'a' : self.author,
+            'u' : self.url,
+            'p' : self.count_parsed(),
+            'f' : len(self.urls_filepaths),
+            token : token
+            }
+
         for i, char in enumerate(template):
             if specifier_found:
-
-                # Each of these cases represents a different token (%t, %s, etc)
-                if char == 't':
-                    string_list += self.title
-                elif char == 'T':
-                    string_list += strings.title_case(self.title)
-                elif char == 's':
-                    string_list += self.subreddit
-                elif char == 'a':
-                    string_list += self.author
-                elif char == 'u':
-                    string_list += self.url
-                elif char == 'p':
-                    string_list += self.count_parsed()
-                elif char == 'f':
-                    string_list += len(self.url_tuples)
-                elif char == token:
-                    string_list += token                
-                else:
-                    # None of the above cases were satisfied, so this template must be malformed
-                    raise ValueError("The given string contains a malformed specifier:\n"
-                                    + template
-                                    + "\n" + i*" " + "^")
-                    
-                # we completed this specifier, so we can now look for the next one
+                if char not in specifier_map:
+                    raise ValueError(f"The given string contains a malformed specifier:\n{template}\n{i*' '}^")
+                string_list.append(specifier_map[char])
                 specifier_found = False
-
             elif char == token:
-                # we haven't previously found a format specifier, so this token must be the start of a new one
                 specifier_found = True
             else:
                 string_list.append(char)
-            
+
         if specifier_found:
             # A format specifier began but was not finished, so this template is malformed
             raise ValueError("The given string contains a trailing token")
-            
+
         return ''.join(string_list)

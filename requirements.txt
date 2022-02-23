@@ -1,6 +1,8 @@
-beautifulsoup4
-flask
-imgurpython
-praw
-Pillow
-requests
+beautifulsoup4==4.10.0
+Flask==2.0.3
+imgurpython==1.1.7
+Jinja2==3.0.3
+Pillow==8.3.2
+praw==7.4.0
+prawcore==2.3.0
+requests==2.26.0

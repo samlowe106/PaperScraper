@@ -17,6 +17,9 @@ class SubmissionWrapper:
         self.subreddit = str(submission.subreddit)
         self.url = submission.url
         self.author = str(submission.author)
+        self.nsfw = submission.over_18
+        self.score = submission.score
+        self.created = submission.created_utc # in Unix time
 
         # relevant to parsing
         self.base_file_title = strings.file_title(self.submission.title)
@@ -38,6 +41,19 @@ class SubmissionWrapper:
             filename = self.base_file_title if i == 0 else f'{self.base_file_title} ({i})'
             destination = os.path.join(directory, filename)
             self.urls_filepaths[url] = destination if urls.download(url, destination) else ""
+
+
+    def score_at_least(self, score_minimum: int) -> bool:
+        """
+        True if this post has at least as much score as the given minimum, else False
+        """
+        return score_minimum is None or self.score >= score_minimum
+
+
+    def posted_after(self):
+        """
+        True if this post was made before the given date, else False
+        """
 
 
     def download_image(self, url: str, directory: str) -> bool:

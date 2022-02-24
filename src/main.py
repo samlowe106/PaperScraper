@@ -1,73 +1,45 @@
 import argparse
 import os
-from typing import List, Optional
-from prawcore.exceptions import OAuthException
-from praw import Reddit
-from praw.models import Submission
-from .view import TerminalView, FlaskWebView, View
-from .model import SubmissionWrapper
+from typing import Dict
+from .view import View, view_factory
+from .model import SubmissionSource, SORT_OPTIONS
 
 LOG_DIRECTORY = "Logs"
 LOG_PATH = os.path.join("Logs", "log.txt")
 
 
+
 def main() -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
 
-    if args.web:
-        view = FlaskWebView()
-    else:
-        view = TerminalView()
+    view = view_factory(args.web)
 
     run_info = view.get_run_info(args)
-    reddit = sign_in(run_info["username"], run_info["password"])
 
-    if reddit is None:
-        view.output("Unrecognized username or password.", error=True)
-        if not args.web:
-            return
-
-    for path in [args.directory, LOG_DIRECTORY]:
+    for path in [run_info.directory, LOG_DIRECTORY]:
         os.makedirs(path, exist_ok=True)
 
-    download_from_list(reddit.user.me().saved(), view, limit=args.limit)
-
-    view.show_results(args.directory)
-
-
-
-def sign_in(username: str, password: str) -> Optional[Reddit]:
-    """Signs in to reddit"""
-    if not (username and password):
-        return None
     try:
-        return Reddit(client_id=os.environ.get("CLIENT_ID"),
-                      client_secret=os.environ.get("CLIENT_SECRET"),
-                      user_agent='PaperScraper',
-                      username=username,
-                      password=password)
-    except OAuthException:
-        return None
+        run(run_info, view)
+    except Exception as e:
+        view.output(str(e), error=True)
+
+    view.show_results(run_info.directory)
 
 
-def download_from_list(submissions: List[Submission], view: View, limit: int = 1000) -> int:
+def run(run_info: Dict[str, str], view: View) -> int:
     """
-    Downloads all posts from the given list
+    Downloads all posts
     """
-    count = 0
-    for submission in submissions:
-        wrapped = SubmissionWrapper(submission)
-        wrapped.download_all(args.directory, args.title)
+    i = 0
+    for i, wrapped in enumerate(SubmissionSource(args, view)):
+        wrapped.download_all(args.directory, run_info.title)
         if args.logging:
             wrapped.log(LOG_PATH)
-        if wrapped.count_parsed() > 0:
-            index += 1
-            view.output_submission_wrapper(count, wrapped)
+        view.output_submission_wrapper(i, wrapped)
+        if not args.dry:
             wrapped.unsave()
-            # End if the desired number of posts have had their images downloaded
-            if count >= limit:
-                break
-    return count
+    return i
 
 
 if __name__ == "__main__":
@@ -77,11 +49,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
             description="Scrapes images from the user's saved posts on Reddit")
 
-    """ Required arguments """
-
-    parser.add_argument("username",
+    parser.add_argument("source",
                         type=str,
-                        help="username of the reddit account from which to get saved posts")
+                        help="specify where posts should be taken from. choices are:"\
+                             "saved: user saved posts"\
+                             "r/<subreddit>: posts from <>")
 
     """ Optional arguments """
 
@@ -121,29 +93,26 @@ if __name__ == "__main__":
     parser.add_argument("-o",
                         "--organize",
                         action='store_false',
-                        help="organize images into folders by subreddit")
-
-    parser.add_argument("-s",
-                        "--source",
-                        type=str,
-                        help="specify where posts should be taken from. choices are:"\
-                            "saved: user saved posts"\
-                            "r/<subreddit>: posts from <>")
-
+                        help="organize images from saved into folders by subreddit")
     parser.add_argument("-a",
                         "--age",
                         type=str,
+                        # TODO: hours, days, months, etc?
                         help="specify the maximum age in hours a post can be to be downloaded")
-
     parser.add_argument("-k",
-                        "--karma",
+                        "--score",
                         type=int,
-                        help="specify the minimum karma a post must have to be downloaded")
-
-    parser.add_argument("--sort",
+                        help="specify the minimum score a post must have to be downloaded")
+    parser.add_argument("-s"
+                        "--sortby",
                         type=str,
-                        help="specify whether to sort the given subreddit source by 'top', 'new', 'hot', or 'controversial'")
-    # TODO: add more options based on what praw offers
+                        choices=SORT_OPTIONS,
+                        default="hot",
+                        help="specify how to sort the given source if it's a subreddit")
+    parser.add_argument("--dry",
+                        action='store_false',
+                        help="do not unsave any posts, even those that were completely parsed")
+
 
     args = parser.parse_args()
 

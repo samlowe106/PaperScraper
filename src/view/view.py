@@ -12,7 +12,7 @@ class View():
 
     def get_run_info(self, args : Dict[str, Any]) -> Dict[str, Any]:
         """
-        Gets parameters about this run, based on the given args
+        Gets parameters about this run based on the given command line args
         """
 
     def show_results(self, output_directory: str):
@@ -42,7 +42,7 @@ class TerminalView(View):
 
     def get_run_info(self, args) -> Dict[str, Any]:
         """
-        Gets parameters about this run
+        Gets parameters about this run based on the given command line args
         """
         args["password"] = getpass("Password: ")
         return args
@@ -77,7 +77,7 @@ class FlaskWebView():
 
 
     @app.route('/', methods=["POST", "GET"])
-    def index(self):
+    def root(self):
         """
         Landing page for PaperScraper, takes user input and run parameters
         """
@@ -123,3 +123,9 @@ class FlaskWebView():
         Outputs the submission wrapper to the user
         """
         self.submission_wrappers.append(wrapper)
+
+
+def view_factory(web: bool):
+    if web:
+        return FlaskWebView()
+    return TerminalView()

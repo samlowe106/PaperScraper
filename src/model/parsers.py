@@ -168,14 +168,14 @@ class GfycatParser(IParser):
     """
 
 
-PARSER_LIST = [SingleImageParser(), ImgurParser()]
+PARSERS = (SingleImageParser(), ImgurParser())
 
 
-def find_urls(r: Response) -> Set[str]:
+def find_urls(response: Response) -> Set[str]:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
-    return {url for url in [parser.try_parse(r) for parser in PARSER_LIST]}
+    return {url for url in [parser.try_parse(response) for parser in PARSERS]}

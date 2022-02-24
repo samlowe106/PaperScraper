@@ -1,5 +1,5 @@
 from .submission_wrapper import SubmissionWrapper
-from ..model import sign_in
+from . import sign_in
 
 source_dict = {
     "top" : lambda sub, age, score: sub.top(age_limit=age, score_limit=score),

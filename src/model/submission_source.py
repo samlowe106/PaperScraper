@@ -1,53 +1,99 @@
+from enum import Enum
+from typing import Callable
+from praw import Reddit
+from praw.models.subreddits import Subreddit
 from .submission_wrapper import SubmissionWrapper
-from . import sign_in
 
-source_dict = {
-    "top" : lambda sub, age, score: sub.top(age_limit=age, score_limit=score),
-    "new" : lambda sub, age, score: sub.new(age_limit=age, score_limit=score),
-    "hot" : lambda sub, age, score: sub.hot(age_limit=age, score_limit=score),
-    "controversial" : lambda sub, age, score: sub.controversial(age_limit=age, score_limit=score),
-    "gilded" : lambda sub, age, score: sub.gilded(age_limit=age, score_limit=score),
-}
 
-SORT_OPTIONS = source_dict.keys()
+class SortOption(Enum):
+    """
+    Represents the ways a subreddit's submissions can be sorted
+    """
+    TOP = Subreddit.top
+    NEW = Subreddit.new
+    HOT = Subreddit.hot
+    CONTROVERSIAL = Subreddit.controversial
+    GILDED = Subreddit.gilded
 
-source_dict["identity"] = lambda saved, _, __: saved
 
 class SubmissionSource:
     """
     Represents a source of reddit posts, such as a subreddit or user's saved posts
     """
 
-    count = 0
+    def __init__(self, source, limit):
+        self.source = source
+        self.limit = limit
+        self.index = 0
 
-    def __init__(self, args, view):
-        self.score_minimum = args.score
-        self.limit = args.limit
+        # raise ValueError(f"Expected source to be saved or a subreddit, got {args.source}")
 
-        if args.source == "saved":
-            if args.sortby is not None:
-                raise ValueError(f"No way to sort saved posts by {args.sortby}")
-            while not (args.username and args.password):
-                view.prompt_sign_in()
-            reddit = sign_in(args.username, args.password)
-            self.original_source = reddit.user.me().saved()
-
-        elif args.source.startswith("r/"):
-            # raises prawcore.NotFound ??
-            self.original_source = source_dict[args.sortby](
-                reddit.subreddit(args.source.rstrip("/r")),
-                args.age,
-                args.score)
-        else:
-            raise ValueError(f"Expected source to be saved or a subreddit, got {args.source}")
-
-
-    def __iter__(self):
-        for submission in self.original_source:
+    def __iter__(self) -> SubmissionWrapper:
+        for submission in self.source:
             wrapper = SubmissionWrapper(submission)
-            if (self.count < self.limit
-                and wrapper.score_at_least(self.score_minimum)
-                and wrapper.posted_after()
+            if (self.index < self.limit
+#               and wrapper.score_at_least(self.score_minimum)
+#               and wrapper.posted_after()
                 and wrapper.count_parsed() > 0):
-                self.count += 1
+                self.index += 1
                 yield SubmissionWrapper(submission)
+
+
+    class Builder:
+        """
+        Builds SubmissionSources
+        """
+
+        def __init__(self) -> None:
+            self.limit: int = None
+            self.age = None
+            self.score: int = None
+            self.source_func: Callable = None
+
+
+        def build(self):
+            """
+            Builds the SubmissionSource
+            """
+            return SubmissionSource(self.source_func(score=self.score, age=self.age), self.limit)
+
+
+        def from_user_saved(self, reddit: Reddit, score_min):
+            """
+            Generates a source from a user's saved posts
+            """
+            self.score = score_min
+            self.source_func = reddit.user.me().saved
+            return self
+
+
+        def from_subreddit(self, reddit: Reddit, subreddit_name: str, sortby: SortOption):
+            """
+            Generates a source from a subreddit
+            """
+            subreddit = reddit.subreddit(subreddit_name.rstrip("r/"))
+            self.source_func = lambda score, age: sortby(subreddit, score=score, age=age)
+            return self
+
+
+        def submission_limit(self, limit: int):
+            """
+            Sets the submission limit
+            """
+            self.limit = limit
+            return self
+
+
+        def score_min(self, score: int):
+            """
+            Sets the score min
+            """
+            self.score = score
+            return self
+
+        def age_max(self, age_max):
+            """
+            Sets how old posts can be before they're ignored
+            """
+            self.age = age_max
+            return self

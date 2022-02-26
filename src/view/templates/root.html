@@ -7,11 +7,18 @@
 {% block body %}
 <form action="/" method="POST">
 
-    <input type="text" name="username" id="username" autofocus required>
-    <label for="username"> Username </label><br>
+    <details>
+        <input type="text" name="username" id="username" required>
+        <label for="username"> Username </label><br>
 
-    <input type="password" name="password" id="password" required>
-    <label for="password"> Password </label><br>
+        <input type="password" name="password" id="password" required>
+        <label for="password"> Password </label><br>
+    </details>
+
+    <details>
+        <input type="text" name="subreddit" id="subreddit" required>
+        <label for="subreddit"> Subreddit r/</label><br>
+    </details>
 
     <details>
         <summary>Additional Settings</summary>

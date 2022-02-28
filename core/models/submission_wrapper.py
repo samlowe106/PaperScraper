@@ -3,7 +3,8 @@ import os
 from typing import Dict
 import requests
 from praw.models import Submission
-from . import parsers, strings, urls
+from ...core.utils import strings, urls
+from ...core.models import parsers
 
 
 class SubmissionWrapper:
@@ -25,6 +26,8 @@ class SubmissionWrapper:
         self.base_file_title = strings.file_title(self.submission.title)
         self.response = requests.get(self.submission.url, headers={'Content-type': 'content_type_value'})
         self.urls_filepaths = {url : "" for url in parsers.find_urls(self.response)} if self.response.status_code == 200 else []
+        self.found = len(self.urls_filepaths)
+        self.parsed = 0
 
 
     def download_all(self, directory: str, title: str = None) -> Dict[str, str]:
@@ -40,7 +43,9 @@ class SubmissionWrapper:
         for i, url in enumerate(self.urls_filepaths.keys()):
             filename = self.base_file_title if i == 0 else f'{self.base_file_title} ({i})'
             destination = os.path.join(directory, filename)
-            self.urls_filepaths[url] = destination if urls.download(url, destination) else ""
+            if urls.download(url, destination):
+                self.urls_filepaths[url] = destination
+                self.parsed += 1
 
 
     def score_at_least(self, score_minimum: int) -> bool:
@@ -81,7 +86,7 @@ class SubmissionWrapper:
         Counts the number of urls that were parsed
         :return: number of tuples that were correctly parsed
         """
-        return [bool(filepath) for filepath in self.urls_filepaths.values()].count(True)
+        return sum(int(bool(filepath)) for filepath in self.urls_filepaths.values())
 
 
     def fully_parsed(self) -> bool:
@@ -110,7 +115,6 @@ class SubmissionWrapper:
         :return: None
         """
         return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
-
 
 
     def unsave(self) -> None:

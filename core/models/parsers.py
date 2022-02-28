@@ -3,7 +3,7 @@ from typing import Set
 from bs4 import BeautifulSoup
 import requests
 from requests.models import Response
-from . import urls
+from ..utils import urls
 
 
 class IParser:

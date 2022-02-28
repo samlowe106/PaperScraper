@@ -58,16 +58,15 @@ class SubmissionSource:
             return SubmissionSource(self.source_func(score=self.score, age=self.age), self.limit)
 
 
-        def from_user_saved(self, reddit: Reddit, score_min):
+        def from_user_saved(self, reddit):
             """
             Generates a source from a user's saved posts
             """
-            self.score = score_min
             self.source_func = reddit.user.me().saved
             return self
 
 
-        def from_subreddit(self, reddit: Reddit, subreddit_name: str, sortby: SortOption):
+        def from_subreddit(self, subreddit_name: str, sortby: SortOption, reddit: Reddit):
             """
             Generates a source from a subreddit
             """

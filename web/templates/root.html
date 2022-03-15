@@ -1,22 +1,28 @@
 {% extends 'base.html' %}
 
-{% block head %}
-<h1>PaperScraper</h1>
-{% endblock %}
+
 
 {% block body %}
+
+{% if error %}
+<h3>{{error}}</h3>
+{% endif %}
+
+{% if not source %}
 <form action="/" method="POST">
 
     <details>
-        <input type="text" name="username" id="username" required>
+        <summary>From User Saved Posts</summary>
+        <input type="text" name="username" id="username">
         <label for="username"> Username </label><br>
 
-        <input type="password" name="password" id="password" required>
+        <input type="password" name="password" id="password">
         <label for="password"> Password </label><br>
     </details>
 
     <details>
-        <input type="text" name="subreddit" id="subreddit" required>
+        <summary>From A Subreddit</summary>
+        <input type="text" name="subreddit" id="subreddit">
         <label for="subreddit"> Subreddit r/</label><br>
     </details>
 
@@ -33,14 +39,14 @@
         <label for="unsave"> Unsave posts if all images were downloaded </label><br>
 
         <input type="text" name="title" id="title" value="%T posted by %a to %s" required>
-        <label for="username"> Format the file title <abbr title="t: post title
-            %T: post title in Title Case
-            %s: subreddit
-            %a: author
-            %u: submission's url
-            %p: number of parsed urls
-            %f: number of found urls
-            %%: %">(help)</abbr></label><br>
+        <label for="username"> Format the file title <abbr title="%t: post title
+        %T: post title in Title Case
+        %s: subreddit
+        %a: author
+        %u: submission's url
+        %p: number of parsed urls
+        %f: number of found urls
+        %%: %">(help)</abbr></label><br>
 
         <input type="checkbox" name="ignorensfw" id="ignorensfw" value="checked">
         <label for="ignorensfw"> Ignore NSFW posts </label><br>
@@ -49,4 +55,7 @@
     <input type="submit" value="Start">
 
 </form>
+{% else %}
+    <p>Data!</p>
+{% endif %}
 {% endblock %}

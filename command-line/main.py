@@ -1,8 +1,8 @@
 import argparse
 import getpass
 import os
-from ..core.models import SubmissionSource, SortOption
-from ..core import sign_in
+from PaperScraper.core.models import SubmissionSource, SortOption
+from PaperScraper.core import sign_in
 
 LOG_DIRECTORY = "Logs"
 LOG_PATH = os.path.join("Logs", "log.txt")
@@ -43,8 +43,8 @@ def main() -> None:
                 f"\t{wrapped.parsed} / {wrapped.found} posts parsed")
             if not args.dry:
                 wrapped.unsave()
-        except Exception as e:
-            print(f"Encountered uncaught exception parsing post with url {wrapped.url}\n{e}")
+        except Exception as exception:
+            print(f"Encountered uncaught exception parsing post with url {wrapped.url}\n{exception}")
             return
         finally:
             if args.logging:

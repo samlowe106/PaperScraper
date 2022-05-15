@@ -2,7 +2,6 @@ from collections.abc import Callable
 import os
 import shutil
 import re
-import requests
 from requests.models import Response
 
 
@@ -22,24 +21,6 @@ def determine_name(directory: str, title: str, extension: str) -> str:
     return os.path.join(directory, title + ("" if conflicts == 0 else f" ({conflicts})") + extension)
 
 
-def download(url: str, destination: str) -> bool:
-    """
-    Downloads the linked image and saves to the specified filepath
-    :param url: url directly linking to the image to download
-    :param destination: file that the image should be saved to
-    :return: True if the file was downloaded correctly, else False
-    """
-    r = requests.get(url)
-
-    if r.status_code != 200:
-        return False
-
-    os.makedirs(os.path.split(destination)[0], exist_ok=True)
-    with open(destination, "wb") as f:
-        f.write(r.content)
-    return True
-
-
 def get_extension(r: Response) -> str:
     """
     Gets the extension of the content in the specified response
@@ -57,9 +38,10 @@ def sandbox(directory: str) -> Callable:
     def wrapper(function: Callable):
         def make_directory(*args, **kwargs):
             os.makedirs(directory, exist_ok=False)
+            original_wd = os.getcwd()
             os.chdir(directory)
             result = function(*args, **kwargs)
-            os.chdir("..")
+            os.chdir(original_wd)
             shutil.rmtree(directory)
             return result
         return make_directory

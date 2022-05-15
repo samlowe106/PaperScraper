@@ -74,14 +74,16 @@ class SubmissionWrapper:
         :param temp_dir: directory that the final file should be saved to
         :return: True if the file was downloaded correctly, else False
         """
-        r = requests.get(url)
+        resp = requests.get(url)
 
-        if r.status_code != 200:
+        if resp.status_code != 200:
             return False
 
         os.makedirs(directory, exist_ok=True)
-        with open(os.path.join(directory, self.title + urls.get_extension(r)), "wb") as f:
-            f.write(r.content)
+        with open(os.path.join(
+                directory,
+                self.title + urls.get_extension(resp)), "wb") as image_file:
+            image_file.write(resp.content)
         return True
 
 

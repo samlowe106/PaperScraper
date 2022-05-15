@@ -11,23 +11,27 @@ def determine_name(directory: str, title: str, extension: str) -> str:
     with any of the files in the specified directory
     :param directory: the directory to check the filename against
     :param title: the title to give the file
-    :param extension: a string beginning with a . representing the extension that the file should have
+    :param extension: a string beginning with a .
+    representing the extension that the file should have
     """
     # there's a one-line implementation of this function, but it's slower and less legible
     # this regex will match all possible outputs of this function, and is used to guarantee
     #  that the output of this call won't conflict with anything
     pattern = re.compile("^" + re.escape(title) + r"( \(\d+\))?" + re.escape(extension) + "$")
     conflicts = sum(1 for filename in os.listdir(directory) if re.match(pattern, filename))
-    return os.path.join(directory, title + ("" if conflicts == 0 else f" ({conflicts})") + extension)
+    return os.path.join(
+        directory,
+        title + ("" if conflicts == 0 else f" ({conflicts})") + extension
+        )
 
 
-def get_extension(r: Response) -> str:
+def get_extension(resp: Response) -> str:
     """
     Gets the extension of the content in the specified response
     :param r: valid request object
     :return: the filetype of the content stored in that request, in lowercase
     """
-    return "." + r.headers["Content-type"].split("/")[1].lower()
+    return "." + resp.headers["Content-type"].split("/")[1].lower()
 
 
 def sandbox(directory: str) -> Callable:

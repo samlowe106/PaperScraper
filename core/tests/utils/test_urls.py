@@ -4,26 +4,19 @@ import unittest
 
 
 class TestURLS(unittest.TestCase):
-
+    """Verifies that the URLs module works as intended"""
 
     def test_determine_name(self):
-        # TODO
-        pass
+        """Verifies that determine_name works as intended"""
 
 
     def test_download(self):
-        # TODO
-        pass
+        """Verifies that determine_name works as intended"""
 
 
     def test_get_extension(self):
-        # TODO
-        pass
+        """Verifies that determine_name works as intended"""
 
-
-    def test_sandbox(self):
-        # TODO
-        pass
 
 """
 def test_get_extension(self):

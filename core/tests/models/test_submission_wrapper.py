@@ -1,4 +1,4 @@
-from src.models.submission_wrapper import SubmissionWrapper
+from PaperScraper.core.models import SubmissionWrapper
 import json
 import unittest
 from praw.models import Submission
@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 
 class TestSubmissionWrapper(unittest.TestCase):
-    """ """
+    """Verifies that SubmissionWrapper behaves as expected"""
 
     urls = ["https://www.reddit.com/r/ImaginaryFutureWar/comments/pvum2y/mech_sketch_by_daryl_mandryk/",
             "https://www.reddit.com/r/ImaginaryWorlds/comments/pv8b3p/fantasy_dreaming_by_michal_kv%C3%A1%C4%8D/",

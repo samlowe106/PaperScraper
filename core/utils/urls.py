@@ -16,7 +16,7 @@ def determine_name(directory: str, title: str, extension: str) -> str:
     # there's a one-line implementation of this function, but it's slower and less legible
     # this regex will match all possible outputs of this function, and is used to guarantee
     #  that the output of this call won't conflict with anything
-    pattern = re.compile(f"^{re.escape(title)}( \(\d+\))?{re.escape(extension)}$")
+    pattern = re.compile("^" + re.escape(title) + r"( \(\d+\))?" + re.escape(extension) + "$")
     conflicts = sum(1 for filename in os.listdir(directory) if re.match(pattern, filename))
     return os.path.join(directory, title + ("" if conflicts == 0 else f" ({conflicts})") + extension)
 

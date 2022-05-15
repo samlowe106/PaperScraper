@@ -1,23 +1,26 @@
+from abc import ABC
 import json
 from typing import Set
 from bs4 import BeautifulSoup
 import requests
 from requests.models import Response
+from ..tests.snapshotter import snapshot
 from ..utils import urls
 
 
-class IParser:
+class IParser(ABC):
     """
     An interface representing the functionality implemented by a website HTML parser
     """
 
+    @snapshot("idk.txt")
     def recognizes(self, response: Response) -> bool:
         """
         :param r: A webpage
         :returns: True if this parser recognizes the given response, else false
         """
-        return False
 
+    @snapshot("idk.txt")
     def try_parse(self, response: Response) -> Set[str]:
         """
         :param r: A web page that has been recognized by this parser
@@ -28,18 +31,15 @@ class IParser:
 
         return self._parse(response)
 
+    @snapshot("idk.txt")
     def _parse(self, response: Response) -> Set[str]:
         """
         Parses the given response.
         """
-        raise NotImplementedError("parse() has not yet been implemented for this parser")
 
 
 class SingleImageParser(IParser):
     """Parses direct links to single images"""
-
-    def __init__(self):
-        return
 
 
     def recognizes(self, response: Response) -> bool:
@@ -62,9 +62,6 @@ class SingleImageParser(IParser):
 
 class ImgurParser(IParser):
     """Parses imgur images, albums, and galleries"""
-
-    def __init__(self):
-        return
 
 
     def recognizes(self, response: Response) -> bool:
@@ -178,4 +175,4 @@ def find_urls(response: Response) -> Set[str]:
     :param url: a link to a webpage
     :return: a list of direct links to images found on that webpage
     """
-    return {url for url in [parser.try_parse(response) for parser in PARSERS]}
+    return {parser.try_parse(response) for parser in PARSERS}

@@ -24,13 +24,17 @@ class SubmissionWrapper:
 
         # relevant to parsing
         self.base_file_title = strings.file_title(self.submission.title)
-        self.response = requests.get(self.submission.url, headers={'Content-type': 'content_type_value'})
-        self.urls_filepaths = {url : "" for url in parsers.find_urls(self.response)} if self.response.status_code == 200 else []
+        self.response = requests.get(
+            self.submission.url,
+            headers={'Content-type': 'content_type_value'}
+            )
+        self.urls_filepaths = {url : "" for url in parsers.find_urls(self.response)}\
+             if self.response.status_code == 200 else []
         self.found = len(self.urls_filepaths)
         self.parsed = 0
 
 
-    def download_all(self, directory: str, title: str = None) -> Dict[str, str]:
+    async def download_all(self, directory: str, title: str = None) -> Dict[str, str]:
         """
         Downloads all urls and bundles them with their results
         :param directory: directory in which to download each file
@@ -43,7 +47,7 @@ class SubmissionWrapper:
         for i, url in enumerate(self.urls_filepaths.keys()):
             filename = self.base_file_title if i == 0 else f'{self.base_file_title} ({i})'
             destination = os.path.join(directory, filename)
-            if urls.download(url, destination):
+            if self.download_image(url, destination):
                 self.urls_filepaths[url] = destination
                 self.parsed += 1
 
@@ -61,7 +65,7 @@ class SubmissionWrapper:
         """
 
 
-    def download_image(self, url: str, directory: str) -> bool:
+    async def download_image(self, url: str, directory: str) -> bool:
         """
         Downloads the linked image, converts it to the specified filetype,
         and saves to the specified directory. Avoids name conflicts.
@@ -158,7 +162,8 @@ class SubmissionWrapper:
         for i, char in enumerate(template):
             if specifier_found:
                 if char not in specifier_map:
-                    raise ValueError(f"The given string contains a malformed specifier:\n{template}\n{i*' '}^")
+                    raise ValueError(
+                        f"The given string contains a malformed specifier:\n{template}\n{i*' '}^")
                 string_list.append(specifier_map[char])
                 specifier_found = False
             elif char == token:

@@ -18,7 +18,6 @@ lazy-object-proxy==1.7.1
 MarkupSafe==2.1.1
 mccabe==0.7.0
 nodeenv==1.7.0
-pkg_resources==0.0.0
 platformdirs==2.5.2
 praw==7.4.0
 prawcore==2.3.0

@@ -1,9 +1,11 @@
-from abc import ABC
 import json
+from abc import ABC
 from typing import Set
-from bs4 import BeautifulSoup
+
 import requests
+from bs4 import BeautifulSoup
 from requests.models import Response
+
 from ..utils import urls
 
 
@@ -118,7 +120,7 @@ class ImgurAlbumParser(IParser):
     @staticmethod
     def recognizes(response: Response) -> bool:
         """
-        :param r: A webpage
+        :param response: A webpage
         :returns: True if this parser recognizes the given response, else false
         """
         return "imgur.com" in response.url  # and not r.url.endswith("/gallery/")

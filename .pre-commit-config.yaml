@@ -9,19 +9,19 @@ repos:
     rev: 'c2dc3514b189811b1e3190eb51d36c4cc599bdf3'
     hooks:
     -   id: flake8
-        args: ['--max-line-length=110']
+        args: [--max-line-length=110]
 
 -   repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:
     -   id: isort
         args: [
-          '--line-length=110',
-          '--multi-line=3',
-          '--force-grid-wrap=0',
-          '--trailing-comma',
-          '--use-parentheses',
-          '--ensure-newline-before-comments',
+          --line-length=110,
+          --multi-line=3,
+          --force-grid-wrap=0,
+          --trailing-comma,
+          --use-parentheses,
+          --ensure-newline-before-comments,
         ]
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
@@ -32,4 +32,5 @@ repos:
           --no-strict-optional,
           --ignore-missing-imports,
           --install-types,
+          --non-interactive,
         ]

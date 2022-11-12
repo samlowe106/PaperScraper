@@ -16,11 +16,8 @@ __pycache__
 app/helpers/__pycache__
 app/helpers/parsers/__pycache__
 
-# Testing directory
-app/tests/test_dir
-
-# Note file
-notes.txt
+# mypy
+.mypy_cache
 
 # TODO file
 todo

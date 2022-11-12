@@ -9,6 +9,7 @@ repos:
     rev: 'c2dc3514b189811b1e3190eb51d36c4cc599bdf3'
     hooks:
     -   id: flake8
+        args: ['--max-line-length=110']
 
 -   repo: https://github.com/PyCQA/isort
     rev: 5.10.1
@@ -27,4 +28,7 @@ repos:
     rev: '586b4f092e52673a0fe64a149440ecdf7fc125c5'
     hooks:
       - id: mypy
-        args: [--no-strict-optional, --ignore-missing-imports]
+        args: [
+          --no-strict-optional,
+          --ignore-missing-imports,
+        ]

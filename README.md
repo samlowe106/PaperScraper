@@ -1,7 +1,12 @@
 # Paper Scraper for Reddit
+
 PaperScraper is a Python script that downloads images from the user's saved category on Reddit.
 
 Posts linking directly to an image or imgur page will be downloaded and unsaved; all other posts will be ignored.
+
+## Requirements
+
+* Python (3.11)
 
 ## Summary
 
@@ -27,7 +32,7 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 PaperScraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using ``` python src/main.py ```
 
-PaperScraper also comes with a handful of flags, which can be found by running PaperScraper with the `--help` flag. 
+PaperScraper also comes with a handful of flags, which can be found by running PaperScraper with the `--help` flag.
 
 ## License
 

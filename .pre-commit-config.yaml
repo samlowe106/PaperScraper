@@ -31,4 +31,5 @@ repos:
         args: [
           --no-strict-optional,
           --ignore-missing-imports,
+          --install-types,
         ]

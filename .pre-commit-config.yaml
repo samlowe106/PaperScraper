@@ -1,10 +1,4 @@
 repos:
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: '586b4f092e52673a0fe64a149440ecdf7fc125c5'
-    hooks:
-      - id: mypy
-        args: [--no-strict-optional, --ignore-missing-imports]
-
 -   repo: https://github.com/psf/black
     rev: 22.10.0
     hooks:
@@ -28,3 +22,9 @@ repos:
           '--use-parentheses',
           '--ensure-newline-before-comments',
         ]
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: '586b4f092e52673a0fe64a149440ecdf7fc125c5'
+    hooks:
+      - id: mypy
+        args: [--no-strict-optional, --ignore-missing-imports]

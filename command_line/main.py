@@ -1,8 +1,9 @@
 import argparse
 import getpass
 import os
-from core.models import SubmissionSource, SortOption
+
 from core import sign_in
+from core.models import SortOption, SubmissionSource
 
 LOG_PATH = os.path.join("Logs", "log.txt")
 
@@ -98,7 +99,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sortby",
-        type=str,
         choices=SortOption,
         default="hot",
         help="specify how to sort the given source if it's a subreddit",

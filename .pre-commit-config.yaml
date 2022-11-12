@@ -9,7 +9,10 @@ repos:
     rev: 'c2dc3514b189811b1e3190eb51d36c4cc599bdf3'
     hooks:
     -   id: flake8
-        args: [--max-line-length=110]
+        args: [
+          --max-line-length=110,
+          --per-file-ignores=__init__.py:F401
+          ]
 
 -   repo: https://github.com/PyCQA/isort
     rev: 5.10.1

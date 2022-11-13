@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from typing import Dict
+from typing import Dict, Set
 
 import requests
 from praw.models import Submission
@@ -14,7 +14,7 @@ class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
 
     def __init__(self, submission: Submission):
-        self.submission = submission
+        self._submission = submission
 
         # relevant to user
         self.title = submission.title
@@ -26,18 +26,25 @@ class SubmissionWrapper:
         self.created = submission.created_utc  # in Unix time
 
         # relevant to parsing
-        self.base_file_title = core.file_title(self.submission.title)
-        self.response = requests.get(
-            self.submission.url, headers={"Content-type": "content_type_value"}
-        )
+        self.base_file_title = core.file_title(self._submission.title)
+        self.response: requests.Response = None
+        self.urls: Set[str] = set()
 
-        self.urls_filepaths: Dict[str, str] = (
-            {url: "" for url in asyncio.run(parsers.find_urls(self.response))}
-            if self.response.status_code == 200
-            else dict()
+    async def find_urls(self) -> bool:
+        """
+        Parses this wrapper's associated url to find all relevant image urls,
+        and populates this wrapper's urls field
+        :returns: True if no problems were encountered while scraping this wrapper's url, else False
+        """
+        self.response = requests.get(
+            self._submission.url,
+            headers={"Content-type": "content_type_value"},
+            timeout=10,
         )
-        self.found = len(self.urls_filepaths)
-        self.parsed = 0
+        if self.response.status_code == 200:
+            self.urls = asyncio.run(parsers.find_urls(self.response))
+            return True
+        return False
 
     async def download_all(self, directory: str, title: str = None) -> Dict[str, str]:
         """
@@ -48,16 +55,35 @@ class SubmissionWrapper:
         """
         if title is None:
             title = self.title
-
-        for i, url in enumerate(self.urls_filepaths.keys()):
-            filename = (
-                self.base_file_title if i == 0 else f"{self.base_file_title} ({i})"
+        urls_filepaths: Dict[str, str] = dict()
+        for i, url in enumerate(self.urls):
+            destination = os.path.join(
+                directory,
+                self.base_file_title if i == 0 else f"{self.base_file_title} ({i})",
             )
-            destination = os.path.join(directory, filename)
-            if await self.download_image(url, destination):
-                self.urls_filepaths[url] = destination
-                self.parsed += 1
-        return self.urls_filepaths
+            urls_filepaths[url] = (
+                destination if await self._download_image(url, destination) else None
+            )
+        return urls_filepaths
+
+    async def _download_image(self, url: str, directory: str) -> bool:
+        """
+        Downloads the linked image, converts it to the specified filetype,
+        and saves to the specified directory. Avoids name conflicts.
+        :param url: url directly linking to the image to download
+        :param title: title that the final file should have
+        :param temp_dir: directory that the final file should be saved to
+        :return: True if the file was downloaded correctly, else False
+        """
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            return False
+        os.makedirs(directory, exist_ok=True)
+        with open(
+            os.path.join(directory, self.title + core.get_extension(response)), "wb"
+        ) as image_file:
+            image_file.write(response.content)
+        return True
 
     def score_at_least(self, score_minimum: int) -> bool:
         """
@@ -70,38 +96,6 @@ class SubmissionWrapper:
         True if this post was made before the given date, else False
         """
 
-    async def download_image(self, url: str, directory: str) -> bool:
-        """
-        Downloads the linked image, converts it to the specified filetype,
-        and saves to the specified directory. Avoids name conflicts.
-        :param url: url directly linking to the image to download
-        :param title: title that the final file should have
-        :param temp_dir: directory that the final file should be saved to
-        :return: True if the file was downloaded correctly, else False
-        """
-        resp = requests.get(url)
-        if resp.status_code != 200:
-            return False
-        os.makedirs(directory, exist_ok=True)
-        with open(
-            os.path.join(directory, self.title + core.get_extension(resp)), "wb"
-        ) as image_file:
-            image_file.write(resp.content)
-        return True
-
-    def count_parsed(self) -> int:
-        """
-        Counts the number of urls that were parsed
-        :return: number of tuples that were correctly parsed
-        """
-        return sum(int(bool(filepath)) for filepath in self.urls_filepaths.values())
-
-    def fully_parsed(self) -> bool:
-        """:return: True if urls were found and each one was parsed, else False"""
-        return bool(self.urls_filepaths) and (
-            self.count_parsed() == len(self.urls_filepaths.keys())
-        )
-
     def log(self, file: str) -> None:
         """
         Writes the given post's title and url to the specified file
@@ -110,10 +104,10 @@ class SubmissionWrapper:
         with open(file, "a", encoding="utf-8") as logfile:
             json.dump(
                 {
-                    "title": self.submission.title,
-                    "id": self.submission.id,
-                    "url": self.submission.url,
-                    "recognized_urls": self.urls_filepaths,
+                    "title": self._submission.title,
+                    "id": self._submission.id,
+                    "url": self._submission.url,
+                    "recognized_urls": self.urls,
                 },
                 logfile,
             )
@@ -134,7 +128,7 @@ class SubmissionWrapper:
 
     def unsave(self) -> None:
         """Unsaves this submission"""
-        self.submission.unsave()
+        self._submission.unsave()
 
     def format(self, template: str, token="%") -> str:
         """
@@ -164,8 +158,6 @@ class SubmissionWrapper:
             "s": self.subreddit,
             "a": self.author,
             "u": self.url,
-            "p": self.count_parsed(),
-            "f": len(self.urls_filepaths),
             token: token,
         }
 

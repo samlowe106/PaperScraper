@@ -1,5 +1,6 @@
+import asyncio
 from enum import Enum
-from typing import Callable, Generator
+from typing import AsyncGenerator, Callable, Iterable
 
 from praw import Reddit
 from praw.models.subreddits import Subreddit
@@ -27,26 +28,45 @@ class SubmissionSource:
     Represents a source of reddit posts, such as a subreddit or user's saved posts
     """
 
-    def __init__(self, source, limit):
+    def __init__(self, source, limit: int):
         self.source = source
         self.limit = limit
         self.index = 0
 
         # raise ValueError(f"Expected source to be saved or a subreddit, got {args.source}")
 
-    def __iter__(self) -> Generator:
-        # TODO: type should be Generator[Self, None, None], but mypy doesn't yet
-        #  support the Self type (failing with 'typing.Self is not a valid type')
+        # Concurrently parse a handful of submissions up-front
+        #  Very likely to save time, especially if there are enough valid posts
+        self.initial_batch: Iterable[SubmissionWrapper] = [
+            SubmissionWrapper(submission)
+            for i, submission in enumerate(self.source)
+            if i < 2 * self.limit
+        ]
+        asyncio.gather(submission.find_urls() for submission in self.initial_batch)
+        self.initial_batch = (
+            wrapper for wrapper in self.source if self.is_valid(wrapper)
+        )
+
+    def is_valid(self, wrapper: SubmissionWrapper) -> bool:
+        """
+        :return: True if the given post meets the minimum criteria to be parsed, else False
+        """
+        # TODO
+        # and wrapper.score_at_least(self.score_minimum)
+        # and wrapper.posted_after()
+        return len(wrapper.urls) > 0
+
+    # TODO: type should be Generator[Self, None, None], but mypy doesn't yet
+    #  support the Self type (failing with 'typing.Self is not a valid type')
+    async def __iter__(self) -> AsyncGenerator:
+        for wrapper in self.initial_batch:
+            yield wrapper
         for submission in self.source:
             wrapper = SubmissionWrapper(submission)
-            if (
-                self.index < self.limit
-                #               and wrapper.score_at_least(self.score_minimum)
-                #               and wrapper.posted_after()
-                and wrapper.count_parsed() > 0
-            ):
+            await wrapper.find_urls()
+            if self.index < self.limit and self.is_valid(wrapper):
                 self.index += 1
-                yield SubmissionWrapper(submission)
+                yield wrapper
 
     class Builder:
         """

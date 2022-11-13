@@ -51,6 +51,7 @@ async def imgur_gallery(response: Response) -> Set[str]:
         if gallery_response.status_code == 200:
             return await imgur_album(gallery_response)
 
+    # TODO
     raise NotImplementedError(
         "No rule for parsing single-image gallery:\n" + response.url
     )

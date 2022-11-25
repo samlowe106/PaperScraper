@@ -1,7 +1,8 @@
 import asyncio
 import json
 import os
-from typing import Dict, Set
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Optional, Set
 
 import requests
 from praw.models import Submission
@@ -17,13 +18,13 @@ class SubmissionWrapper:
         self._submission = submission
 
         # relevant to user
-        self.title = submission.title
+        self.title: str = submission.title
         self.subreddit = str(submission.subreddit)
-        self.url = submission.url
+        self.url: str = submission.url
         self.author = str(submission.author)
-        self.nsfw = submission.over_18
-        self.score = submission.score
-        self.created = submission.created_utc  # in Unix time
+        self.nsfw: bool = submission.over_18
+        self.score: int = submission.score
+        self.time_created = datetime.fromtimestamp(submission.created_utc, timezone.utc)
 
         # relevant to parsing
         self.base_file_title = core.file_title(self._submission.title)
@@ -85,16 +86,21 @@ class SubmissionWrapper:
             image_file.write(response.content)
         return True
 
-    def score_at_least(self, score_minimum: int) -> bool:
+    def score_at_least(self, score_minimum: Optional[int]) -> bool:
         """
         True if this post has at least as much score as the given minimum, else False
         """
+        if score_minimum is None:
+            return True
         return score_minimum is None or self.score >= score_minimum
 
-    def posted_after(self):
+    def older_than(self, delta: Optional[timedelta]) -> bool:
         """
-        True if this post was made before the given date, else False
+        True if this post is older than the given delta, else False
         """
+        if delta is None:
+            return True
+        return datetime.now(timezone.utc) - self.time_created >= delta
 
     def log(self, file: str) -> None:
         """

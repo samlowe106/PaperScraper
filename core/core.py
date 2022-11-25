@@ -143,13 +143,13 @@ def determine_name(directory: str, title: str, extension: str) -> str:
     )
 
 
-def get_extension(resp: requests.models.Response) -> str:
+def get_extension(response: requests.models.Response) -> str:
     """
     Gets the extension of the content in the specified response
     :param r: valid request object
     :return: the filetype of the content stored in that request, in lowercase
     """
-    return "." + resp.headers["Content-type"].split("/")[1].lower()
+    return "." + response.headers["Content-type"].split("/")[1].lower()
 
 
 def sandbox(directory: str) -> Callable:

@@ -2,44 +2,45 @@ import asyncio
 from functools import reduce
 from typing import Any, Callable, Coroutine, Set
 
-from requests.models import Response
+import requests
 
 from core import get_extension
 
+from .flickr import flickr_parser
 from .imgur import imgur_parser
 
 
-async def single_image(response: Response) -> Set[str]:
+async def single_image(url: str) -> Set[str]:
     """
     :param response: A web page that has been recognized by this parser
     :returns: A list of all scrapeable urls found in the given webpage
     """
-    if get_extension(response).lower() in [".png", ".jpg", ".jpeg", ".gif"]:
+    response = requests.get(url)
+    if response.status_code == 200 and get_extension(response).lower() in [
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+    ]:
         return {response.url}
     return set()
 
 
-async def flickr(response: Response) -> Set[str]:
-    """Parses flickr links"""
-    return set()
-    # raise NotImplementedError("Class is not yet implemented!")
-
-
-async def gfycat(response: Response) -> Set[str]:
+async def gfycat(url: str) -> Set[str]:
     """Parses gfycat links"""
     return set()
     # raise NotImplementedError("Class is not yet implemented!")
 
 
-PARSERS: Set[Callable[[Response], Coroutine[Any, Any, Set[str]]]] = {
+PARSERS: Set[Callable[[str], Coroutine[Any, Any, Set[str]]]] = {
     single_image,
     imgur_parser,
-    flickr,
+    flickr_parser,
     gfycat,
 }
 
 
-async def find_urls(response: Response) -> Set[str]:
+async def find_urls(url: str) -> Set[str]:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
@@ -48,6 +49,6 @@ async def find_urls(response: Response) -> Set[str]:
     """
     return reduce(
         set.union,
-        await asyncio.gather(parser(response) for parser in PARSERS),
+        await asyncio.gather(parser(url) for parser in PARSERS),
         set(),
     )

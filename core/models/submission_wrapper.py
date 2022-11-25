@@ -31,21 +31,12 @@ class SubmissionWrapper:
         self.response: requests.Response = None
         self.urls: Set[str] = set()
 
-    async def find_urls(self) -> bool:
+    async def find_urls(self) -> None:
         """
         Parses this wrapper's associated url to find all relevant image urls,
         and populates this wrapper's urls field
-        :returns: True if no problems were encountered while scraping this wrapper's url, else False
         """
-        self.response = requests.get(
-            self._submission.url,
-            headers={"Content-type": "content_type_value"},
-            timeout=10,
-        )
-        if self.response.status_code == 200:
-            self.urls = asyncio.run(parsers.find_urls(self.response))
-            return True
-        return False
+        self.urls = asyncio.run(parsers.find_urls(self.url))
 
     async def download_all(self, directory: str, title: str = None) -> Dict[str, str]:
         """

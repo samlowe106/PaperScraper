@@ -3,7 +3,6 @@ import re
 from typing import Set
 
 import requests
-from requests.models import Response
 
 API_ROOT = "https://api.imgur.com/3/"
 IMAGE_API = API_ROOT + "image/"
@@ -15,17 +14,17 @@ IMGUR_REGEX = re.compile(r"imgur\.com/(a/|gallery/|){0,1}([a-zA-Z]+)\Z")
 HEADERS = {"Authorization": f'Client-ID {os.environ["imgur_client_id"]}'}
 
 
-async def imgur_parser(response: Response) -> Set[str]:
+async def imgur_parser(url: str) -> Set[str]:
     """
     :param response: a GET response from an imgur (single image, album, or gallery) page
     :return: a set of strings representing all scrape-able images on that page
     """
-    m = IMGUR_REGEX.search(response.url)
+    m = IMGUR_REGEX.search(url)
     if m.group(1) == "":
         # single image
         if m.group(3) is not None:
             # direct link
-            return {response.url}
+            return {url}
         image_data = requests.get(IMAGE_API + m.group(2), headers=HEADERS)
         if image_data.status_code == 200:
             return {image_data.json()["link"]}

@@ -6,7 +6,7 @@ from .core import (
     retitle,
     sandbox,
     shorten,
-    sign_in,
     title_case,
     trim_string,
 )
+from .reddit import SortOption, from_saved_posts, from_subreddit, sign_in

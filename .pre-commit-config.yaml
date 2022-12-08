@@ -6,7 +6,7 @@ repos:
         args: [--safe]
 
 -   repo: https://github.com/pycqa/flake8
-    rev: 'c2dc3514b189811b1e3190eb51d36c4cc599bdf3'
+    rev: '6.0.0'
     hooks:
     -   id: flake8
         args: [
@@ -19,17 +19,12 @@ repos:
     hooks:
     -   id: isort
         args: [
-          --line-length=110,
-          --multi-line=3,
-          --force-grid-wrap=0,
-          --trailing-comma,
-          --use-parentheses,
-          --ensure-newline-before-comments,
-          --profile=black,
+          "--profile",
+          "black",
         ]
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: '586b4f092e52673a0fe64a149440ecdf7fc125c5'
+    rev: 'v0.991'
     hooks:
       - id: mypy
         args: [

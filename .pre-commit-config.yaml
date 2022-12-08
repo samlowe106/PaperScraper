@@ -25,6 +25,7 @@ repos:
           --trailing-comma,
           --use-parentheses,
           --ensure-newline-before-comments,
+          "--profile black",
         ]
 
 -   repo: https://github.com/pre-commit/mirrors-mypy

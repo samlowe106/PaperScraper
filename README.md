@@ -18,15 +18,17 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 1. Clone this repository: ``` git clone https://github.com/samlowe106/PaperScraper.git ```
 
-2. Install all requirements: ``` pip install -r requirements.txt ```
+2. (Optional) Create a virtual environment with `python -m venv [PATH]` and activate that virtual environment with `source [PATH]/bin/activate`
 
-3. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
+3. Install all requirements: ```pip install -r requirements.txt```
 
-4. Click "create app"
+4. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
 
-5. Fill out the app's info, choosing script as the app type
+5. Click "create app"
 
-6. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
+6. Fill out the app's info, choosing **script** as the app type
+
+7. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
 
 ## Usage
 

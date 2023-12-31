@@ -56,7 +56,6 @@ def get_source() -> SubmissionSource:
 
 
 if __name__ == "__main__":
-
     # region Argument Parsing
 
     parser = argparse.ArgumentParser(description="Scrapes images from Reddit")

@@ -15,7 +15,7 @@ SHORT_FLICKR_REGEX = re.compile(r"flic.kr/p/(^/+)")
 API_ROOT = "https://www.flickr.com/services/rest/"
 
 
-async def _get_flickr_photo_id(url: str) -> Optional[str]:
+def _get_flickr_photo_id(url: str) -> Optional[str]:
     """
     :param url: url possibly linking to a flickr image
     :return: the regular id of the image, or None if no id could be found
@@ -32,12 +32,12 @@ async def _get_flickr_photo_id(url: str) -> Optional[str]:
     return None
 
 
-async def flickr_parser(url: str) -> Set[str]:
+def flickr_parser(url: str) -> Set[str]:
     """
     :param url: url possibly linking to a flickr image
     :return: a set of urls of downloadable images
     """
-    if (photo_id := await _get_flickr_photo_id(url)) is None:
+    if (photo_id := _get_flickr_photo_id(url)) is None:
         return set()
 
     parameters = {

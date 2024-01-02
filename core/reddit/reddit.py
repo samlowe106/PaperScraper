@@ -1,9 +1,8 @@
-import asyncio
 import json
 import os
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, Set
+from typing import Dict, Iterable, Set
 
 import praw
 import requests
@@ -41,7 +40,7 @@ def sign_in(username: str = None, password: str = None) -> praw.Reddit:
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
 
-    def __init__(self, submission: Submission):
+    def __init__(self, submission: Submission, dry: bool = True):
         self._submission = submission
 
         # relevant to user
@@ -58,34 +57,50 @@ class SubmissionWrapper:
         self.response: requests.Response = None
         self.urls: Set[str] = set()
 
-    async def find_urls(self) -> None:
+        # whether this post can be unsaved or not
+        self.can_unsave = not dry
+
+    def find_urls(self) -> None:
         """
         Parses this wrapper's associated url to find all relevant image urls,
         and populates this wrapper's urls field
         """
-        self.urls = await parsers.find_urls(self.url)
+        self.urls = parsers.find_urls(self.url)
 
-    async def download_all(self, directory: str, title: str = None) -> Dict[str, str]:
+    def download_all(
+        self, directory: str, title: str = None, organize: bool = False
+    ) -> Dict[str, str]:
         """
         Downloads all urls and bundles them with their results
         :param directory: directory in which to download each file
+        :param title: title that the final file should have
+        :param organize: whether or not to organize the download directory by subreddit
         :return: a zipped list of each url bundled with a True if the download succeeded
         or False if that download failed
         """
+        if organize:
+            directory = os.path.join(directory, self.subreddit)
         if title is None:
             title = self.title
         urls_filepaths: Dict[str, str] = dict()
         for i, url in enumerate(self.urls):
-            destination = os.path.join(
-                directory,
-                self.base_file_title if i == 0 else f"{self.base_file_title} ({i})",
-            )
+            if organize:
+                directory = os.path.join(
+                    directory,
+                    self.base_file_title,
+                    self.base_file_title if i == 0 else f"{self.base_file_title} ({i})",
+                )
+            else:
+                destination = os.path.join(
+                    directory,
+                    self.base_file_title if i == 0 else f"{self.base_file_title} ({i})",
+                )
             urls_filepaths[url] = (
-                destination if await self._download_image(url, destination) else None
+                destination if self._download_image(url, destination) else None
             )
         return urls_filepaths
 
-    async def _download_image(self, url: str, directory: str) -> bool:
+    def _download_image(self, url: str, directory: str) -> bool:
         """
         Downloads the linked image, converts it to the specified filetype,
         and saves to the specified directory. Avoids name conflicts.
@@ -221,20 +236,21 @@ class SortOption(Enum):
         self.value(*args, **kwargs)
 
 
-async def from_source(
-    source: ListingGenerator, limit: int = None
-) -> AsyncGenerator[SubmissionWrapper, Any]:
+def from_source(
+    source: ListingGenerator, limit: int = None, dry: bool = True
+) -> Iterable[SubmissionWrapper]:
     """
     Wraps the submissions from the given source, and returns a generator that will generate at most
     limit items
     """
 
-    async def refill_batch():
+    def refill_batch():
         submissions = [s for i, s in enumerate(source) if i < 2 * limit]
-        wrappers = asyncio.gather(SubmissionWrapper(s) for s in submissions)
+        # TODO: why was asyncio.gather used here?
+        wrappers = [SubmissionWrapper(s, dry) for s in submissions]
         return filter(lambda x: len(x.urls) > 0, wrappers)
 
-    async def submission_generator() -> AsyncGenerator[SubmissionWrapper, Any]:
+    def submission_generator() -> Iterable[SubmissionWrapper]:
         yielded = 0
         batch = []
         while yielded < limit:
@@ -246,28 +262,32 @@ async def from_source(
     return submission_generator()
 
 
-async def from_saved_posts(
-    redditor: Redditor, score: int = None, age: timedelta = None, limit: int = None
-) -> AsyncGenerator[SubmissionWrapper, Any]:
+def from_saved_posts(
+    redditor: Redditor,
+    score: int = None,
+    age: timedelta = None,
+    limit: int = None,
+    dry: bool = True,
+) -> Iterable[SubmissionWrapper]:
     """Generates a source of SubmissionWrappers from the given users' saved posts"""
     if limit < 1 or limit is None:
         raise ValueError("Limit must be a positive integer")
-    return await from_source(
-        redditor.saved(limit=None, score=score, age=age), limit=limit
+    return from_source(
+        redditor.saved(limit=None, score=score, age=age), limit=limit, dry=dry
     )
 
 
-async def from_subreddit(
+def from_subreddit(
     subreddit_name: str,
     sortby: SortOption,
     score: int = None,
     age: timedelta = None,
     limit: int = 10,
-) -> AsyncGenerator[SubmissionWrapper, Any]:
+) -> Iterable[SubmissionWrapper]:
     """Generates a source from a subreddit"""
     if limit < 1 or limit is None:
         raise ValueError("Limit must be a positive integer")
-    return await from_source(
+    return from_source(
         sortby(REDDIT.subreddit(subreddit_name.rstrip("r/")), score=score, age=age),
         limit=limit,
     )

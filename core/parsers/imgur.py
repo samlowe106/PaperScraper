@@ -14,7 +14,7 @@ IMGUR_REGEX = re.compile(r"imgur\.com/(a/|gallery/|){0,1}([a-zA-Z]+)\Z")
 HEADERS = {"Authorization": f'Client-ID {os.environ["imgur_client_id"]}'}
 
 
-async def imgur_parser(url: str) -> Set[str]:
+def imgur_parser(url: str) -> Set[str]:
     """
     :param response: a GET response from an imgur (single image, album, or gallery) page
     :return: a set of strings representing all scrape-able images on that page

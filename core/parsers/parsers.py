@@ -1,6 +1,5 @@
-import asyncio
 from functools import reduce
-from typing import Any, Callable, Coroutine, Set
+from typing import Callable, Set
 
 import httpx
 
@@ -10,7 +9,7 @@ from .flickr import flickr_parser
 from .imgur import imgur_parser
 
 
-async def single_image(url: str) -> Set[str]:
+def single_image(url: str) -> Set[str]:
     """
     :param response: A web page that has been recognized by this parser
     :returns: A list of all scrapeable urls found in the given webpage
@@ -26,14 +25,14 @@ async def single_image(url: str) -> Set[str]:
     return set()
 
 
-PARSERS: Set[Callable[[str], Coroutine[Any, Any, Set[str]]]] = {
+PARSERS: Set[Callable[[str], Set[str]]] = {
     single_image,
     imgur_parser,
     flickr_parser,
 }
 
 
-async def find_urls(url: str) -> Set[str]:
+def find_urls(url: str) -> Set[str]:
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
@@ -42,6 +41,6 @@ async def find_urls(url: str) -> Set[str]:
     """
     return reduce(
         set.union,
-        await asyncio.gather(parser(url) for parser in PARSERS),
+        [parser(url) for parser in PARSERS],
         set(),
     )

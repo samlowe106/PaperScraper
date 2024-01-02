@@ -1,9 +1,10 @@
 import argparse
 import getpass
 import os
+from typing import Iterable
 
-from core import sign_in
-from core.models import SortOption, SubmissionSource
+from core import SortOption, sign_in
+from core.reddit import SubmissionWrapper, from_saved_posts, from_subreddit
 
 LOG_PATH = os.path.join("Logs", "log.txt")
 
@@ -14,14 +15,11 @@ def main() -> None:
     os.makedirs(args.directory, exist_ok=True)
     os.chdir(args.directory)
 
-    download_dir = ""
-
     for i, wrapped in enumerate(get_source()):
-        if args.organize:
-            download_dir = wrapped.subreddit
+        download_dir = "" if not args.organize else wrapped.subreddit
         try:
-            wrapped.download_all(download_dir, args.title)
-            if not args.dry:
+            wrapped.download_all(download_dir, title=args.title, organize=args.organize)
+            if wrapped.can_unsave:
                 wrapped.unsave()
             print(wrapped.summary_string(i))
         except Exception as exception:
@@ -32,23 +30,25 @@ def main() -> None:
                 wrapped.log(LOG_PATH)
 
 
-def get_source() -> SubmissionSource:
+def get_source() -> Iterable[SubmissionWrapper]:
     """Gets the program's submission source based on user args"""
-    source_builder = (
-        SubmissionSource.Builder()
-        .age_max(args.age)
-        .submission_limit(args.limit)
-        .score_min(args.karma)
-    )
     source_name = args.source.lower()
     if source_name == "saved":
-        return source_builder.from_user_saved(
-            sign_in(input("Username: "), getpass.getpass("Password: "))
-        ).build()
+        return from_saved_posts(
+            redditor=sign_in(input("Username: "), getpass.getpass("Password: ")),
+            score=args.karma,
+            age=args.age,
+            limit=args.limit,
+            dry=args.dry,
+        )
     if source_name.startswith("r/"):
-        return source_builder.from_subreddit(
-            source_name, args.sortby, sign_in()
-        ).build()
+        return from_subreddit(
+            subreddit_name=source_name,
+            sortby=args.sortby,
+            score=args.karma,
+            age=args.age,
+            limit=args.limit,
+        )
     raise ValueError(
         f'Expected source to be "saved" or a subreddit\
         beginning with "r/", got {args.source}'
@@ -108,7 +108,6 @@ if __name__ == "__main__":
         help="do not unsave any posts, even those that were completely parsed",
     )
 
-    # TODO
     parser.add_argument(
         "--organize",
         action="store_false",

@@ -2,7 +2,7 @@ import asyncio
 from functools import reduce
 from typing import Any, Callable, Coroutine, Set
 
-import requests
+import httpx
 
 from core import get_extension
 
@@ -15,7 +15,7 @@ async def single_image(url: str) -> Set[str]:
     :param response: A web page that has been recognized by this parser
     :returns: A list of all scrapeable urls found in the given webpage
     """
-    response = requests.get(url)
+    response = httpx.get(url)
     if response.status_code == 200 and get_extension(response).lower() in [
         ".png",
         ".jpg",
@@ -26,17 +26,10 @@ async def single_image(url: str) -> Set[str]:
     return set()
 
 
-async def gfycat(url: str) -> Set[str]:
-    """Parses gfycat links"""
-    return set()
-    # raise NotImplementedError("Class is not yet implemented!")
-
-
 PARSERS: Set[Callable[[str], Coroutine[Any, Any, Set[str]]]] = {
     single_image,
     imgur_parser,
     flickr_parser,
-    gfycat,
 }
 
 

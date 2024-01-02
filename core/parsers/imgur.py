@@ -2,7 +2,7 @@ import os
 import re
 from typing import Set
 
-import requests
+import httpx
 
 API_ROOT = "https://api.imgur.com/3/"
 IMAGE_API = API_ROOT + "image/"
@@ -25,12 +25,12 @@ async def imgur_parser(url: str) -> Set[str]:
         if m.group(3) is not None:
             # direct link
             return {url}
-        image_data = requests.get(IMAGE_API + m.group(2), headers=HEADERS)
+        image_data = httpx.get(IMAGE_API + m.group(2), headers=HEADERS)
         if image_data.status_code == 200:
             return {image_data.json()["link"]}
     elif m.group(1) in {"album/", "gallery/"}:
         # album or gallery
-        album_response = requests.get(ALBUM_API + m.group(2), headers=HEADERS)
+        album_response = httpx.get(ALBUM_API + m.group(2), headers=HEADERS)
         if album_response.status_code == 200:
             return {
                 image_data["link"]

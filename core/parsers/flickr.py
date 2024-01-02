@@ -3,7 +3,7 @@ import os
 import re
 from typing import Optional, Set
 
-import requests
+import httpx
 
 # first group is user's name, second is image id
 FLICKR_REGEX = re.compile(r"flickr\.com/photos/(^/+)/(^/+)/")
@@ -21,7 +21,7 @@ async def _get_flickr_photo_id(url: str) -> Optional[str]:
     :return: the regular id of the image, or None if no id could be found
     """
     if SHORT_FLICKR_REGEX.match(url):
-        response = requests.get(url)
+        response = httpx.get(url)
         if response.status_code != 200:
             return None
         url = response.url
@@ -46,7 +46,7 @@ async def flickr_parser(url: str) -> Set[str]:
         "method": "flickr.photos.getInfo",
         "photo_id": photo_id,
     }
-    response = requests.get(
+    response = httpx.get(
         API_ROOT + "?" + "&".join(f"{arg}={param}" for arg, param in parameters.items())
     )
     if response.status_code != 200:

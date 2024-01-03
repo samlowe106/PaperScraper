@@ -134,12 +134,14 @@ if __name__ == "__main__":
         action="store_false",
         help="organize images from saved into folders by subreddit",
     )
+    """
     parser.add_argument(
         "--age",
         type=str,
         # TODO: hours, days, months, etc?
         help="specify the maximum age in hours a post can be to be downloaded",
     )
+    """
 
     args = parser.parse_args()
 

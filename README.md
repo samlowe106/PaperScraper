@@ -12,6 +12,7 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
    - [Installation](#installation)
    - [Usage](#usage)
+   - [Technical Overview](#technical-overview)
    - [License](#license)
 
 ## Installation
@@ -35,6 +36,19 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 PaperScraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using ``` python src/main.py ```
 
 PaperScraper also comes with a handful of flags, which can be found by running PaperScraper with the `--help` flag.
+
+## Technical Overview
+
+PaperScraper is fairly simple. After basic argument parsing is done, the program has two major steps:
+
+### Batch parsing
+First, reddit submissions are fetched from reddit via [PRAW](https://praw.readthedocs.io/en/stable/index.html). PRAW provides submissions through "listing generators", which PaperScraper wraps with `from_saved` and `from_subreddit` functions. These provide submissions as `SubmissionWrapper` objects to provide a simpler API for interacting with submissions and managing PaperScraper-related data.
+
+The url that each `SubmissionWrapper` links to is asynchronously scraped by parser objects (`flickr_parser`, `imgur_parser`, and `single_image_parser`) in a strategy pattern. If any of the and appended to the `SubmissionWrapper.urls` field. If the urls couldn't be accessed, the parsers couldn't find any urls, or if the post fails some other criteria specified in the command line arguments, the `SubmissionWrapper` is filtered out of the batch. This process repeats until a batch of valid `SubmissionWrapper`s of the desired size is created, or the underlying generator runs out of new posts.
+
+### Batch downloading
+
+After a batch of valid `SubmissionWrapper`s is created, each of the images linked to in the `SubmissionWrapper.urls` field are downloaded asynchronously and the resulting files are saved. If the `organize` flag is specified, images are also sorted into subdirectories by subreddit. Post data is written to a log file, and the program ends.
 
 ## License
 

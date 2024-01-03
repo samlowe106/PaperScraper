@@ -10,7 +10,7 @@ from .flickr import flickr_parser
 from .imgur import imgur_parser
 
 
-async def single_image(url: str, client: httpx.AsyncClient) -> Set[str]:
+async def single_image_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     """
     :param response: A web page that has been recognized by this parser
     :returns: A list of all scrapeable urls found in the given webpage
@@ -27,7 +27,7 @@ async def single_image(url: str, client: httpx.AsyncClient) -> Set[str]:
 
 
 PARSERS = {
-    single_image,
+    single_image_parser,
     imgur_parser,
     flickr_parser,
 }

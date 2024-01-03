@@ -9,4 +9,4 @@ from .core import (
     title_case,
     trim_string,
 )
-from .reddit import SortOption, from_saved_posts, from_subreddit, sign_in
+from .reddit import SortOption, from_saved, from_subreddit, sign_in

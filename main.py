@@ -7,7 +7,7 @@ from typing import Iterable
 import httpx
 
 from core import SortOption, sign_in
-from core.reddit import SubmissionWrapper, from_saved_posts, from_subreddit
+from core.reddit import SubmissionWrapper, from_saved, from_subreddit
 
 LOG_PATH = os.path.join("Logs", "log.txt")
 
@@ -53,7 +53,7 @@ async def get_source(client: httpx.AsyncClient) -> Iterable[SubmissionWrapper]:
     """Gets the program's submission source based on user args"""
     source_name = args.source.lower()
     if source_name == "saved":
-        return await from_saved_posts(
+        return await from_saved(
             sign_in(input("Username: "), getpass.getpass("Password: ")),
             args.limit,
             client,

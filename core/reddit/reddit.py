@@ -230,7 +230,7 @@ class SortOption(Enum):
         self.value(*args, **kwargs)
 
 
-async def from_source(
+async def _from_source(
     source: ListingGenerator, amount: int, client: httpx.AsyncClient, dry: bool = True
 ) -> List[SubmissionWrapper]:
     """
@@ -255,7 +255,7 @@ async def from_source(
     return batch
 
 
-async def from_saved_posts(
+async def from_saved(
     redditor: Redditor,
     amount: int,
     client: httpx.AsyncClient,
@@ -266,7 +266,7 @@ async def from_saved_posts(
     """Generates a batch of at most (amount) SubmissionWrappers from the given users' saved posts"""
     if amount < 1:
         raise ValueError("Limit must be a positive integer")
-    return await from_source(
+    return await _from_source(
         redditor.saved(limit=None, score=score, age=age), amount, client, dry=dry
     )
 
@@ -282,7 +282,7 @@ async def from_subreddit(
     """Generates a batch of at most (amount) SubmissionWrappers from the given subreddit"""
     if amount < 1:
         raise ValueError("Limit must be a positive integer")
-    return await from_source(
+    return await _from_source(
         sortby(REDDIT.subreddit(subreddit_name.rstrip("r/")), score=score, age=age),
         amount,
         client,

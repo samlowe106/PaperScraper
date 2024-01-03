@@ -1,7 +1,10 @@
 import argparse
+import asyncio
 import getpass
 import os
 from typing import Iterable
+
+import httpx
 
 from core import SortOption, sign_in
 from core.reddit import SubmissionWrapper, from_saved_posts, from_subreddit
@@ -9,45 +12,63 @@ from core.reddit import SubmissionWrapper, from_saved_posts, from_subreddit
 LOG_PATH = os.path.join("Logs", "log.txt")
 
 
-def main() -> None:
+async def main() -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
 
     os.makedirs(args.directory, exist_ok=True)
     os.chdir(args.directory)
 
-    for i, wrapped in enumerate(get_source()):
+    async with httpx.AsyncClient() as client:
+        batch = await get_source(client)
+        results = await asyncio.gather(
+            handle_wrapped(wrapped, client) for wrapped in batch
+        )
+
+    for i, result in enumerate(results):
+        print(f"({i}) {result}")
+
+
+async def handle_wrapped(wrapped: SubmissionWrapper, client: httpx.AsyncClient) -> str:
+    exception = ""
+    try:
         download_dir = "" if not args.organize else wrapped.subreddit
-        try:
-            wrapped.download_all(download_dir, title=args.title, organize=args.organize)
-            if wrapped.can_unsave:
-                wrapped.unsave()
-            print(wrapped.summary_string(i))
-        except Exception as exception:
-            print(f"Encountered exception parsing {wrapped.url}:\n{exception}")
-            return
-        finally:
-            if args.logging:
-                wrapped.log(LOG_PATH)
+        await wrapped.download_all(
+            download_dir,
+            client,
+            title=args.title,
+            organize=args.organize,
+        )
+        if wrapped.can_unsave:
+            wrapped.unsave()
+        return wrapped.summary_string()
+    except Exception as e:
+        exception = str(e)
+        return f"Encountered exception parsing {wrapped.url}:\n{exception}"
+    finally:
+        if args.logging:
+            wrapped.log(LOG_PATH, exception=exception)
 
 
-def get_source() -> Iterable[SubmissionWrapper]:
+async def get_source(client: httpx.AsyncClient) -> Iterable[SubmissionWrapper]:
     """Gets the program's submission source based on user args"""
     source_name = args.source.lower()
     if source_name == "saved":
-        return from_saved_posts(
-            redditor=sign_in(input("Username: "), getpass.getpass("Password: ")),
+        return await from_saved_posts(
+            sign_in(input("Username: "), getpass.getpass("Password: ")),
+            args.limit,
+            client,
             score=args.karma,
             age=args.age,
-            limit=args.limit,
             dry=args.dry,
         )
     if source_name.startswith("r/"):
-        return from_subreddit(
-            subreddit_name=source_name,
-            sortby=args.sortby,
+        return await from_subreddit(
+            source_name,
+            args.sortby,
+            client,
             score=args.karma,
             age=args.age,
-            limit=args.limit,
+            amount=args.limit,
         )
     raise ValueError(
         f'Expected source to be "saved" or a subreddit\
@@ -124,4 +145,4 @@ if __name__ == "__main__":
 
     # endregion
 
-    main()
+    asyncio.run(main())

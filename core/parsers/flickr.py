@@ -15,13 +15,13 @@ SHORT_FLICKR_REGEX = re.compile(r"flic.kr/p/(^/+)")
 API_ROOT = "https://www.flickr.com/services/rest/"
 
 
-def _get_flickr_photo_id(url: str) -> Optional[str]:
+async def _get_flickr_photo_id(url: str, client: httpx.AsyncClient) -> Optional[str]:
     """
     :param url: url possibly linking to a flickr image
     :return: the regular id of the image, or None if no id could be found
     """
     if SHORT_FLICKR_REGEX.match(url):
-        response = httpx.get(url)
+        response = await client.get(url)
         if response.status_code != 200:
             return None
         url = response.url
@@ -32,12 +32,12 @@ def _get_flickr_photo_id(url: str) -> Optional[str]:
     return None
 
 
-def flickr_parser(url: str) -> Set[str]:
+async def flickr_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     """
     :param url: url possibly linking to a flickr image
     :return: a set of urls of downloadable images
     """
-    if (photo_id := _get_flickr_photo_id(url)) is None:
+    if (photo_id := _get_flickr_photo_id(url, client)) is None:
         return set()
 
     parameters = {
@@ -46,7 +46,7 @@ def flickr_parser(url: str) -> Set[str]:
         "method": "flickr.photos.getInfo",
         "photo_id": photo_id,
     }
-    response = httpx.get(
+    response = await client.get(
         API_ROOT + "?" + "&".join(f"{arg}={param}" for arg, param in parameters.items())
     )
     if response.status_code != 200:

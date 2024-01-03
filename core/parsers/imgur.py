@@ -14,7 +14,7 @@ IMGUR_REGEX = re.compile(r"imgur\.com/(a/|gallery/|){0,1}([a-zA-Z]+)\Z")
 HEADERS = {"Authorization": f'Client-ID {os.environ["imgur_client_id"]}'}
 
 
-def imgur_parser(url: str) -> Set[str]:
+async def imgur_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     """
     :param response: a GET response from an imgur (single image, album, or gallery) page
     :return: a set of strings representing all scrape-able images on that page
@@ -25,12 +25,12 @@ def imgur_parser(url: str) -> Set[str]:
         if m.group(3) is not None:
             # direct link
             return {url}
-        image_data = httpx.get(IMAGE_API + m.group(2), headers=HEADERS)
+        image_data = await client.get(IMAGE_API + m.group(2), headers=HEADERS)
         if image_data.status_code == 200:
             return {image_data.json()["link"]}
     elif m.group(1) in {"album/", "gallery/"}:
         # album or gallery
-        album_response = httpx.get(ALBUM_API + m.group(2), headers=HEADERS)
+        album_response = await client.get(ALBUM_API + m.group(2), headers=HEADERS)
         if album_response.status_code == 200:
             return {
                 image_data["link"]

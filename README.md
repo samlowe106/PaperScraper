@@ -1,12 +1,13 @@
 # Paper Scraper for Reddit
 
-PaperScraper is a Python script that downloads images from the user's saved category on Reddit.
+Paper Scraper is a Python script that downloads images from the user's saved category on Reddit.
 
 Posts linking directly to an image or imgur page will be downloaded and unsaved; all other posts will be ignored.
 
 ## Requirements
 
-* Python (3.11)
+* Python 3.11
+* A reddit account
 
 ## Summary
 
@@ -17,7 +18,7 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 ## Installation
 
-1. Clone this repository: ``` git clone https://github.com/samlowe106/PaperScraper.git ```
+1. Clone this repository: ``` git clone https://github.com/samlowe106/Paper Scraper.git ```
 
 2. (Optional) Create a virtual environment with `python -m venv [PATH]` and activate that virtual environment with `source [PATH]/bin/activate`
 
@@ -33,16 +34,16 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 ## Usage
 
-PaperScraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using ``` python src/main.py ```
+Paper Scraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using ``` python src/main.py ```
 
-PaperScraper also comes with a handful of flags, which can be found by running PaperScraper with the `--help` flag.
+Paper Scraper also comes with a handful of flags, which can be found by running Paper Scraper with the `--help` flag.
 
 ## Technical Overview
 
-PaperScraper is fairly simple. After basic argument parsing is done, the program has two major steps:
+Paper Scraper is fairly simple. After basic argument parsing is done, the program has two major steps:
 
 ### Batch parsing
-First, reddit submissions are fetched from reddit via [PRAW](https://praw.readthedocs.io/en/stable/index.html). PRAW provides submissions through "listing generators", which PaperScraper wraps with `from_saved` and `from_subreddit` functions. These provide submissions as `SubmissionWrapper` objects to provide a simpler API for interacting with submissions and managing PaperScraper-related data.
+First, reddit submissions are fetched from reddit via [PRAW](https://praw.readthedocs.io/en/stable/index.html). PRAW provides submissions through "listing generators", which Paper Scraper wraps with `from_saved` and `from_subreddit` functions. These provide submissions as `SubmissionWrapper` objects to provide a simpler API for interacting with submissions and managing Paper Scraper-related data.
 
 The url that each `SubmissionWrapper` links to is asynchronously scraped by parser objects (`flickr_parser`, `imgur_parser`, and `single_image_parser`) in a strategy pattern. If any of the and appended to the `SubmissionWrapper.urls` field. If the urls couldn't be accessed, the parsers couldn't find any urls, or if the post fails some other criteria specified in the command line arguments, the `SubmissionWrapper` is filtered out of the batch. This process repeats until a batch of valid `SubmissionWrapper`s of the desired size is created, or the underlying generator runs out of new posts.
 
@@ -52,4 +53,4 @@ After a batch of valid `SubmissionWrapper`s is created, each of the images linke
 
 ## License
 
-PaperScraper is licensed under the [MIT license.](https://github.com/samlowe106/PaperScraper/blob/master/LICENSE)
+Paper Scraper is licensed under the [MIT license.](https://github.com/samlowe106/Paper Scraper/blob/master/LICENSE)

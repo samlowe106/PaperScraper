@@ -34,7 +34,7 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 ## Usage
 
-Paper Scraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using ``` python src/main.py ```
+Paper Scraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using ``` python main.py ```
 
 Paper Scraper also comes with a handful of flags, which can be found by running Paper Scraper with the `--help` flag.
 

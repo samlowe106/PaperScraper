@@ -6,35 +6,37 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 ## Requirements
 
-* Python 3.11
-* A reddit account
+- Python 3.11
+- A reddit account
 
 ## Summary
 
-   - [Installation](#installation)
-   - [Usage](#usage)
-   - [Technical Overview](#technical-overview)
-   - [License](#license)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Technical Overview](#technical-overview)
+- [License](#license)
 
 ## Installation
 
-1. Clone this repository: ``` git clone https://github.com/samlowe106/Paper Scraper.git ```
+1. Clone this repository: `git clone https://github.com/samlowe106/PaperScraper.git`
 
 2. (Optional) Create a virtual environment with `python -m venv [PATH]` and activate that virtual environment with `source [PATH]/bin/activate`
 
-3. Install all requirements: ```pip install -r requirements.txt```
+3. Install all requirements: `pip install -r requirements.txt`
 
-4. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
+4. Install pre-commit via `pre-commit install`. Ensure pre-commit is working by runnig `pre-commit run --all-files`
 
-5. Click "create app"
+5. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
 
-6. Fill out the app's info, choosing **script** as the app type
+6. Click "create app"
 
-7. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
+7. Fill out the app's info, choosing **script** as the app type
+
+8. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
 
 ## Usage
 
-Paper Scraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using ``` python main.py ```
+Paper Scraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using `python main.py`
 
 Paper Scraper also comes with a handful of flags, which can be found by running Paper Scraper with the `--help` flag.
 
@@ -43,6 +45,7 @@ Paper Scraper also comes with a handful of flags, which can be found by running 
 Paper Scraper is fairly simple. After basic argument parsing is done, the program has two major steps:
 
 ### Batch parsing
+
 First, reddit submissions are fetched from reddit via [PRAW](https://praw.readthedocs.io/en/stable/index.html). PRAW provides submissions through "listing generators", which Paper Scraper wraps with `from_saved` and `from_subreddit` functions. These provide submissions as `SubmissionWrapper` objects to provide a simpler API for interacting with submissions and managing Paper Scraper-related data.
 
 The url that each `SubmissionWrapper` links to is asynchronously scraped by parser objects (`flickr_parser`, `imgur_parser`, and `single_image_parser`) in a strategy pattern. If any of the and appended to the `SubmissionWrapper.urls` field. If the urls couldn't be accessed, the parsers couldn't find any urls, or if the post fails some other criteria specified in the command line arguments, the `SubmissionWrapper` is filtered out of the batch. This process repeats until a batch of valid `SubmissionWrapper`s of the desired size is created, or the underlying generator runs out of new posts.

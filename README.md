@@ -56,4 +56,4 @@ After a batch of valid `SubmissionWrapper`s is created, each of the images linke
 
 ## License
 
-Paper Scraper is licensed under the [MIT license.](https://github.com/samlowe106/Paper Scraper/blob/master/LICENSE)
+Paper Scraper is licensed under the [MIT license.](https://github.com/samlowe106/PaperScraper/blob/master/LICENSE)

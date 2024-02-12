@@ -52,7 +52,7 @@ async def flickr_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     if response.status_code != 200:
         return set()
 
-    data = json.loads(response.text.lstrip("jsonFlickrApi(").rstrip(")"))
+    data = json.loads(response.text.removeprefix("jsonFlickrApi(").removesuffix(")"))
 
     if not data["sizes"]["candownload"] == 1:
         return set()

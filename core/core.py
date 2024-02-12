@@ -8,7 +8,7 @@ import requests
 
 def retitle(string: str, title: bool = False) -> str:
     """
-    Strips certain punctuation from the start and end of the given string,
+    Removes certain punctuation from the start and end of the given string,
     and optionally titlecases it
     :param s: the string to be improved
     :param title: True if the string should be in title case
@@ -30,10 +30,10 @@ def trim_string(string1: str, string2: str) -> str:
     """
     if string2:  # loops won't terminate if string2 is empty
         while string1.startswith(string2):
-            string1 = string1.lstrip(string2)
+            string1 = string1.removeprefix(string2)
 
         while string1.endswith(string2):
-            string1 = string1.rstrip(string2)
+            string1 = string1.removesuffix(string2)
 
     return string1
 

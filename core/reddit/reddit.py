@@ -143,9 +143,16 @@ class SubmissionWrapper:
         """Generates a string that summarizes this post"""
         return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
 
-    def unsave(self) -> None:
-        """Unsaves this submission"""
-        self._submission.unsave()
+    def unsave(self, force=False) -> bool:
+        """
+        Unsaves this submission
+        :param force: True to unsave this submission, even if can_unsave is False
+        :return: True if the submission was unsaved, else False
+        """
+        if force or self.can_unsave:
+            self._submission.unsave()
+            return True
+        return False
 
     def format(self, template: str, token="%") -> str:
         """

@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, Iterable, List, Set, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 import httpx
 import praw
@@ -72,7 +72,7 @@ class SubmissionWrapper:
         client: httpx.AsyncClient,
         title: str = None,
         organize: bool = False,
-    ) -> Dict[str, Union[str, None]]:
+    ) -> Dict[str, Optional[str]]:
         """
         Downloads all urls and bundles them with their results
         :param directory: directory in which to download each file
@@ -82,31 +82,35 @@ class SubmissionWrapper:
         :return: a dictionary where the keys are this submission's urls and the values are the
         filepaths to which those images were downloaded or None if the download failed
         """
-        urls_filepaths: Dict[str, Union[str, None]] = {url: None for url in self.urls}
-        if len(urls_filepaths) == 0:
-            return urls_filepaths
+
+        if not self.urls:
+            return dict()
         if organize:
             directory = os.path.join(directory, self.subreddit)
         os.makedirs(directory, exist_ok=True)
-        if title is None:
+        if not title:
             title = self.title
+        urls_filepaths: Dict[str, Optional[str]] = dict()
+        filename = title + core.get_extension(self.response)
+        offset = 0
 
         async def zip_result(url: str) -> Tuple[str, httpx.Response]:
             return (url, await client.get(self.url, timeout=10))
 
-        urls_responses: List[
-            Tuple[str, Union[httpx.Response, None]]
-        ] = await asyncio.gather(zip_result(url) for url in self.urls)
+        urls_responses: List[Tuple[str, Optional[httpx.Response]]] = list(
+            await asyncio.gather(zip_result(url) for url in self.urls)
+        )
 
-        for i, pair in enumerate(urls_responses):
-            url, response = pair
+        for url, response in urls_responses:
             if response is None or response.status_code != 200:
+                urls_filepaths[url] = None
                 continue
-            filename = (
-                title + core.get_extension(response)
-                if len(self.response) == 1
-                else f"{title} ({i+1}){core.get_extension(response)}"
-            )
+
+            # Determine filename
+            while filename in os.listdir(directory):
+                offset += 1
+                filename = f"{title} ({offset}){core.get_extension(self.response)}"
+
             destination = os.path.join(directory, filename)
             with open(destination, "wb") as image_file:
                 image_file.write(response.content)

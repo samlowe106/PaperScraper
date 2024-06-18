@@ -8,6 +8,10 @@ from core.reddit import SubmissionWrapper
 
 def SubmissionMockFactory(
     self,
+    title=str(uuid.uuid4()),
+    subreddit=uuid.uuid4(),
+    url=str(uuid.uuid4()),
+    author=str(uuid.uuid4()),
     over_18=False,
     score=random.randint(-100, 100),
     created_utc=datetime.utcnow(),
@@ -15,14 +19,20 @@ def SubmissionMockFactory(
     **kwargs
 ):
     submission_mock = Mock()
-    submission_mock.title = str(uuid.uuid4())
-    submission_mock.subreddit = uuid.uuid4()
-    submission_mock.url = str(uuid.uuid4())
-    submission_mock.author = str(uuid.uuid4())
-    submission_mock.submission.over_18 = over_18
+
+    submission_mock.title = title
+    submission_mock.subreddit = subreddit
+    submission_mock.url = url
+    submission_mock.author = author
+    submission_mock.over_18 = over_18
     submission_mock.score = score
     submission_mock.created_utc = created_utc
-    submission_mock.saved = Mock()
+
+    submission_mock.unsave = Mock()
+
+    for arg, value in kwargs.items():
+        setattr(Mock, arg, value)
+
     return submission_mock
 
 

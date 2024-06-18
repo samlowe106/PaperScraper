@@ -203,6 +203,8 @@ class TestDownloadAll(unittest.TestCase):
             open_mock.assert_called_with(value, "wb")
         self.assertDictEqual(result, expected)
 
+
+class TestLog(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open, read_data="data")
     @patch("json.dump")
     def test_log(self, mock_open, mock_json_dump):

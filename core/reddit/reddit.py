@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -245,25 +246,27 @@ async def _from_source(
     source: ListingGenerator, amount: int, client: httpx.AsyncClient, dry: bool = True
 ) -> List[SubmissionWrapper]:
     """
-    Wraps the submissions from the given source, and returns a generator that will generate at most
-    limit items
+    Returns a list containing at most amount number of SubmissionWarppers,
+    created from posts from the given source
     """
     if amount < 1:
-        raise ValueError("Desired must be a positive integer")
+        raise ValueError("Amount must be a positive integer")
+    # basically, just get batches of 2 * amount and filter out the ones that don't have urls
+    #  until we have enough. Worst case (for a single iteration) is that we only need 1
+    #  additional post to reach the desired amount but try_amount is large
+    try_amount = 2 * amount
     batch: List[SubmissionWrapper] = []
     exhausted = False
     while not exhausted and len(batch) < amount:
-        submissions: List[SubmissionWrapper] = []
-        for i in range(amount - len(batch)):
-            try:
-                batch.append(next(source))
-            except StopIteration:
-                exhausted = True
-                break
-        wrappers = [SubmissionWrapper(s, client, dry=dry) for s in submissions]
-        asyncio.gather(wrapper.find_urls(client) for wrapper in wrappers)
-        batch += list(filter(lambda x: len(x.urls) > 0, wrappers))  # type: ignore
-    return batch
+        prospective = [
+            SubmissionWrapper(submission, client, dry=dry)
+            for submission in itertools.islice(source, try_amount)
+        ]
+        if len(prospective) <= try_amount:
+            # might have 0 < len(prospective) < try_amount
+            exhausted = True
+        batch += list(filter(lambda x: len(x.urls) > 0, prospective))
+    return batch[:amount]
 
 
 async def from_saved(
@@ -276,7 +279,7 @@ async def from_saved(
 ) -> List[SubmissionWrapper]:
     """Generates a batch of at most (amount) SubmissionWrappers from the given users' saved posts"""
     if amount < 1:
-        raise ValueError("Limit must be a positive integer")
+        raise ValueError("Amount must be a positive integer")
     return await _from_source(
         redditor.saved(limit=None, score=score, age=age), amount, client, dry=dry
     )
@@ -292,7 +295,7 @@ async def from_subreddit(
 ) -> Iterable[SubmissionWrapper]:
     """Generates a batch of at most (amount) SubmissionWrappers from the given subreddit"""
     if amount < 1:
-        raise ValueError("Limit must be a positive integer")
+        raise ValueError("Amount must be a positive integer")
     return await _from_source(
         sortby(REDDIT.subreddit(subreddit_name.rstrip("r/")), score=score, age=age),
         amount,

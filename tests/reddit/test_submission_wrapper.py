@@ -126,11 +126,11 @@ class TestDownloadAll(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open)
     def test_download_all_unorganized(
         self,
-        io_write_mock,
-        httpx_response_mock,
-        os_makedirs_mock,
-        get_extension_mock,
         open_mock,
+        get_extension_mock,
+        os_makedirs_mock,
+        httpx_response_mock,
+        io_write_mock,
     ):
         directory = "mock directory"
         httpx_client = MagicMock()
@@ -169,11 +169,11 @@ class TestDownloadAll(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open)
     def test_download_all_organized(
         self,
-        io_write_mock,
-        httpx_response_mock,
-        os_makedirs_mock,
-        get_extension_mock,
         open_mock,
+        get_extension_mock,
+        os_makedirs_mock,
+        httpx_response_mock,
+        io_write_mock,
     ):
         directory = "mock directory"
         httpx_client = MagicMock()
@@ -207,7 +207,7 @@ class TestDownloadAll(unittest.TestCase):
 class TestLog(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open, read_data="data")
     @patch("json.dump")
-    def test_log(self, mock_open, mock_json_dump):
+    def test_log(self, mock_json_dump, mock_open):
         mock_open.return_value = "mock file stream"
         wrapper = SubmissionWrapperFactory()
         wrapper.log("foo.file")
@@ -225,7 +225,7 @@ class TestLog(unittest.TestCase):
 
     @patch("builtins.open", new_callable=mock_open, read_data="data")
     @patch("json.dump")
-    def test_log_with_exception(self, mock_open, mock_json_dump):
+    def test_log_with_exception(self, mock_json_dump, mock_open):
         mock_open.return_value = "mock file stream"
         wrapper = SubmissionWrapperFactory()
         wrapper.log("foo.file", exception="mock exception")
@@ -246,15 +246,105 @@ class TestLog(unittest.TestCase):
         pass
 
 
-class TestFromSaved(unittest.TestCase):
-    # TODO
+class TestFromSource(unittest.TestCase):
+    def test_requires_nonnegative_amount(self):
+        with self.assertRaises(ValueError):
+            SubmissionWrapper.from_source(
+                source="mock source", amount=-1, client="mock client"
+            )
 
-    def __init__(self):
+    def test_requires_nonzero_amount(self):
+        with self.assertRaises(ValueError):
+            SubmissionWrapper.from_source(
+                source="mock source", amount=0, client="mock client"
+            )
+
+    @patch("SubmissionWrapper", wraps=lambda s, client, dry: (s))
+    def test_handles_exhaustion(self, mock_submission_wrapper):
+        # amount is 10, generates only 4, two are valid, two are invalid
+        mock_valid_1 = MagicMock()
+        mock_valid_2 = MagicMock()
+        mock_invalid_1 = MagicMock()
+        mock_invalid_2 = MagicMock()
+        mock_valid_1.urls = ["mock url"]
+        mock_valid_2.urls = ["mock url"]
+        mock_invalid_1.urls = []
+        mock_invalid_2.urls = []
+        mock_source = MagicMock()
+        mock_source.return_value = iter(
+            [mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2]
+        )
+
+        result = SubmissionWrapper.from_source(
+            source=mock_source, amount=10, client="mock client"
+        )
+        # Instead of wrapping submissions in a submission wrapper
+        #  the mocked SubmissionWrapper just wraps the mocks in a tuple
+        mock_submission_wrapper.assert_called_with(
+            mock_valid_1, client="mock client", dry=True
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_invalid_1, client="mock client", dry=True
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_valid_2, client="mock client", dry=True
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_invalid_2, client="mock client", dry=True
+        )
+        self.assertListEqual(result, [(mock_valid_1), (mock_valid_2)])
+
+    @patch("SubmissionWrapper", wraps=lambda s, client, dry: (s))
+    def test_handles_not_enough_valid_submissions(self, mock_submission_wrapper):
+        """The case where the amount contains more submissions than the amount required, but not enough are valid"""
+        mock_valid_1 = MagicMock()
+        mock_valid_2 = MagicMock()
+        mock_invalid_1 = MagicMock()
+        mock_invalid_2 = MagicMock()
+        mock_invalid_3 = MagicMock()
+        mock_valid_1.urls = ["mock url"]
+        mock_valid_2.urls = ["mock url"]
+        mock_invalid_1.urls = []
+        mock_invalid_2.urls = []
+        mock_invalid_3.urls = []
+        mock_source = MagicMock()
+        # amount is 3, list generates 5 but only 2 are valid. should have to request two batches
+        mock_source.return_value = iter(
+            [mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2, mock_invalid_3]
+        )
+
+        result = SubmissionWrapper.from_source(
+            source=mock_source, amount=10, client="mock client"
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_valid_1, client="mock client", dry=True
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_invalid_1, client="mock client", dry=True
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_valid_2, client="mock client", dry=True
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_invalid_2, client="mock client", dry=True
+        )
+        mock_submission_wrapper.assert_called_with(
+            mock_invalid_3, client="mock client", dry=True
+        )
+        self.assertListEqual(result, [(mock_valid_1), (mock_valid_2)])
+
+
+class TestFromSaved(unittest.TestCase):
+    @patch("_from_source")
+    @patch("redditor.saved")
+    def test_from_saved(self):
+        # TODO
         pass
 
 
 class TestFromSubreddit(unittest.TestCase):
-    # TODO
-
-    def __init__(self):
+    @patch("_from_source")
+    @patch("REDDIT.subreddit")
+    def test_from_subreddit(self):
+        # TODO
         pass

@@ -243,7 +243,10 @@ class SortOption(Enum):
 
 
 async def _from_source(
-    source: ListingGenerator, amount: int, client: httpx.AsyncClient, dry: bool = True
+    source: ListingGenerator,
+    client: httpx.AsyncClient,
+    amount: int = 10,
+    dry: bool = True,
 ) -> List[SubmissionWrapper]:
     """
     Returns a list containing at most amount number of SubmissionWarppers,
@@ -271,23 +274,23 @@ async def _from_source(
 
 async def from_saved(
     redditor: Redditor,
-    amount: int,
     client: httpx.AsyncClient,
     score: int = None,
     age: timedelta = None,
+    amount: int = 10,
     dry: bool = True,
 ) -> List[SubmissionWrapper]:
     """Generates a batch of at most (amount) SubmissionWrappers from the given users' saved posts"""
     if amount < 1:
         raise ValueError("Amount must be a positive integer")
     return await _from_source(
-        redditor.saved(limit=None, score=score, age=age), amount, client, dry=dry
+        redditor.saved(limit=None, score=score, age=age), client, amount=amount, dry=dry
     )
 
 
 async def from_subreddit(
     subreddit_name: str,
-    sortby: SortOption,
+    sort_by: SortOption,
     client: httpx.AsyncClient,
     score: int = None,
     age: timedelta = None,
@@ -297,9 +300,10 @@ async def from_subreddit(
     if amount < 1:
         raise ValueError("Amount must be a positive integer")
     return await _from_source(
-        sortby(
+        sort_by(
             REDDIT.subreddit(subreddit_name.removeprefix("r/")), score=score, age=age
         ),
-        amount,
         client,
+        amount=amount,
+        dry=True,  # Can't/shouldn't unsave posts from subreddits
     )

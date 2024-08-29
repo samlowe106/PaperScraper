@@ -297,7 +297,9 @@ async def from_subreddit(
     if amount < 1:
         raise ValueError("Amount must be a positive integer")
     return await _from_source(
-        sortby(REDDIT.subreddit(subreddit_name.rstrip("r/")), score=score, age=age),
+        sortby(
+            REDDIT.subreddit(subreddit_name.removeprefix("r/")), score=score, age=age
+        ),
         amount,
         client,
     )

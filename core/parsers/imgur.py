@@ -1,17 +1,32 @@
 import os
 import re
-from typing import Set
+from typing import Dict, Optional, Set
 
 import httpx
+
+SINGLE_IMAGE_LINK = ""
+ALBUM_LINK = "a/"
+GALLERY_LINK = "gallery/"
 
 API_ROOT = "https://api.imgur.com/3/"
 IMAGE_API = API_ROOT + "image/"
 ALBUM_API = API_ROOT + "album/"
 GALLERY_API = API_ROOT + "gallery/"
 
-IMGUR_REGEX = re.compile(r"imgur\.com/(a/|gallery/|){0,1}([a-zA-Z]+)\Z")
+IMGUR_REGEX = re.compile(
+    r"(?P<protocol>https?://)?"
+    + r"(?P<direct_link>i.)?"
+    + r"(?P<base_url>imgur\.com/)"
+    + r"(?P<link_type>a/|gallery/|)?"
+    + r"(?P<link_id>[a-zA-Z]+)\Z"
+)
 
 HEADERS = {"Authorization": f'Client-ID {os.environ["imgur_client_id"]}'}
+
+
+def _split_imgur_url(url: str) -> Optional[Dict[str, str]]:
+    m = IMGUR_REGEX.match(url)
+    return m.groupdict() if m else None
 
 
 async def imgur_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
@@ -19,20 +34,20 @@ async def imgur_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     :param response: a GET response from an imgur (single image, album, or gallery) page
     :return: a set of strings representing all scrape-able images on that page
     """
-    m = IMGUR_REGEX.match(url)
-    if m is None:
+    # might get redirected!
+    url = await client.get(url).url
+
+    if (match := _split_imgur_url(url)) is None:
         return set()
-    if m.group(1) == "":
-        # single image
-        if m.group(3) is not None:
-            # direct link
+
+    if match["link_type"] == SINGLE_IMAGE_LINK:
+        if match["direct_link"]:
             return {url}
-        image_data = await client.get(IMAGE_API + m.group(2), headers=HEADERS)
+        image_data = await client.get(IMAGE_API + match["link_id"], headers=HEADERS)
         if image_data.status_code == 200:
             return {image_data.json()["link"]}
-    elif m.group(1) in {"album/", "gallery/"}:
-        # album or gallery
-        album_response = await client.get(ALBUM_API + m.group(2), headers=HEADERS)
+    elif match["link_type"] in {ALBUM_LINK, GALLERY_LINK}:
+        album_response = await client.get(ALBUM_API + match["link_id"], headers=HEADERS)
         if album_response.status_code == 200:
             return {
                 image_data["link"]

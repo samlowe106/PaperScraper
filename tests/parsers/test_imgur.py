@@ -116,3 +116,7 @@ class TestImgurParser(unittest.TestCase):
         result = imgur_parser("https://i.reddit.com", MagicMock())
         self.assertEqual(result, set())
         pass
+
+
+if __name__ == "__main__":
+    unittest.main()

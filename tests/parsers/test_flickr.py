@@ -25,3 +25,7 @@ class TestFlickrParser(unittest.TestCase):
     def test_makes_api_call(self):
         # TODO
         pass
+
+
+if __name__ == "__main__":
+    unittest.main()

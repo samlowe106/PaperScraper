@@ -388,3 +388,7 @@ class TestFromSubreddit(unittest.TestCase):
         )
 
         self.assertEqual(result, mock_from_source.return_value)
+
+
+if __name__ == "__main__":
+    unittest.main()

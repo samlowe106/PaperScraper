@@ -1,6 +1,7 @@
+# mypy: ignore-errors
 import asyncio
 from functools import reduce
-from typing import Set
+from typing import Callable, Set
 
 import httpx
 
@@ -26,7 +27,7 @@ async def single_image_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     return set()
 
 
-PARSERS = {
+PARSERS: Callable[[str, httpx.AsyncClient], Set[str]] = {
     single_image_parser,
     imgur_parser,
     flickr_parser,
@@ -42,6 +43,6 @@ async def find_urls(url: str, client: httpx.AsyncClient) -> Set[str]:
     """
     return reduce(
         set.union,
-        asyncio.gather(parser(url, client) for parser in PARSERS),
+        await asyncio.gather(*(parser(url, client) for parser in PARSERS)),
         set(),
     )

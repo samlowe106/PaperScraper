@@ -1,6 +1,6 @@
-import datetime
 import random
 import uuid
+from datetime import datetime
 from unittest.mock import Mock
 
 from core.reddit import SubmissionWrapper
@@ -14,7 +14,7 @@ def SubmissionMockFactory(
     author=str(uuid.uuid4()),
     over_18=False,
     score=random.randint(-100, 100),
-    created_utc=datetime.utcnow(),
+    created_utc=datetime.now(),
     *args,
     **kwargs
 ):
@@ -37,8 +37,8 @@ def SubmissionMockFactory(
 
 
 def SubmissionWrapperFactory(
-    self, submission=None, client=Mock(), dry=True, *args, **kwargs
-):
+    submission=None, client=Mock(), dry=True, *args, **kwargs
+) -> SubmissionWrapper:
     if not submission:
         submission = SubmissionMockFactory(*args, **kwargs)
 

@@ -7,7 +7,6 @@ from core.reddit import SubmissionWrapper
 
 
 def SubmissionMockFactory(
-    self,
     title=str(uuid.uuid4()),
     subreddit=uuid.uuid4(),
     url=str(uuid.uuid4()),

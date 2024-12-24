@@ -3,6 +3,7 @@ import re
 from typing import Dict, Optional, Set
 
 import httpx
+from dotenv import load_dotenv
 
 SINGLE_IMAGE_LINK = ""
 ALBUM_LINK = "a/"
@@ -21,6 +22,7 @@ IMGUR_REGEX = re.compile(
     + r"(?P<link_id>[a-zA-Z]+)\Z"
 )
 
+load_dotenv()
 HEADERS = {"Authorization": f'Client-ID {os.environ["IMGUR_CLIENT_ID"]}'}
 
 

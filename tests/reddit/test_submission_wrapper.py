@@ -12,43 +12,36 @@ from tests import SubmissionWrapperFactory
 
 class TestSignIn(unittest.TestCase):
     @patch("praw.Reddit")
-    @patch.dict(
-        os.environ,
-        {
-            "CLIENT_ID": "mock client id",
-            "CLIENT_SECRET": "mock client secret",
-        },
-    )
     def test_sign_in(self, mock_praw_reddit):
         # Assert correct call is made when no arguments passed
         core.reddit.sign_in()
         mock_praw_reddit.assert_called_with(
-            client_id="mock client id",
-            client_secret="mock client secret",
+            client_id="mock reddit client id",
+            client_secret="mock reddit client secret",
             user_agent="PaperScraper",
         )
 
         # Assert correct call is made with only username
         core.reddit.sign_in(username="username")
         mock_praw_reddit.assert_called_with(
-            client_id="mock client id",
-            client_secret="mock client secret",
+            client_id="mock reddit client id",
+            client_secret="mock reddit client secret",
             user_agent="PaperScraper",
         )
 
         # Assert correct call is made with only password
         core.reddit.sign_in(password="password")
         mock_praw_reddit.assert_called_with(
-            client_id="mock client id",
-            client_secret="mock client secret",
+            client_id="mock reddit client id",
+            client_secret="mock reddit client secret",
             user_agent="PaperScraper",
         )
 
         # Assert correct call is made with username and password
         core.reddit.sign_in(username="username", password="password")
         mock_praw_reddit.assert_called_with(
-            client_id="mock client id",
-            client_secret="mock client secret",
+            client_id="mock reddit client id",
+            client_secret="mock reddit client secret",
             user_agent="PaperScraper",
             username="username",
             password="password",

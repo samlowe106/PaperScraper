@@ -24,15 +24,17 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 3. Install all requirements: `pip install -r requirements.txt`
 
-4. Install pre-commit via `pre-commit install`. Ensure pre-commit is working by runnig `pre-commit run --all-files`
+4. Install pre-commit via `pre-commit install`. Ensure pre-commit is working by running `pre-commit run --all-files`
 
 5. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
 
-6. Click "create app"
+6. Create a new app and choose **script** as the app type
 
-7. Fill out the app's info, choosing **script** as the app type
+7. Go to your [Applications setting](https://imgur.com/account/settings/apps) on imgur
 
-8. Configure your Python environment variables, adding the client ID as "CLIENT_ID" and client secret as "CLIENT_SECRET"
+8. Create a new app
+
+9. Configure your Python environment variables, adding the reddit client ID as "REDDIT_CLIENT_ID", reddit client secret as "REDDIT_CLIENT_SECRET", and imgur client ID as "IMGUR_CLIENT_ID"
 
 ## Usage
 

@@ -1,12 +1,15 @@
 import asyncio
-import datetime
 import os
 import unittest
 import uuid
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
+
+import pytest
 
 import core
 from core import SortOption, SubmissionWrapper
+from core.reddit.reddit import _from_source
 from tests import SubmissionWrapperFactory
 
 
@@ -57,7 +60,7 @@ class TestSubmissionWrapper(unittest.TestCase):
         submission_mock.author = str(uuid.uuid4())
         submission_mock.over_18 = False
         submission_mock.score = 10
-        submission_mock.created_utc = datetime.utcnow()
+        submission_mock.created_utc = datetime.now()
         submission_mock.saved = Mock()
 
         client_mock = Mock()
@@ -68,20 +71,20 @@ class TestSubmissionWrapper(unittest.TestCase):
 
         # Assert that the wrapper has the correct values
         self.assertEqual(wrapper.title, submission_mock.title)
-        self.assertEqual(wrapper.subreddit, submission_mock.subreddit)
+        self.assertEqual(wrapper.subreddit, str(submission_mock.subreddit))
         self.assertEqual(wrapper.url, submission_mock.url)
         self.assertEqual(wrapper.author, submission_mock.author)
         self.assertEqual(wrapper.nsfw, submission_mock.over_18)
         self.assertEqual(wrapper.score, submission_mock.score)
         self.assertEqual(wrapper.created_utc, submission_mock.created_utc)
-        self.assertEqual(wrapper.dry, not dry)
-        # Assert that the file title is uppercased and has the special characters removed
-        self.assertEqual(wrapper.file_title, "Mock Title")
+        self.assertEqual(wrapper.can_unsave, not dry)
+        # Assert that the file title has the special characters removed
+        self.assertEqual(wrapper.base_file_title, "mock title")
         # Assert values like responses and urls are not set
         self.assertIsNone(wrapper.response)
         self.assertIsNone(wrapper.urls)
         # Assert that the submission is has not been unsaved
-        self.submission_mock.unsave.assert_not_called()
+        submission_mock.unsave.assert_not_called()
 
     def test_unsave(self):
         # Assert SubmissionWrappers do not unsave posts when dry = True
@@ -106,27 +109,27 @@ class TestSubmissionWrapper(unittest.TestCase):
 
 
 class TestDownloadAll(unittest.TestCase):
-    def test_download_all_empty(self):
+    async def test_download_all_empty(self):
         # Assert that an empty list of urls returns an empty dictionary
         wrapper = SubmissionWrapperFactory()
-        self.assertEqual(wrapper.urls, [])
-        self.assertEqual(wrapper.download_all(), dict())
+        self.assertEqual(wrapper.urls, set())
+        mock_client = MagicMock()
+        mock_path = "mock path"
+        self.assertEqual(await wrapper.download_all(mock_path, mock_client), dict())
 
-    @patch("IO.write")
     @patch("httpx.Response")
     @patch("os.makedirs")
-    @patch("get_extension")
+    @patch("core.get_extension")
     @patch("builtins.open", new_callable=mock_open)
-    def test_download_all_unorganized(
+    async def test_download_all_unorganized(
         self,
         open_mock,
         get_extension_mock,
         os_makedirs_mock,
         httpx_response_mock,
-        io_write_mock,
     ):
         directory = "mock directory"
-        httpx_client = MagicMock()
+        httpx_client = AsyncMock()
         wrapper = SubmissionWrapperFactory()
         wrapper.urls = ["url1", "url2", "url3", "url4"]
         httpx_response_mock.content = "mock content"
@@ -145,7 +148,7 @@ class TestDownloadAll(unittest.TestCase):
                 organize=False,
             )
         )
-        io_write_mock.assert_called_with(httpx_response_mock.content)
+        mock_open.write.assert_called_with(httpx_response_mock.content)
         httpx_response_mock.assert_called_with("url1", timeout=10)
         httpx_response_mock.assert_called_with("url2", timeout=10)
         httpx_response_mock.assert_called_with("url3", timeout=10)
@@ -155,26 +158,34 @@ class TestDownloadAll(unittest.TestCase):
             open_mock.assert_called_with(value, "wb")
         self.assertDictEqual(result, expected)
 
-    @patch("IO.write")
-    @patch("httpx.Response")
     @patch("os.makedirs")
-    @patch("get_extension")
+    @patch("os.listdir")
+    @patch("core.get_extension")
     @patch("builtins.open", new_callable=mock_open)
     def test_download_all_organized(
         self,
         open_mock,
         get_extension_mock,
+        os_listdir_mock,
         os_makedirs_mock,
-        httpx_response_mock,
-        io_write_mock,
     ):
         directory = "mock directory"
-        httpx_client = MagicMock()
+        httpx_client_mock = AsyncMock()
+
+        class MockResponse:
+            status_code = 200
+            content = "mock content"
+
+        os_listdir_mock.return_value = []
+
+        httpx_client_mock.get.return_value = MockResponse()
+
         wrapper = SubmissionWrapperFactory()
         wrapper.subreddit = "mock subreddit"
+        wrapper.title = "mock title"
         wrapper.urls = ["url1", "url2", "url3", "url4"]
-        httpx_response_mock.content = "mock content"
         get_extension_mock.return_value = ".jpg"
+
         expected = {
             "url1": os.path.join(directory, wrapper.subreddit, "mock title.jpg"),
             "url2": os.path.join(directory, wrapper.subreddit, "mock title (1).jpg"),
@@ -183,12 +194,16 @@ class TestDownloadAll(unittest.TestCase):
         }
         result = asyncio.run(
             wrapper.download_all(
-                directory=directory, client=httpx_client, organize=False
+                directory=directory, client=httpx_client_mock, organize=False
             )
         )
-        io_write_mock.assert_called_with(httpx_response_mock.content)
+
+        os_listdir_mock.assert_called_with(directory)
+
+        print(result)
+
         for key in expected.keys():
-            httpx_response_mock.assert_called_with(key, timeout=10)
+            httpx_client_mock.get.assert_called_with(key, timeout=10)
         os_makedirs_mock.assert_called_with(
             os.path.join(directory, wrapper.subreddit), exist_ok=True
         )
@@ -239,20 +254,16 @@ class TestLog(unittest.TestCase):
         pass
 
 
-class TestFromSource(unittest.TestCase):
-    def test_requires_nonnegative_amount(self):
-        with self.assertRaises(ValueError):
-            SubmissionWrapper.from_source(
-                source="mock source", amount=-1, client="mock client"
-            )
+class TestFromSource:
+    async def test_requires_nonnegative_amount(self):
+        with pytest.raises(ValueError):
+            await _from_source(source="mock source", amount=-1, client="mock client")
 
-    def test_requires_nonzero_amount(self):
-        with self.assertRaises(ValueError):
-            SubmissionWrapper.from_source(
-                source="mock source", amount=0, client="mock client"
-            )
+    async def test_requires_nonzero_amount(self):
+        with pytest.raises(ValueError):
+            await _from_source(source="mock source", amount=0, client="mock client")
 
-    @patch("SubmissionWrapper", wraps=lambda s, client, dry: (s))
+    @patch("core.SubmissionWrapper", wraps=lambda s, client, dry: (s))
     def test_handles_exhaustion(self, mock_submission_wrapper):
         # amount is 10, generates only 4, two are valid, two are invalid
         mock_valid_1 = MagicMock()
@@ -268,9 +279,7 @@ class TestFromSource(unittest.TestCase):
             [mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2]
         )
 
-        result = SubmissionWrapper.from_source(
-            source=mock_source, amount=10, client="mock client"
-        )
+        result = _from_source(source=mock_source, amount=10, client="mock client")
         # Instead of wrapping submissions in a submission wrapper
         #  the mocked SubmissionWrapper just wraps the mocks in a tuple
         mock_submission_wrapper.assert_called_with(
@@ -287,7 +296,7 @@ class TestFromSource(unittest.TestCase):
         )
         self.assertListEqual(result, [(mock_valid_1), (mock_valid_2)])
 
-    @patch("SubmissionWrapper", wraps=lambda s, client, dry: (s))
+    @patch("core.SubmissionWrapper", wraps=lambda s, client, dry: (s))
     def test_handles_not_enough_valid_submissions(self, mock_submission_wrapper):
         """The case where the amount contains more submissions than the amount required, but not enough are valid"""
         mock_valid_1 = MagicMock()
@@ -326,7 +335,7 @@ class TestFromSource(unittest.TestCase):
 
 
 class TestFromSaved(unittest.TestCase):
-    @patch("_from_source")
+    @patch("core._from_source")
     def test_from_saved(self, mock_from_source):
         mock_redditor = MagicMock()
         mock_redditor.saved.return_value = object()
@@ -353,8 +362,8 @@ class TestFromSaved(unittest.TestCase):
 
 
 class TestFromSubreddit(unittest.TestCase):
-    @patch("_from_source")
-    @patch("REDDIT.subreddit")
+    @patch("core._from_source")
+    @patch("core.REDDIT.subreddit")
     def test_from_subreddit(self, mock_subreddit, mock_from_source):
         expected_amount = 10
         expected_client = "mock client"

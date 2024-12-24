@@ -1,0 +1,43 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    env:
+      REDDIT_CLIENT_ID: "mock reddit client id"
+      REDDIT_CLIENT_SECRET: "mock reddit client secret"
+      IMGUR_CLIENT_ID: "mock reddit client secret"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install pipx
+        run: |
+          sudo apt install pipx
+          pipx ensurepath
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Install project dependencies
+        run: poetry install
+
+      - name: Run tests
+        run: pytest

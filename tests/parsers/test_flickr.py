@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch  # MagicMock,
 
-from parsers.flickr import flickr_parser  # _get_flickr_photo_id,
+from core.parsers.flickr import flickr_parser  # _get_flickr_photo_id,
 
 
 class TestFlickrRegex(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestGetFlickrPhotoID(unittest.TestCase):
 
 
 class TestFlickrParser(unittest.TestCase):
-    @patch("_get_flickr_photo_id")
+    @patch("core.parsers.flickr._get_flickr_photo_id")
     def test_returns_empty_set_if_no_id(self, mock_get_flickr_photo_id):
         mock_get_flickr_photo_id.return_value = None
         result = flickr_parser("mock url", "mock client")

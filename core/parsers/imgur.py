@@ -21,7 +21,7 @@ IMGUR_REGEX = re.compile(
     + r"(?P<link_id>[a-zA-Z]+)\Z"
 )
 
-HEADERS = {"Authorization": f'Client-ID {os.environ["imgur_client_id"]}'}
+HEADERS = {"Authorization": f'Client-ID {os.environ["IMGUR_CLIENT_ID"]}'}
 
 
 def _split_imgur_url(url: str) -> Optional[Dict[str, str]]:

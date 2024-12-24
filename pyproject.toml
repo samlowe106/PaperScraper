@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "paperscraper"
+version = "0.1.0"
+description = ""
+authors = ["Samuel Lowe <samlowe106@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+beautifulsoup4 = "^4.12.3"
+httpx = "^0.28.1"
+praw = "^7.8.1"
+pre-commit = "^4.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

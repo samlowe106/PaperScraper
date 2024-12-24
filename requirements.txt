@@ -1,7 +1,0 @@
-# primary dependencies
-beautifulsoup4==4.12.2
-imgurpython==1.1.7
-httpx==0.26.0
-# praw==7.4.0
-praw == 7.7.1
-pre-commit==3.6.0

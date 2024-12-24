@@ -2,9 +2,8 @@
 .idea
 .vscode
 
-# Client ID/Secret File
-info.txt
-info.json
+# Environment variables
+.env
 
 # Output folder
 Output

@@ -4,6 +4,7 @@
 
 # Client ID/Secret File
 info.txt
+info.json
 
 # Output folder
 Output

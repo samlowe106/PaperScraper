@@ -2,7 +2,7 @@ import asyncio
 import itertools
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from enum import Enum
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
@@ -54,12 +54,12 @@ class SubmissionWrapper:
         self.author = str(submission.author)
         self.nsfw: bool = submission.over_18
         self.score: int = submission.score
-        self.time_created = datetime.fromtimestamp(submission.created_utc, timezone.utc)
+        self.created_utc = submission.created_utc
 
         # relevant to parsing
         self.base_file_title = core.file_title(self._submission.title)
         self.response: httpx.Response = None
-        self.urls: Set[str] = None
+        self.urls: Set[str] = set()
 
         # whether this post can be unsaved or not
         self.can_unsave = not dry
@@ -99,7 +99,7 @@ class SubmissionWrapper:
             return (url, await client.get(self.url, timeout=10))
 
         urls_responses: List[Tuple[str, Optional[httpx.Response]]] = list(
-            await asyncio.gather(zip_result(url) for url in self.urls)
+            await asyncio.gather(*(zip_result(url) for url in self.urls))
         )
 
         for url, response in urls_responses:
@@ -249,7 +249,7 @@ async def _from_source(
     dry: bool = True,
 ) -> List[SubmissionWrapper]:
     """
-    Returns a list containing at most amount number of SubmissionWarppers,
+    Returns a list containing at most amount number of SubmissionWrappers,
     created from posts from the given source
     """
     if amount < 1:

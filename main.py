@@ -5,6 +5,7 @@ import os
 from typing import Iterable
 
 import httpx
+from dotenv import load_dotenv
 
 from core import SortOption, sign_in
 from core.reddit import SubmissionWrapper, from_saved, from_subreddit
@@ -55,8 +56,8 @@ async def get_source(client: httpx.AsyncClient) -> Iterable[SubmissionWrapper]:
     if source_name == "saved":
         return await from_saved(
             sign_in(input("Username: "), getpass.getpass("Password: ")),
-            args.limit,
             client,
+            amount=args.limit,
             score=args.karma,
             age=args.age,
             dry=args.dry,
@@ -77,6 +78,9 @@ async def get_source(client: httpx.AsyncClient) -> Iterable[SubmissionWrapper]:
 
 
 if __name__ == "__main__":
+
+    load_dotenv()
+
     # region Argument Parsing
 
     parser = argparse.ArgumentParser(description="Scrapes images from Reddit")

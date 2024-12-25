@@ -215,11 +215,10 @@ class TestDownloadAll(unittest.TestCase):
 class TestLog(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open, read_data="data")
     @patch("json.dump")
-    def test_log(self, mock_json_dump, mock_open):
-        mock_open.return_value = "mock file stream"
+    def test_log(self, mock_json_dump, mock_file):
         wrapper = SubmissionWrapperFactory()
         wrapper.log("foo.file")
-        mock_open.assert_called_with("foo.file", "a", encoding="utf-8")
+        mock_file.assert_called_with("foo.file", "a", encoding="utf-8")
         mock_json_dump.assert_called_with(
             {
                 "title": wrapper._submission.title,
@@ -228,16 +227,15 @@ class TestLog(unittest.TestCase):
                 "recognized_urls": wrapper.urls,
                 "exception": "",
             },
-            "mock file stream",
+            mock_file(),
         )
 
     @patch("builtins.open", new_callable=mock_open, read_data="data")
     @patch("json.dump")
-    def test_log_with_exception(self, mock_json_dump, mock_open):
-        mock_open.return_value = "mock file stream"
+    def test_log_with_exception(self, mock_json_dump, mock_file):
         wrapper = SubmissionWrapperFactory()
         wrapper.log("foo.file", exception="mock exception")
-        mock_open.assert_called_with("foo.file", "a", encoding="utf-8")
+        mock_file.assert_called_once_with("foo.file", "a", encoding="utf-8")
         mock_json_dump.assert_called_with(
             {
                 "title": wrapper._submission.title,
@@ -246,7 +244,7 @@ class TestLog(unittest.TestCase):
                 "recognized_urls": wrapper.urls,
                 "exception": "mock exception",
             },
-            "mock file stream",
+            mock_file(),
         )
 
     def test_summary_string(self):

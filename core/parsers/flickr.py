@@ -37,7 +37,7 @@ async def flickr_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     :param url: url possibly linking to a flickr image
     :return: a set of urls of downloadable images
     """
-    if (photo_id := _get_flickr_photo_id(url, client)) is None:
+    if (photo_id := await _get_flickr_photo_id(url, client)) is None:
         return set()
 
     parameters = {

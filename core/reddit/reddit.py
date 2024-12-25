@@ -57,7 +57,7 @@ class SubmissionWrapper:
         self.created_utc = submission.created_utc
 
         # relevant to parsing
-        self.base_file_title = core.file_title(self._submission.title)
+        self.base_file_title = core.retitle(self._submission.title)
         self.response: httpx.Response = None
         self.urls: Set[str] = set()
 

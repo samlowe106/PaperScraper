@@ -7,80 +7,109 @@ from core.parsers.imgur import _split_imgur_url, imgur_parser
 class TestSplitImgurURL(unittest.TestCase):
     """Test the regex/function that splits imgur urls into their components"""
 
-    # TODO: creating the urls and the expected results is a bit complicated for a test case
-    #   maybe simplify it at the cost of a lot of repeated code
-
-    expected_templates = [
-        {
-            "protocol": "https://",
-            "direct_link": "",
-            "base_url": "imgur.com/",
-            "link_type": None,
-            "link_id": "aB12c3",
-        },
-        {
-            "protocol": "http://",
-            "direct_link": "",
-            "base_url": "imgur.com/",
-            "link_type": None,
-            "link_id": "XYz4zyX",
-        },
-    ]
-
     def test_regex_matches_album(self):
-        # url1 = "{protocol}{direct_link}{base_url}{link_type}{link_id}"
-        expected = self.expected_template.copy()
-        expected[0]["link_type"] = "a/"  # "https://imgur.com/a/aB12c3"
-        expected[1]["link_type"] = "a/"  # "https://imgur.com/a/XYz4zyX"
+        url1 = "www.imgur.com/a/XYz4zyX"
+        url2 = "http://imgur.com/a/XYz4zyX"
+        url3 = "https://imgur.com/a/aB12c3"
+        url4 = "http://www.imgur.com/a/XYz4zyX"
+        url5 = "https://www.imgur.com/a/aB12c3"
 
-        url1 = "".join(expected[0].values())
-        url2 = "".join(expected[1].values())
+        expected1 = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/a/",
+            "link_id": "XYz4zyX",
+        }
+        expected2 = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/a/",
+            "link_id": "aB12c3",
+        }
 
-        match_dict = _split_imgur_url(url1)
-        self.assertDictEqual(match_dict, expected[0])
-        match_dict = _split_imgur_url(url2)
-        self.assertDictEqual(match_dict, expected[1])
+        self.assertDictEqual(_split_imgur_url(url1), expected1)
+        self.assertDictEqual(_split_imgur_url(url2), expected1)
+        self.assertDictEqual(_split_imgur_url(url3), expected2)
+        self.assertDictEqual(_split_imgur_url(url4), expected1)
+        self.assertDictEqual(_split_imgur_url(url5), expected2)
 
     def test_regex_matches_gallery(self):
-        expected = self.expected_template.copy()
-        expected[0]["link_type"] = "gallery/"
-        expected[1]["link_type"] = "gallery/"
+        url1 = "www.imgur.com/gallery/XYz4zyX"
+        url2 = "http://imgur.com/gallery/XYz4zyX"
+        url3 = "https://imgur.com/gallery/aB12c3"
+        url4 = "http://www.imgur.com/gallery/XYz4zyX"
+        url5 = "https://www.imgur.com/gallery/aB12c3"
 
-        url1 = "".join(expected[0].values())  # "https://imgur.com/gallery/aB12c3"
-        url2 = "".join(expected[1].values())  # "https://imgur.com/gallery/XYz4zyX"
+        expected1 = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/gallery/",
+            "link_id": "XYz4zyX",
+        }
+        expected2 = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/gallery/",
+            "link_id": "aB12c3",
+        }
 
-        match_dict = _split_imgur_url(url1)
-        self.assertDictEqual(match_dict, expected[0])
-        match_dict = _split_imgur_url(url2)
-        self.assertDictEqual(match_dict, expected[1])
+        self.assertDictEqual(_split_imgur_url(url1), expected1)
+        self.assertDictEqual(_split_imgur_url(url2), expected1)
+        self.assertDictEqual(_split_imgur_url(url3), expected2)
+        self.assertDictEqual(_split_imgur_url(url4), expected1)
+        self.assertDictEqual(_split_imgur_url(url5), expected2)
 
     def test_regex_matches_non_direct_single_image(self):
-        expected = self.expected_template.copy()
-        expected[0]["link_type"] = ""
-        expected[1]["link_type"] = ""
+        url1 = "www.imgur.com/XYz4zyX"
+        url2 = "http://imgur.com/XYz4zyX"
+        url3 = "https://imgur.com/aB12c3"
+        url4 = "http://www.imgur.com/XYz4zyX"
+        url5 = "https://www.imgur.com/aB12c3"
 
-        url1 = "".join(expected[0].values())  # "https://imgur.com/aB12c3"
-        url2 = "".join(expected[1].values())  # "https://imgur.com/XYz4zyX"
+        expected1 = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/",
+            "link_id": "XYz4zyX",
+        }
+        expected2 = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/",
+            "link_id": "aB12c3",
+        }
 
-        match_dict = _split_imgur_url(url1)
-        self.assertDictEqual(match_dict, expected[0])
-        match_dict = _split_imgur_url(url2)
-        self.assertDictEqual(match_dict, expected[1])
+        self.assertDictEqual(_split_imgur_url(url1), expected1)
+        self.assertDictEqual(_split_imgur_url(url2), expected1)
+        self.assertDictEqual(_split_imgur_url(url3), expected2)
+        self.assertDictEqual(_split_imgur_url(url4), expected1)
+        self.assertDictEqual(_split_imgur_url(url5), expected2)
 
     def test_regex_matches_direct_single_image(self):
-        expected = self.expected_template.copy()
-        expected[0]["direct_link"] = "i."
-        expected[0]["link_type"] = ""
-        expected[1]["direct_link"] = "i."
-        expected[1]["link_type"] = ""
+        url1 = "www.i.imgur.com/XYz4zyX"
+        url2 = "http://i.imgur.com/XYz4zyX"
+        url3 = "https://i.imgur.com/aB12c3"
+        url4 = "http://www.i.imgur.com/XYz4zyX"
+        url5 = "https://www.i.imgur.com/aB12c3"
 
-        url1 = "".join(expected[0].values())  # "https://i.imgur.com/aB12c3"
-        url2 = "".join(expected[1].values())  # "https://i.imgur.com/XYz4zyX"
+        expected1 = {
+            "direct_link": "i.",
+            "base_url": "imgur.com",
+            "link_type": "/",
+            "link_id": "XYz4zyX",
+        }
+        expected2 = {
+            "direct_link": "i.",
+            "base_url": "imgur.com",
+            "link_type": "/",
+            "link_id": "aB12c3",
+        }
 
-        match_dict = _split_imgur_url(url1)
-        self.assertDictEqual(match_dict, expected[0])
-        match_dict = _split_imgur_url(url2)
-        self.assertDictEqual(match_dict, expected[1])
+        self.assertDictEqual(_split_imgur_url(url1), expected1)
+        self.assertDictEqual(_split_imgur_url(url2), expected1)
+        self.assertDictEqual(_split_imgur_url(url3), expected2)
+        self.assertDictEqual(_split_imgur_url(url4), expected1)
+        self.assertDictEqual(_split_imgur_url(url5), expected2)
 
     def test_does_not_match_other(self):
         self.assertIsNone(_split_imgur_url("https://api.imgur.com/3/"))
@@ -108,14 +137,13 @@ class TestImgurParser(unittest.TestCase):
         # TODO
         pass
 
-    def test_ignores_non_imgur(self):
+    async def test_ignores_non_imgur(self):
         result = imgur_parser("https://example.com", MagicMock())
-        self.assertEqual(result, set())
+        self.assertEqual(await result, set())
         result = imgur_parser("http://google.com", MagicMock())
-        self.assertEqual(result, set())
+        self.assertEqual(await result, set())
         result = imgur_parser("https://i.reddit.com", MagicMock())
-        self.assertEqual(result, set())
-        pass
+        self.assertEqual(await result, set())
 
 
 if __name__ == "__main__":

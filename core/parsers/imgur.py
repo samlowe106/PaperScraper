@@ -15,7 +15,8 @@ ALBUM_API = API_ROOT + "album/"
 GALLERY_API = API_ROOT + "gallery/"
 
 IMGUR_REGEX = re.compile(
-    r"(?P<direct_link>i\.)?"
+    r"(http(s)?://)?(www.)?"
+    + r"(?P<direct_link>i\.)?"
     + r"(?P<base_url>imgur\.com)"
     + r"(?P<link_type>/a/|/gallery/|/)"
     + r"(?P<link_id>\S+)\Z"
@@ -27,7 +28,7 @@ HEADERS = {"Authorization": f'Client-ID {os.environ["IMGUR_CLIENT_ID"]}'}
 
 def _split_imgur_url(url: str) -> Optional[Dict[str, str]]:
     print(url)
-    m = IMGUR_REGEX.search(url)
+    m = IMGUR_REGEX.match(url)
     return m.groupdict() if m else None
 
 

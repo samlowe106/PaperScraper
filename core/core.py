@@ -1,16 +1,17 @@
 import os
 import re
 
-import requests
+import httpx
 
 INVALID_WINDOWS_CHARS = r'<>:"/\|?*'
 
 
-def file_title(s: str) -> str:
+def retitle(s: str) -> str:
     """
-    Creates a valid filename based on the given title string
+    Creates a valid filename based on the given title string without duplicate whitespace or
+    leading/trailing punctuation
     :param s: the string that the created filename should be based on
-    :return: a valid filename
+    :return: a valid, aesthetically pleasing filename
     """
     # remove characters that windows doesn't allow in filenames
     s = s.replace('"', "'")
@@ -50,7 +51,7 @@ def determine_name(directory: str, title: str, extension: str) -> str:
     )
 
 
-def get_extension(response: requests.models.Response) -> str:
+def get_extension(response: httpx.Response) -> str:
     """
     Gets the extension of the content in the specified response
     :param r: valid request object

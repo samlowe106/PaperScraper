@@ -14,7 +14,7 @@ class TestGetFlickrPhotoID(unittest.TestCase):
     pass
 
 
-class TestFlickrParser(unittest.TestCase):
+class TestFlickrParser(unittest.IsolatedAsyncioTestCase):
     @patch("core.parsers.flickr._get_flickr_photo_id")
     async def test_returns_empty_set_if_no_id(self, mock_get_flickr_photo_id):
         mock_get_flickr_photo_id.return_value = None

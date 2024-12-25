@@ -108,7 +108,8 @@ class TestSubmissionWrapper(unittest.TestCase):
         wrapper._submission.unsave.assert_called_once()
 
 
-class TestDownloadAll(unittest.TestCase):
+class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
+
     async def test_download_all_empty(self):
         # Assert that an empty list of urls returns an empty dictionary
         wrapper = SubmissionWrapperFactory()
@@ -141,7 +142,7 @@ class TestDownloadAll(unittest.TestCase):
             "url4": os.path.join(directory, "mock title (3).jpg"),
         }
         result = asyncio.run(
-            wrapper.download_all(
+            await wrapper.download_all(
                 title="mock title",
                 directory=directory,
                 client=httpx_client,
@@ -252,7 +253,8 @@ class TestLog(unittest.TestCase):
         pass
 
 
-class TestFromSource:
+class TestFromSource(unittest.IsolatedAsyncioTestCase):
+
     async def test_requires_nonnegative_amount(self):
         with pytest.raises(ValueError):
             await _from_source(source="mock source", amount=-1, client="mock client")
@@ -262,7 +264,7 @@ class TestFromSource:
             await _from_source(source="mock source", amount=0, client="mock client")
 
     @patch("core.SubmissionWrapper", wraps=lambda s, client, dry: (s))
-    def test_handles_exhaustion(self, mock_submission_wrapper):
+    async def test_handles_exhaustion(self, mock_submission_wrapper):
         # amount is 10, generates only 4, two are valid, two are invalid
         mock_valid_1 = MagicMock()
         mock_valid_2 = MagicMock()
@@ -277,7 +279,7 @@ class TestFromSource:
             [mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2]
         )
 
-        result = _from_source(source=mock_source, amount=10, client="mock client")
+        result = await _from_source(source=mock_source, amount=10, client="mock client")
         # Instead of wrapping submissions in a submission wrapper
         #  the mocked SubmissionWrapper just wraps the mocks in a tuple
         mock_submission_wrapper.assert_called_with(
@@ -295,7 +297,7 @@ class TestFromSource:
         self.assertListEqual(result, [(mock_valid_1), (mock_valid_2)])
 
     @patch("core.SubmissionWrapper", wraps=lambda s, client, dry: (s))
-    def test_handles_not_enough_valid_submissions(self, mock_submission_wrapper):
+    async def test_handles_not_enough_valid_submissions(self, mock_submission_wrapper):
         """The case where the amount contains more submissions than the amount required, but not enough are valid"""
         mock_valid_1 = MagicMock()
         mock_valid_2 = MagicMock()
@@ -313,7 +315,7 @@ class TestFromSource:
             [mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2, mock_invalid_3]
         )
 
-        result = _from_source(source=mock_source, amount=10, client="mock client")
+        result = await _from_source(source=mock_source, amount=10, client="mock client")
         mock_submission_wrapper.assert_called_with(
             mock_valid_1, client="mock client", dry=True
         )
@@ -332,8 +334,9 @@ class TestFromSource:
         self.assertListEqual(result, [(mock_valid_1), (mock_valid_2)])
 
 
-class TestFromSaved(unittest.TestCase):
-    @patch("core.reddit._from_source")
+class TestFromSaved(unittest.IsolatedAsyncioTestCase):
+
+    @patch("core.reddit.reddit._from_source")
     async def test_from_saved(self, mock_from_source):
         mock_redditor = MagicMock()
         mock_redditor.saved.return_value = object()
@@ -343,7 +346,7 @@ class TestFromSaved(unittest.TestCase):
         mock_client = Mock()
 
         mock_from_source.return_value = object()
-        result = core.from_saved(mock_redditor, "mock client")
+        result = await core.from_saved(mock_redditor, "mock client")
 
         mock_redditor.saved.assert_called_once_with(
             limit=None, score=expected_score, age=expected_age
@@ -359,8 +362,8 @@ class TestFromSaved(unittest.TestCase):
         self.assertEqual(result, mock_from_source.return_value)
 
 
-class TestFromSubreddit(unittest.TestCase):
-    @patch("core.reddit._from_source")
+class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
+    @patch("core.reddit.reddit._from_source")
     @patch("core.reddit.from_subreddit")
     async def test_from_subreddit(self, mock_from_subreddit, mock_from_source):
         expected_amount = 10

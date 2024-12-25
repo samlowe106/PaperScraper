@@ -16,10 +16,10 @@ class TestGetFlickrPhotoID(unittest.TestCase):
 
 class TestFlickrParser(unittest.TestCase):
     @patch("core.parsers.flickr._get_flickr_photo_id")
-    def test_returns_empty_set_if_no_id(self, mock_get_flickr_photo_id):
+    async def test_returns_empty_set_if_no_id(self, mock_get_flickr_photo_id):
         mock_get_flickr_photo_id.return_value = None
         result = flickr_parser("mock url", "mock client")
-        self.assertEqual(result, set())
+        self.assertEqual(await result, set())
         mock_get_flickr_photo_id.assert_called_once_with("mock url", "mock client")
 
     def test_makes_api_call(self):

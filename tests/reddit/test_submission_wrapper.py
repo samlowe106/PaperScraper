@@ -82,7 +82,7 @@ class TestSubmissionWrapper(unittest.TestCase):
         self.assertEqual(wrapper.base_file_title, "mock title")
         # Assert values like responses and urls are not set
         self.assertIsNone(wrapper.response)
-        self.assertIsNone(wrapper.urls)
+        self.assertEqual(wrapper.urls, set())
         # Assert that the submission is has not been unsaved
         submission_mock.unsave.assert_not_called()
 
@@ -313,7 +313,7 @@ class TestFromSource:
             [mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2, mock_invalid_3]
         )
 
-        result = core._from_source(source=mock_source, amount=10, client="mock client")
+        result = _from_source(source=mock_source, amount=10, client="mock client")
         mock_submission_wrapper.assert_called_with(
             mock_valid_1, client="mock client", dry=True
         )
@@ -333,8 +333,8 @@ class TestFromSource:
 
 
 class TestFromSaved(unittest.TestCase):
-    @patch("core._from_source")
-    def test_from_saved(self, mock_from_source):
+    @patch("core.reddit._from_source")
+    async def test_from_saved(self, mock_from_source):
         mock_redditor = MagicMock()
         mock_redditor.saved.return_value = object()
         expected_score = None
@@ -360,27 +360,27 @@ class TestFromSaved(unittest.TestCase):
 
 
 class TestFromSubreddit(unittest.TestCase):
-    @patch("core._from_source")
-    @patch("core.REDDIT.subreddit")
-    def test_from_subreddit(self, mock_subreddit, mock_from_source):
+    @patch("core.reddit._from_source")
+    @patch("core.reddit.from_subreddit")
+    async def test_from_subreddit(self, mock_from_subreddit, mock_from_source):
         expected_amount = 10
         expected_client = "mock client"
         expected_score = None
         expected_age = None
 
-        mock_subreddit.return_value = object()
+        mock_from_subreddit.return_value = object()
         mock_sort_by = Mock()
         mock_sort_by.return_value = object()
         mock_from_source.return_value = object()
 
-        result = core.from_subreddit(
+        result = await core.from_subreddit(
             "r/mock_subreddit", SortOption.TOP_ALL, expected_client
         )
 
-        mock_subreddit.assert_called_once_with("mock_subreddit")
+        mock_from_subreddit.assert_called_once_with("mock_subreddit")
 
         mock_sort_by.assert_called_once_with(
-            mock_subreddit.return_value, score=expected_score, age=expected_age
+            mock_from_subreddit.return_value, score=expected_score, age=expected_age
         )
 
         mock_from_source.assert_called_once_with(

@@ -151,4 +151,5 @@ if __name__ == "__main__":
 
     # endregion
 
-    asyncio.run(main())
+    with asyncio.get_event_loop() as loop:
+        loop.run_until_complete(main())

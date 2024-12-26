@@ -14,8 +14,6 @@ from praw.models.subreddits import Subreddit
 import core
 from core import parsers
 
-REDDIT: praw.Reddit = None
-
 
 def sign_in(username: str = None, password: str = None) -> praw.Reddit:
     """
@@ -31,12 +29,11 @@ def sign_in(username: str = None, password: str = None) -> praw.Reddit:
             username=username,
             password=password,
         )
-    REDDIT = praw.Reddit(
+    return praw.Reddit(
         client_id=os.environ.get("REDDIT_CLIENT_ID"),
         client_secret=os.environ.get("REDDIT_CLIENT_SECRET"),
         user_agent="PaperScraper",
     )
-    return REDDIT
 
 
 class SubmissionWrapper:
@@ -289,6 +286,7 @@ async def from_saved(
 
 
 async def from_subreddit(
+    reddit: praw.Reddit,
     subreddit_name: str,
     sort_by: SortOption,
     client: httpx.AsyncClient,
@@ -301,7 +299,7 @@ async def from_subreddit(
         raise ValueError("Amount must be a positive integer")
     return await _from_source(
         sort_by(
-            REDDIT.subreddit(subreddit_name.removeprefix("r/")), score=score, age=age
+            reddit.subreddit(subreddit_name.removeprefix("r/")), score=score, age=age
         ),
         client,
         amount=amount,

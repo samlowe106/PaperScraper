@@ -64,6 +64,7 @@ async def get_source(client: httpx.AsyncClient) -> Iterable[SubmissionWrapper]:
         )
     if source_name.startswith("r/"):
         return await from_subreddit(
+            sign_in(),
             source_name,
             args.sortby,
             client,

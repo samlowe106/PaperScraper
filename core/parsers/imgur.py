@@ -27,7 +27,6 @@ HEADERS = {"Authorization": f'Client-ID {os.environ["IMGUR_CLIENT_ID"]}'}
 
 
 def _split_imgur_url(url: str) -> Optional[Dict[str, str]]:
-    print(url)
     m = IMGUR_REGEX.match(url)
     return m.groupdict() if m else None
 

@@ -1,13 +1,14 @@
+import os
 import unittest
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 from core import SubmissionWrapper
 from tests import SubmissionWrapperFactory
 
 
-class TestSubmissionWrapper(unittest.TestCase):
+class TestConstructor(unittest.TestCase):
     def test_constructor(self):
         submission_mock = MagicMock()
         submission_mock.title = "mock ?? title: \\"
@@ -42,6 +43,8 @@ class TestSubmissionWrapper(unittest.TestCase):
         # Assert that the submission is has not been unsaved
         submission_mock.unsave.assert_not_called()
 
+
+class TestUnsave(unittest.TestCase):
     def test_unsave(self):
         # Assert SubmissionWrappers do not unsave posts when dry = True
         wrapper = SubmissionWrapperFactory()
@@ -62,3 +65,102 @@ class TestSubmissionWrapper(unittest.TestCase):
         wrapper = SubmissionWrapperFactory(dry=False)
         self.assertTrue(wrapper.unsave(force=True))
         wrapper._submission.unsave.assert_called_once()
+
+
+class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
+
+    async def test_download_all_empty(self):
+        # Assert that an empty list of urls returns an empty dictionary
+        wrapper = SubmissionWrapperFactory()
+        self.assertEqual(wrapper.urls, set())
+        mock_client = MagicMock()
+        mock_path = "mock path"
+        self.assertEqual(await wrapper.download_all(mock_path, mock_client), dict())
+
+    @patch("httpx.Response")
+    @patch("os.makedirs")
+    @patch("core.get_extension")
+    @patch("builtins.open", new_callable=mock_open)
+    async def test_download_all_unorganized(
+        self,
+        open_mock,
+        get_extension_mock,
+        os_makedirs_mock,
+        httpx_response_mock,
+    ):
+        directory = "mock directory"
+        httpx_client = AsyncMock()
+        wrapper = SubmissionWrapperFactory()
+        wrapper.urls = ["url1", "url2", "url3", "url4"]
+        httpx_response_mock.content = "mock content"
+        get_extension_mock.return_value = ".jpg"
+        expected = {
+            "url1": os.path.join(directory, "mock title.jpg"),
+            "url2": os.path.join(directory, "mock title (1).jpg"),
+            "url3": os.path.join(directory, "mock title (2).jpg"),
+            "url4": os.path.join(directory, "mock title (3).jpg"),
+        }
+        result = await wrapper.download_all(
+            title="mock title",
+            directory=directory,
+            client=httpx_client,
+            organize=False,
+        )
+        mock_open.write.assert_called_with(httpx_response_mock.content)
+        httpx_response_mock.assert_called_with("url1", timeout=10)
+        httpx_response_mock.assert_called_with("url2", timeout=10)
+        httpx_response_mock.assert_called_with("url3", timeout=10)
+        httpx_response_mock.assert_called_with("url4", timeout=10)
+        os_makedirs_mock.assert_called_with(directory, exist_ok=True)
+        for value in expected.values():
+            open_mock.assert_called_with(value, "wb")
+        self.assertDictEqual(result, expected)
+
+    @patch("os.makedirs")
+    @patch("os.listdir")
+    @patch("core.get_extension")
+    @patch("builtins.open", new_callable=mock_open)
+    async def test_download_all_organized(
+        self,
+        open_mock,
+        get_extension_mock,
+        os_listdir_mock,
+        os_makedirs_mock,
+    ):
+        directory = "mock directory"
+        httpx_client_mock = AsyncMock()
+
+        class MockResponse:
+            status_code = 200
+            content = "mock content"
+
+        os_listdir_mock.return_value = []
+
+        httpx_client_mock.get.return_value = MockResponse()
+
+        wrapper = SubmissionWrapperFactory()
+        wrapper.subreddit = "mock subreddit"
+        wrapper.title = "mock title"
+        wrapper.urls = ["url1", "url2", "url3", "url4"]
+        get_extension_mock.return_value = ".jpg"
+
+        expected = {
+            "url1": os.path.join(directory, wrapper.subreddit, "mock title.jpg"),
+            "url2": os.path.join(directory, wrapper.subreddit, "mock title (1).jpg"),
+            "url3": os.path.join(directory, wrapper.subreddit, "mock title (2).jpg"),
+            "url4": os.path.join(directory, wrapper.subreddit, "mock title (3).jpg"),
+        }
+        result = await wrapper.download_all(
+            directory=directory, client=httpx_client_mock, organize=False
+        )
+
+        os_listdir_mock.assert_called_with(directory)
+
+        for key in expected.keys():
+            httpx_client_mock.get.assert_called_with(key, timeout=10)
+        os_makedirs_mock.assert_called_with(
+            os.path.join(directory, wrapper.subreddit), exist_ok=True
+        )
+        for value in expected.values():
+            open_mock.assert_called_with(value, "wb")
+        self.assertDictEqual(result, expected)

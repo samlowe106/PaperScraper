@@ -1,4 +1,3 @@
-import asyncio
 import os
 import unittest
 import uuid
@@ -161,7 +160,7 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
     @patch("os.listdir")
     @patch("core.get_extension")
     @patch("builtins.open", new_callable=mock_open)
-    def test_download_all_organized(
+    async def test_download_all_organized(
         self,
         open_mock,
         get_extension_mock,
@@ -191,15 +190,11 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
             "url3": os.path.join(directory, wrapper.subreddit, "mock title (2).jpg"),
             "url4": os.path.join(directory, wrapper.subreddit, "mock title (3).jpg"),
         }
-        result = asyncio.run(
-            wrapper.download_all(
-                directory=directory, client=httpx_client_mock, organize=False
-            )
+        result = await wrapper.download_all(
+            directory=directory, client=httpx_client_mock, organize=False
         )
 
         os_listdir_mock.assert_called_with(directory)
-
-        print(result)
 
         for key in expected.keys():
             httpx_client_mock.get.assert_called_with(key, timeout=10)
@@ -344,7 +339,7 @@ class TestFromSaved(unittest.IsolatedAsyncioTestCase):
         mock_client = Mock()
 
         mock_from_source.return_value = object()
-        result = await core.from_saved(mock_redditor, "mock client")
+        result = await core.from_saved(mock_redditor, mock_client)
 
         mock_redditor.saved.assert_called_once_with(
             limit=None, score=expected_score, age=expected_age

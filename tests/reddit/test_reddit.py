@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 import pytest
 
 import core
-from core import SortOption, SubmissionWrapper
+from core import SubmissionWrapper
 from core.reddit.reddit import _from_source
 from tests import SubmissionWrapperFactory
 
@@ -141,13 +141,11 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
             "url3": os.path.join(directory, "mock title (2).jpg"),
             "url4": os.path.join(directory, "mock title (3).jpg"),
         }
-        result = asyncio.run(
-            await wrapper.download_all(
-                title="mock title",
-                directory=directory,
-                client=httpx_client,
-                organize=False,
-            )
+        result = await wrapper.download_all(
+            title="mock title",
+            directory=directory,
+            client=httpx_client,
+            organize=False,
         )
         mock_open.write.assert_called_with(httpx_response_mock.content)
         httpx_response_mock.assert_called_with("url1", timeout=10)
@@ -364,30 +362,36 @@ class TestFromSaved(unittest.IsolatedAsyncioTestCase):
 
 class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
     @patch("core.reddit.reddit._from_source")
-    @patch("core.reddit.from_subreddit")
-    async def test_from_subreddit(self, mock_from_subreddit, mock_from_source):
+    async def test_from_subreddit(self, mock_from_source):
         expected_amount = 10
         expected_client = "mock client"
         expected_score = None
         expected_age = None
 
-        mock_from_subreddit.return_value = object()
         mock_sort_by = Mock()
         mock_sort_by.return_value = object()
         mock_from_source.return_value = object()
 
+        mock_reddit = MagicMock()
+        mock_reddit.subreddit.return_value = object()
+
         result = await core.from_subreddit(
-            "r/mock_subreddit", SortOption.TOP_ALL, expected_client
+            mock_reddit, "r/mock_subreddit", mock_sort_by, expected_client
         )
 
-        mock_from_subreddit.assert_called_once_with("mock_subreddit")
+        self.assertEqual(result, mock_from_source.return_value)
+
+        mock_reddit.subreddit.assert_called_once_with("mock_subreddit")
 
         mock_sort_by.assert_called_once_with(
-            mock_from_subreddit.return_value, score=expected_score, age=expected_age
+            mock_reddit.subreddit.return_value, score=expected_score, age=expected_age
         )
 
         mock_from_source.assert_called_once_with(
-            mock_sort_by.return_value, expected_amount, expected_client
+            mock_sort_by.return_value,
+            expected_client,
+            amount=expected_amount,
+            dry=True,
         )
 
         self.assertEqual(result, mock_from_source.return_value)

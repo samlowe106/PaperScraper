@@ -142,8 +142,6 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         # organized is False, so the subreddit subdirectory should not be created
         os_makedirs_mock.assert_called_with(directory, exist_ok=True)
 
-        print(file_mock.call_args_list)
-
         for value in expected.values():
             file_mock.assert_any_call(value, "wb")
         self.assertDictEqual(result, expected)
@@ -172,12 +170,11 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         wrapper.urls = ["url1", "url2", "url3", "url4"]
         get_extension_mock.return_value = ".jpg"
 
-        # organized is False, so the subreddit subdirectory should not be created
         expected = {
-            "url1": os.path.join(directory, "mock title.jpg"),
-            "url2": os.path.join(directory, "mock title (1).jpg"),
-            "url3": os.path.join(directory, "mock title (2).jpg"),
-            "url4": os.path.join(directory, "mock title (3).jpg"),
+            "url1": os.path.join(directory, wrapper.subreddit, "mock title.jpg"),
+            "url2": os.path.join(directory, wrapper.subreddit, "mock title (1).jpg"),
+            "url3": os.path.join(directory, wrapper.subreddit, "mock title (2).jpg"),
+            "url4": os.path.join(directory, wrapper.subreddit, "mock title (3).jpg"),
         }
 
         listdir_mock_side_effect = [
@@ -205,15 +202,14 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
                 directory=directory, client=httpx_client_mock, organize=True
             )
 
-        os_listdir_mock.assert_called_with(directory)
+        os_listdir_mock.assert_called_with(os.path.join(directory, wrapper.subreddit))
 
         for key in expected.keys():
             httpx_client_mock.get.assert_any_call(key, timeout=10)
 
-        # organized is False, so the subreddit subdirectory should not be created
-        os_makedirs_mock.assert_called_with(directory, exist_ok=True)
-
-        print(file_mock.call_args_list)
+        os_makedirs_mock.assert_called_with(
+            os.path.join(directory, wrapper.subreddit), exist_ok=True
+        )
 
         for value in expected.values():
             file_mock.assert_any_call(value, "wb")
@@ -221,14 +217,7 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
 
 
 """
-expected = {
-    "url1": os.path.join(directory, wrapper.subreddit, "mock title.jpg"),
-    "url2": os.path.join(directory, wrapper.subreddit, "mock title (1).jpg"),
-    "url3": os.path.join(directory, wrapper.subreddit, "mock title (2).jpg"),
-    "url4": os.path.join(directory, wrapper.subreddit, "mock title (3).jpg"),
-}
 
-os_makedirs_mock.assert_called_with(
-    os.path.join(directory, wrapper.subreddit), exist_ok=True
-)
+
+
 """

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 from core.parsers.imgur import _split_imgur_url, imgur_parser
 
@@ -117,7 +117,7 @@ class TestSplitImgurURL(unittest.TestCase):
         self.assertIsNone(_split_imgur_url(""))
 
 
-class TestImgurParser(unittest.TestCase):
+class TestImgurParser(unittest.IsolatedAsyncioTestCase):
     """
     Because this relies on the structure of imgur's website,
     we have to actually make http requests to imgur to test this.
@@ -138,12 +138,20 @@ class TestImgurParser(unittest.TestCase):
         pass
 
     async def test_ignores_non_imgur(self):
-        result = imgur_parser("https://example.com", MagicMock())
-        self.assertEqual(await result, set())
-        result = imgur_parser("http://google.com", MagicMock())
-        self.assertEqual(await result, set())
-        result = imgur_parser("https://i.reddit.com", MagicMock())
-        self.assertEqual(await result, set())
+        mock_client = AsyncMock()
+
+        async def mock_get(url):
+            mock_response = AsyncMock()
+            mock_response.url = url
+            return mock_response
+
+        mock_client.get = mock_get
+        result = await imgur_parser("https://example.com", mock_client)
+        self.assertEqual(result, set())
+        result = await imgur_parser("http://google.com", mock_client)
+        self.assertEqual(result, set())
+        result = await imgur_parser("https://i.reddit.com", mock_client)
+        self.assertEqual(result, set())
 
 
 if __name__ == "__main__":

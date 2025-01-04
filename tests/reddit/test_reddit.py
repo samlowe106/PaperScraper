@@ -97,17 +97,12 @@ class TestFromSource(unittest.IsolatedAsyncioTestCase):
         with pytest.raises(ValueError):
             await _from_source(source="mock source", amount=0, client="mock client")
 
-    # @patch("core.SubmissionWrapper", wraps=lambda s, client, dry: (s))
     async def test_handles_exhaustion(self):
         # amount is 10, generates only 4, two are valid, two are invalid
         mock_valid_1 = SubmissionMockFactory()
         mock_valid_2 = SubmissionMockFactory()
-        # mock_valid_1.urls = ["mock url 1"]
-        # mock_valid_2.urls = ["mock url 2"]
         mock_invalid_1 = SubmissionMockFactory()
         mock_invalid_2 = SubmissionMockFactory()
-        # mock_invalid_1.urls = []
-        # mock_invalid_2.urls = []
         mock_source = iter([mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2])
         mock_client = "mock client"
 
@@ -140,42 +135,53 @@ class TestFromSource(unittest.IsolatedAsyncioTestCase):
             [expected1, expected2],
         )
 
-    @patch("core.SubmissionWrapper", wraps=lambda s, client, dry: (s))
-    async def test_handles_not_enough_valid_submissions(self, mock_submission_wrapper):
+    async def test_handles_not_enough_valid_submissions(self):
         """The case where the amount contains more submissions than the amount required, but not enough are valid"""
-        mock_valid_1 = MagicMock()
-        mock_valid_2 = MagicMock()
-        mock_invalid_1 = MagicMock()
-        mock_invalid_2 = MagicMock()
-        mock_invalid_3 = MagicMock()
-        mock_valid_1.urls = ["mock url"]
-        mock_valid_2.urls = ["mock url"]
-        mock_invalid_1.urls = []
-        mock_invalid_2.urls = []
-        mock_invalid_3.urls = []
-        mock_source = MagicMock()
-        # amount is 3, list generates 5 but only 2 are valid. should have to request two batches
-        mock_source.return_value = iter(
-            [mock_valid_1, mock_invalid_1, mock_valid_2, mock_invalid_2, mock_invalid_3]
+        mock_valid_1 = SubmissionMockFactory()
+        mock_valid_2 = SubmissionMockFactory()
+        mock_invalid_1 = SubmissionMockFactory()
+        mock_invalid_2 = SubmissionMockFactory()
+        mock_invalid_3 = SubmissionMockFactory()
+        mock_invalid_4 = SubmissionMockFactory()
+        mock_invalid_5 = SubmissionMockFactory()
+        mock_client = "mock client"
+
+        async def mock_find_urls(wrapper, client):
+            if wrapper._submission == mock_valid_1:
+                wrapper.urls = {"mock url 1"}
+            if wrapper._submission == mock_valid_2:
+                wrapper.urls = {"mock url 2"}
+
+        # amount is 3, list generates 7 before exhaustion but only 2 are valid
+        mock_source = iter(
+            [
+                mock_valid_1,
+                mock_invalid_1,
+                mock_invalid_2,
+                mock_invalid_3,
+                mock_invalid_4,
+                mock_invalid_5,
+                mock_valid_2,
+            ]
         )
 
-        result = await _from_source(source=mock_source, amount=10, client="mock client")
-        mock_submission_wrapper.assert_called_with(
-            mock_valid_1, client="mock client", dry=True
+        with patch("core.SubmissionWrapper.find_urls", mock_find_urls):
+            result = await _from_source(
+                source=mock_source, amount=10, client=mock_client
+            )
+
+        for submission in [mock_valid_1, mock_valid_2, mock_invalid_1, mock_invalid_2]:
+            submission.unsave.assert_not_called()
+
+        expected1 = SubmissionWrapper(mock_valid_1, mock_client, dry=True)
+        expected1.urls = {"mock url 1"}
+        expected2 = SubmissionWrapper(mock_valid_2, mock_client, dry=True)
+        expected2.urls = {"mock url 2"}
+
+        self.assertListEqual(
+            result,
+            [expected1, expected2],
         )
-        mock_submission_wrapper.assert_called_with(
-            mock_invalid_1, client="mock client", dry=True
-        )
-        mock_submission_wrapper.assert_called_with(
-            mock_valid_2, client="mock client", dry=True
-        )
-        mock_submission_wrapper.assert_called_with(
-            mock_invalid_2, client="mock client", dry=True
-        )
-        mock_submission_wrapper.assert_called_with(
-            mock_invalid_3, client="mock client", dry=True
-        )
-        self.assertListEqual(result, [(mock_valid_1), (mock_valid_2)])
 
 
 class TestFromSaved(unittest.IsolatedAsyncioTestCase):

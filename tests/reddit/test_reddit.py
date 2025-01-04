@@ -113,22 +113,31 @@ class TestFromSource(unittest.IsolatedAsyncioTestCase):
 
         async def mock_find_urls(wrapper, client):
             if wrapper._submission == mock_valid_1:
-                wrapper.urls = set("mock url 1")
+                wrapper.urls = {"mock url 1"}
             if wrapper._submission == mock_valid_2:
-                wrapper.urls = set("mock url 2")
+                wrapper.urls = {"mock url 2"}
 
         with patch("core.SubmissionWrapper.find_urls", mock_find_urls):
             result = await _from_source(
                 source=mock_source, amount=10, client=mock_client
             )
 
-        print(result, 3 * "\n")
+        for submission in [mock_valid_1, mock_valid_2, mock_invalid_1, mock_invalid_2]:
+            submission.unsave.assert_not_called()
+
+        for wrapper in result:
+            print(wrapper)
+            print(wrapper.urls)
+            print(3 * "\n")
+
+        expected1 = SubmissionWrapper(mock_valid_1, mock_client, dry=True)
+        expected1.urls = {"mock url 1"}
+        expected2 = SubmissionWrapper(mock_valid_2, mock_client, dry=True)
+        expected2.urls = {"mock url 2"}
+
         self.assertListEqual(
             result,
-            [
-                SubmissionWrapper(mock_valid_1, mock_client, dry=True),
-                SubmissionWrapper(mock_valid_2, mock_client, dry=True),
-            ],
+            [expected1, expected2],
         )
 
     @patch("core.SubmissionWrapper", wraps=lambda s, client, dry: (s))

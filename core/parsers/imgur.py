@@ -36,8 +36,8 @@ async def imgur_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     :param response: a GET response from an imgur (single image, album, or gallery) page
     :return: a set of strings representing all scrape-able images on that page
     """
-    # might get redirected!
-    url = await client.get(url).url
+    # TODO: might get redirected?
+    url = (await client.get(url)).url
 
     if (match := _split_imgur_url(url)) is None:
         return set()

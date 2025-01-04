@@ -15,24 +15,36 @@ from core import parsers
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
 
+    _submission: Submission
+    title: str
+    subreddit: str
+    url: str
+    author: str
+    nsfw: bool
+    score: int
+    # created_utc: ???
+    urls: Set[str]
+    response: httpx.Response
+    can_unsave: bool
+
     def __init__(
         self, submission: Submission, client: httpx.AsyncClient, dry: bool = True
     ):
         self._submission = submission
 
         # relevant to user
-        self.title: str = submission.title
+        self.title = submission.title
         self.subreddit = str(submission.subreddit)
-        self.url: str = submission.url
+        self.url = submission.url
         self.author = str(submission.author)
-        self.nsfw: bool = submission.over_18
-        self.score: int = submission.score
+        self.nsfw = submission.over_18
+        self.score = submission.score
         self.created_utc = submission.created_utc
+        self.urls = set()
 
         # relevant to parsing
         self.base_file_title = core.retitle(self._submission.title)
         self.response: httpx.Response = None
-        self.urls: Set[str] = set()
 
         # whether this post can be unsaved or not
         self.can_unsave = not dry
@@ -115,7 +127,8 @@ class SubmissionWrapper:
         :param index: the index number of the post
         :return: None
         """
-        return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
+        return f"{self.title} ({self.subreddit}) by {self.author} ({self.url})"
+        # return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
 
     def summary_string(self) -> str:
         """Generates a string that summarizes this post"""

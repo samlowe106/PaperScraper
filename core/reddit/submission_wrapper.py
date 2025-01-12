@@ -11,6 +11,12 @@ import core
 from core import parsers
 
 
+async def urls_responses(
+    urls: str, client: httpx.AsyncClient
+) -> Tuple[str, httpx.Response]:
+    return asyncio.gather(*((url, await client.get(url, timeout=10)) for url in urls))
+
+
 @dataclass
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
@@ -78,15 +84,15 @@ class SubmissionWrapper:
             title = self.title
         urls_filepaths: Dict[str, Optional[str]] = dict()
         filename = title + core.get_extension(self.response)
-        offset = 0
 
         async def zip_result(url: str) -> Tuple[str, httpx.Response]:
-            return (url, await client.get(self.url, timeout=10))
+            return (url, await client.get(url, timeout=10))
 
-        urls_responses: List[Tuple[str, Optional[httpx.Response]]] = list(
+        urls_responses: List[Tuple[str, Optional[httpx.Response]]] = (
             await asyncio.gather(*(zip_result(url) for url in self.urls))
         )
 
+        offset = 0
         for url, response in urls_responses:
             if response is None or response.status_code != 200:
                 urls_filepaths[url] = None
@@ -144,53 +150,3 @@ class SubmissionWrapper:
             self._submission.unsave()
             return True
         return False
-
-    def format(self, template: str, token="%") -> str:
-        """
-        Formats a string based on the given template.
-
-        Each possible specifier is given below:
-
-        t: current title
-        T: current title in Title Case
-        s: subreddit
-        a: author
-        u: submission's url
-        p: number of parsed urls
-        f: number of found urls
-        (token): the token
-
-        :param template: the template to base the output string on
-        :param token: the token that prefixes each specifier
-        :return: the formatted string
-        """
-        specifier_found = False
-        string_list = []
-
-        specifier_map = {
-            "t": self.title,
-            "T": core.title_case(self.title),
-            "s": self.subreddit,
-            "a": self.author,
-            "u": self.url,
-            token: token,
-        }
-
-        for i, char in enumerate(template):
-            if specifier_found:
-                if char not in specifier_map:
-                    raise ValueError(
-                        f"The given string contains a malformed specifier:\n{template}\n{i*' '}^"
-                    )
-                string_list.append(specifier_map[char])
-                specifier_found = False
-            elif char == token:
-                specifier_found = True
-            else:
-                string_list.append(char)
-
-        if specifier_found:
-            # A format specifier began but was not finished, so this template is malformed
-            raise ValueError("The given string contains a trailing token")
-
-        return "".join(string_list)

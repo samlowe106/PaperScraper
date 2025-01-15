@@ -8,6 +8,9 @@ on:
 
 jobs:
   test:
+    permissions:
+      contents: read
+      pull-requests: write
     env:
       REDDIT_CLIENT_ID: "mock reddit client id"
       REDDIT_CLIENT_SECRET: "mock reddit client secret"

@@ -1,1 +1,8 @@
-from .reddit import SortOption, SubmissionWrapper, from_saved, from_subreddit, sign_in
+from .reddit import (
+    SortOption,
+    SubmissionWrapper,
+    from_saved,
+    from_subreddit,
+    has_urls,
+    sign_in,
+)

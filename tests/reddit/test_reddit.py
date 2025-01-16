@@ -199,7 +199,9 @@ class TestFromSaved(unittest.IsolatedAsyncioTestCase):
         result = await core.from_saved(mock_redditor, mock_client)
 
         mock_redditor.saved.assert_called_once_with(
-            limit=None, score=expected_score, age=expected_age
+            limit=None,
+            score=expected_score,
+            age=expected_age,
         )
 
         mock_from_source.assert_called_once_with(
@@ -207,6 +209,7 @@ class TestFromSaved(unittest.IsolatedAsyncioTestCase):
             mock_client,
             amount=expected_amount,
             dry=True,
+            criteria=core.reddit.has_urls,
         )
 
         self.assertEqual(result, mock_from_source.return_value)
@@ -228,7 +231,11 @@ class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
         mock_reddit.subreddit.return_value = object()
 
         result = await core.from_subreddit(
-            mock_reddit, "r/mock_subreddit", mock_sort_by, expected_client
+            mock_reddit,
+            "r/mock_subreddit",
+            mock_sort_by,
+            expected_client,
+            criteria=core.reddit.has_urls,
         )
 
         self.assertEqual(result, mock_from_source.return_value)
@@ -236,7 +243,9 @@ class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
         mock_reddit.subreddit.assert_called_once_with("mock_subreddit")
 
         mock_sort_by.assert_called_once_with(
-            mock_reddit.subreddit.return_value, score=expected_score, age=expected_age
+            mock_reddit.subreddit.return_value,
+            score=expected_score,
+            age=expected_age,
         )
 
         mock_from_source.assert_called_once_with(
@@ -244,6 +253,7 @@ class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
             expected_client,
             amount=expected_amount,
             dry=True,
+            criteria=core.reddit.has_urls,
         )
 
         self.assertEqual(result, mock_from_source.return_value)

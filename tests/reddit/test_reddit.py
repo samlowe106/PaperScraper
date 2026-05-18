@@ -83,8 +83,17 @@ class TestLog(unittest.TestCase):
         )
 
     def test_summary_string(self):
-        # TODO
-        pass
+        wrapper = SubmissionWrapperFactory()
+        wrapper.urls = {"https://imgur.com/1", "https://imgur.com/2"}
+
+        expected = (
+            f"{wrapper.title}\n"
+            f"   r/{wrapper.subreddit}\n"
+            f"   {wrapper.url}\n"
+            f"   Saved 2 / 2 image(s) so far."
+        )
+
+        self.assertEqual(wrapper.summary_string(), expected)
 
 
 class TestFromSource(unittest.IsolatedAsyncioTestCase):

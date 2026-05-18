@@ -1,0 +1,57 @@
+{
+  "single_image": [
+    {
+      "url": "https://i.imgur.com/UieUlMQ.jpeg",
+      "expected": [
+        "https://i.imgur.com/UieUlMQ.jpeg"
+      ]
+    }
+  ],
+  "album": [
+    {
+      "url": "https://imgur.com/a/minimal-star-wars-wallpapers-jlNpx",
+      "expected": [
+        "https://i.imgur.com/UAqpqU0.png",
+        "https://i.imgur.com/7dMs9gw.png",
+        "https://i.imgur.com/9PZOzY3.png",
+        "https://i.imgur.com/V6JSHJE.png"
+        ]
+    }
+  ],
+  "gallery": [
+    {
+      "url": "https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ",
+      "expected": [
+        "https://i.imgur.com/NVQ1nuu.png",
+        "https://i.imgur.com/rDQ6BEA.jpeg",
+        "https://i.imgur.com/gIMtb0Z.png",
+        "https://i.imgur.com/GeZmbJA.png",
+        "https://i.imgur.com/AGWHnX0.jpeg",
+        "https://i.imgur.com/yt86fMB.jpeg",
+        "https://i.imgur.com/cG9eXMk.jpeg",
+        "https://i.imgur.com/4gdcscj.jpeg",
+        "https://i.imgur.com/uA1NSv3.png"
+      ]
+    },
+    {
+      "url": "https://imgur.com/gallery/low-poly-wallpapers-s8fEA",
+      "expected": [
+        "https://i.imgur.com/vOrD96J.png",
+        "https://i.imgur.com/bbMc2YH.jpeg",
+        "https://i.imgur.com/DknzhSW.jpeg",
+        "https://i.imgur.com/VwcegkJ.jpeg",
+        "https://i.imgur.com/UUg3EWY.jpeg",
+        "https://i.imgur.com/67EjwuD.jpeg",
+        "https://i.imgur.com/H30Q7ME.png",
+        "https://i.imgur.com/2e0VHnW.png",
+        "https://i.imgur.com/uoOziI4.jpeg",
+        "https://i.imgur.com/6orB6Yb.jpeg",
+        "https://i.imgur.com/8reL5zz.jpeg",
+        "https://i.imgur.com/fOWDtYW.jpeg",
+        "https://i.imgur.com/06b3FMA.jpeg",
+        "https://i.imgur.com/WJgUmGi.jpeg",
+        "https://i.imgur.com/xn1Sx7n.jpeg"
+      ]
+    }
+  ]
+}

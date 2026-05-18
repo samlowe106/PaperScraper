@@ -1,5 +1,9 @@
+import json
 import unittest
 from unittest.mock import AsyncMock
+
+import httpx
+import pytest
 
 from core.parsers.imgur import _split_imgur_url, imgur_parser
 
@@ -120,27 +124,47 @@ class TestSplitImgurURL(unittest.TestCase):
 class TestImgurParser(unittest.IsolatedAsyncioTestCase):
     """
     Because this relies on the structure of imgur's website,
-    we have to actually make http requests to imgur to test this.
-    We also need to avoid spamming imgur with requests, so we'll
-    take snapshots of the responses and use those to test
+    we make real requests to imgur and rely on VCR to replay them
+    when a cassette is available
     """
 
-    def test_handles_single_image(self):
-        # TODO
-        pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def test_handles_album(self):
-        # TODO
-        pass
+        with open("tests/parsers/imgur_test_data.json") as f:
+            json_data = json.load(f)
 
-    def test_handles_gallery(self):
-        # TODO
-        pass
+        self.single_image_url = json_data["single_image"][0]["url"]
+        self.album_url = json_data["album"][0]["url"]
+        self.album_expected = json_data["album"][0]["expected"]
+        self.gallery_url = json_data["gallery"][0]["url"]
+        self.gallery_expected = json_data["gallery"][0]["expected"]
+
+    @pytest.mark.vcr()
+    async def test_handles_single_image(self):
+        async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0"}) as client:
+            result = await imgur_parser(self.single_image_url, client)
+
+        self.assertEqual(result, {self.single_image_url})
+
+    @pytest.mark.vcr()
+    async def test_handles_album(self):
+        async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0"}) as client:
+            result = await imgur_parser(self.album_url, client)
+
+        self.assertEqual(result, self.album_expected)
+
+    @pytest.mark.vcr()
+    async def test_handles_gallery(self):
+        async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0"}) as client:
+            result = await imgur_parser(self.gallery_url, client)
+
+        self.assertEqual(result, self.gallery_expected)
 
     async def test_ignores_non_imgur(self):
         mock_client = AsyncMock()
 
-        async def mock_get(url):
+        async def mock_get(url, headers=None):
             mock_response = AsyncMock()
             mock_response.url = url
             return mock_response

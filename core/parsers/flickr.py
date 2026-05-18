@@ -6,11 +6,13 @@ from typing import Optional, Set
 import httpx
 
 # first group is user's name, second is image id
-FLICKR_REGEX = re.compile(r"flickr\.com/photos/(^/+)/(^/+)/")
+FLICKR_REGEX = re.compile(
+    r"(?:https?://)?(?:www\.)?flickr\.com/photos/([^/]+)/([^/]+)/"
+)
 
 # first group is the short image id, which needs to be converted
 #  before it can be used in the API
-SHORT_FLICKR_REGEX = re.compile(r"flic.kr/p/(^/+)")
+SHORT_FLICKR_REGEX = re.compile(r"(?:https?://)?(?:www\.)?flic\.kr/p/([^/]+)")
 
 API_ROOT = "https://www.flickr.com/services/rest/"
 
@@ -57,7 +59,5 @@ async def flickr_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     if not data["sizes"]["candownload"] == 1:
         return set()
 
-    biggest_size_name = max(
-        data["sizes"]["size"], key=lambda x: x["width"] * x["height"]
-    )
-    return {data["sizes"]["size"][biggest_size_name]["source"]}
+    biggest_size = max(data["sizes"]["size"], key=lambda x: x["width"] * x["height"])
+    return {biggest_size["source"]}

@@ -72,10 +72,8 @@ async def get_source(client: httpx.AsyncClient) -> Iterable[SubmissionWrapper]:
             age=args.age,
             amount=args.limit,
         )
-    raise ValueError(
-        f'Expected source to be "saved" or a subreddit\
-        beginning with "r/", got {args.source}'
-    )
+    raise ValueError(f'Expected source to be "saved" or a subreddit\
+        beginning with "r/", got {args.source}')
 
 
 if __name__ == "__main__":

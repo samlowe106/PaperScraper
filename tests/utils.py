@@ -15,7 +15,7 @@ def SubmissionMockFactory(
     score=random.randint(-100, 100),
     created_utc=datetime.now(),
     *args,
-    **kwargs
+    **kwargs,
 ):
     submission_mock = Mock()
 

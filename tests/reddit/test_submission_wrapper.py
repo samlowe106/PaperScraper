@@ -214,10 +214,3 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         for value in expected.values():
             file_mock.assert_any_call(value, "wb")
         self.assertDictEqual(result, expected)
-
-
-"""
-
-
-
-"""

@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from core.parsers.flickr import _get_flickr_photo_id, flickr_parser
+from src.parsers.flickr import _get_flickr_photo_id, flickr_parser
 
 
 class TestFlickrRegex(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestGetFlickrPhotoID(unittest.TestCase):
 
 
 class TestFlickrParser(unittest.IsolatedAsyncioTestCase):
-    @patch("core.parsers.flickr._get_flickr_photo_id")
+    @patch("src.parsers.flickr._get_flickr_photo_id")
     async def test_returns_empty_set_if_no_id(self, mock_get_flickr_photo_id):
         mock_get_flickr_photo_id.return_value = None
         result = flickr_parser("mock url", "mock client")
@@ -43,7 +43,7 @@ class TestFlickrParser(unittest.IsolatedAsyncioTestCase):
         mock_get_flickr_photo_id.assert_called_once_with("mock url", "mock client")
 
     @patch.dict("os.environ", {"flickr_client_id": "mock_api_key"})
-    @patch("core.parsers.flickr._get_flickr_photo_id", new_callable=AsyncMock)
+    @patch("src.parsers.flickr._get_flickr_photo_id", new_callable=AsyncMock)
     async def test_makes_api_call(self, mock_get_flickr_photo_id):
         mock_get_flickr_photo_id.return_value = "12345"
 

@@ -1,20 +1,55 @@
 import asyncio
 import json
 import os
+import re
+from asyncio import Future
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Optional
 
 import httpx
 from praw.models import Submission
 
-import core
-from core import parsers
+from .. import parsers
+
+INVALID_WINDOWS_CHARS = r'<>:"/\|?*'
+
+
+def retitle(s: str) -> str:
+    """
+    Creates a valid filename based on the given title string without duplicate whitespace or
+    leading/trailing punctuation
+    :param s: the string that the created filename should be based on
+    :return: a valid, aesthetically pleasing filename
+    """
+    # remove characters that windows doesn't allow in filenames
+    s = s.replace('"', "'")
+    for char in INVALID_WINDOWS_CHARS:
+        s = s.replace(char, "")
+
+    # remove any duplicate whitespace
+    s = " ".join(s.split())
+
+    # trim punctuation ("." and ",") from the start and end of the string
+    r = re.compile(r"^([\.,]*)([^\.,]*)([\.,]*)\Z")
+    s = r.match(s).group(2)
+
+    return s[:250]
 
 
 async def urls_responses(
     urls: str, client: httpx.AsyncClient
-) -> Tuple[str, httpx.Response]:
-    return asyncio.gather(*((url, await client.get(url, timeout=10)) for url in urls))
+) -> Future[list[tuple[str, httpx.Response]]]:
+    """
+    Gets the responses for a list of urls
+    :param urls: a list of urls to get responses for
+    :param client: the httpx.AsyncClient to use for getting responses
+    :return: a list of tuples, where the first element is the url and the second element is the response for that url
+    """
+
+    async def fetch(url: str) -> tuple[str, httpx.Response]:
+        return url, await client.get(url, timeout=10)
+
+    return asyncio.gather(*(fetch(url) for url in urls))
 
 
 @dataclass
@@ -29,7 +64,7 @@ class SubmissionWrapper:
     nsfw: bool
     score: int
     # created_utc: ???
-    urls: Set[str]
+    urls: set[str]
     response: httpx.Response
     can_unsave: bool
 
@@ -49,7 +84,7 @@ class SubmissionWrapper:
         self.urls = set()
 
         # relevant to parsing
-        self.base_file_title = core.retitle(self._submission.title)
+        self.base_file_title = retitle(self._submission.title)
         self.response: httpx.Response = None
 
         # whether this post can be unsaved or not
@@ -64,7 +99,7 @@ class SubmissionWrapper:
         client: httpx.AsyncClient,
         title: str = None,
         organize: bool = False,
-    ) -> Dict[str, Optional[str]]:
+    ) -> dict[str, Optional[str]]:
         """
         Downloads all urls and bundles them with their results
         :param directory: directory in which to download each file
@@ -82,13 +117,13 @@ class SubmissionWrapper:
         os.makedirs(directory, exist_ok=True)
         if not title:
             title = self.title
-        urls_filepaths: Dict[str, Optional[str]] = dict()
-        filename = title + core.get_extension(self.response)
+        urls_filepaths: dict[str, Optional[str]] = dict()
+        filename = title + parsers.get_response_file_extension(self.response)
 
-        async def zip_result(url: str) -> Tuple[str, httpx.Response]:
+        async def zip_result(url: str) -> tuple[str, httpx.Response]:
             return (url, await client.get(url, timeout=10))
 
-        urls_responses: List[Tuple[str, Optional[httpx.Response]]] = (
+        urls_responses: list[tuple[str, Optional[httpx.Response]]] = (
             await asyncio.gather(*(zip_result(url) for url in self.urls))
         )
 
@@ -101,7 +136,7 @@ class SubmissionWrapper:
             # Determine filename
             while filename in os.listdir(directory):
                 offset += 1
-                filename = f"{title} ({offset}){core.get_extension(self.response)}"
+                filename = f"{title} ({offset}){parsers.get_response_file_extension(self.response)}"
 
             destination = os.path.join(directory, filename)
             with open(destination, "wb") as image_file:
@@ -163,3 +198,9 @@ class SubmissionWrapper:
             self._submission.unsave()
             return True
         return False
+
+    def has_urls(self) -> bool:
+        """
+        Returns True if this SubmissionWrapper has at least one url, else False
+        """
+        return len(self.urls) > 0

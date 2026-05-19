@@ -1,14 +1,11 @@
 import argparse
 import asyncio
-import getpass
 import os
-from typing import Iterable
 
 import httpx
+from core import get_source
+from core.reddit import SortOption, SubmissionWrapper
 from dotenv import load_dotenv
-
-from core import SortOption, sign_in
-from core.reddit import SubmissionWrapper, from_saved, from_subreddit
 
 LOG_PATH = os.path.join("Logs", "log.txt")
 
@@ -22,22 +19,31 @@ async def main() -> None:
     async with httpx.AsyncClient() as client:
         batch = await get_source(client)
         results = await asyncio.gather(
-            handle_wrapped(wrapped, client) for wrapped in batch
+            *(
+                handle_wrapped(wrapped, client, args.organize, args.title, LOG_PATH)
+                for wrapped in batch
+            )
         )
 
     for i, result in enumerate(results):
         print(f"({i}) {result}")
 
 
-async def handle_wrapped(wrapped: SubmissionWrapper, client: httpx.AsyncClient) -> str:
+async def handle_wrapped(
+    wrapped: SubmissionWrapper,
+    client: httpx.AsyncClient,
+    organize: bool,
+    title: str,
+    log_path: str = None,
+) -> str:
     exception = ""
     try:
-        download_dir = "" if not args.organize else wrapped.subreddit
+        download_dir = "" if not organize else wrapped.subreddit
         await wrapped.download_all(
             download_dir,
             client,
-            title=args.title,
-            organize=args.organize,
+            title=title,
+            organize=organize,
         )
         if wrapped.can_unsave:
             wrapped.unsave()
@@ -46,34 +52,8 @@ async def handle_wrapped(wrapped: SubmissionWrapper, client: httpx.AsyncClient) 
         exception = str(e)
         return f"Encountered exception parsing {wrapped.url}:\n{exception}"
     finally:
-        if args.logging:
-            wrapped.log(LOG_PATH, exception=exception)
-
-
-async def get_source(client: httpx.AsyncClient) -> Iterable[SubmissionWrapper]:
-    """Gets the program's submission source based on user args"""
-    source_name = args.source.lower()
-    if source_name == "saved":
-        return await from_saved(
-            sign_in(input("Username: "), getpass.getpass("Password: ")),
-            client,
-            amount=args.limit,
-            score=args.karma,
-            age=args.age,
-            dry=args.dry,
-        )
-    if source_name.startswith("r/"):
-        return await from_subreddit(
-            sign_in(),
-            source_name,
-            args.sortby,
-            client,
-            score=args.karma,
-            age=args.age,
-            amount=args.limit,
-        )
-    raise ValueError(f'Expected source to be "saved" or a subreddit\
-        beginning with "r/", got {args.source}')
+        if log_path is not None:
+            wrapped.log(log_path, exception=exception)
 
 
 if __name__ == "__main__":
@@ -150,5 +130,4 @@ if __name__ == "__main__":
 
     # endregion
 
-    with asyncio.get_event_loop() as loop:
-        loop.run_until_complete(main())
+    asyncio.run(main())

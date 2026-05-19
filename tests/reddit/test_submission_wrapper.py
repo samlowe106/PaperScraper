@@ -4,8 +4,18 @@ import uuid
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
-from core import SubmissionWrapper
+from src.reddit import SubmissionWrapper
+from src.reddit.submission_wrapper import retitle  # determine_name,
 from tests import SubmissionWrapperFactory
+
+
+class TestRetitle(unittest.TestCase):
+
+    def test_retitle(self):
+        self.assertEqual(retitle("mock title"), "mock title")
+        self.assertEqual(retitle("mock title: \\"), "mock title")
+        self.assertEqual(retitle("mock title: ??"), "mock title")
+        self.assertEqual(retitle("mock ?? title: \\"), "mock title")
 
 
 class TestConstructor(unittest.TestCase):
@@ -78,7 +88,7 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await wrapper.download_all(mock_path, mock_client), dict())
 
     @patch("os.makedirs")
-    @patch("core.get_extension")
+    @patch("src.parsers.get_response_file_extension")
     @patch("builtins.open", new_callable=mock_open)
     async def test_download_all_unorganized(
         self,
@@ -147,7 +157,7 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         self.assertDictEqual(result, expected)
 
     @patch("os.makedirs")
-    @patch("core.get_extension")
+    @patch("src.parsers.get_response_file_extension")
     @patch("builtins.open", new_callable=mock_open)
     async def test_download_all_organized(
         self,

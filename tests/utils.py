@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import Mock
 
-from core.reddit import SubmissionWrapper
+from src.reddit import SubmissionWrapper
 
 
 def SubmissionMockFactory(

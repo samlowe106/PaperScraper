@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from core.parsers.imgur import _split_imgur_url, imgur_parser
+from src.parsers.imgur import _split_imgur_url, imgur_parser
 
 
 class TestSplitImgurURL(unittest.TestCase):

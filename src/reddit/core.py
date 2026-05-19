@@ -1,4 +1,5 @@
 import asyncio
+import getpass
 import itertools
 import os
 from datetime import timedelta
@@ -33,19 +34,12 @@ def sign_in(username: str = None, password: str = None) -> praw.Reddit:
     )
 
 
-def has_urls(wrapped: SubmissionWrapper) -> bool:
-    """
-    Returns True if the given SubmissionWrapper has at least one url, else False
-    """
-    return len(wrapped.urls) > 0
-
-
 async def _from_source(
     source: ListingGenerator,
     client: httpx.AsyncClient,
     amount: int = 10,
     dry: bool = True,
-    criteria: Callable[[SubmissionWrapper], bool] = has_urls,
+    criteria: Callable[[SubmissionWrapper], bool] = SubmissionWrapper.has_urls,
 ) -> List[SubmissionWrapper]:
     """
     Returns a list containing at most amount number of SubmissionWrappers,
@@ -82,7 +76,7 @@ async def from_saved(
     age: timedelta = None,
     amount: int = 10,
     dry: bool = True,
-    criteria: Callable[[SubmissionWrapper], bool] = has_urls,
+    criteria: Callable[[SubmissionWrapper], bool] = SubmissionWrapper.has_urls,
 ) -> List[SubmissionWrapper]:
     """Generates a batch of at most (amount) SubmissionWrappers from the given users' saved posts"""
     if amount < 1:
@@ -104,7 +98,7 @@ async def from_subreddit(
     score: int = None,
     age: timedelta = None,
     amount: int = 10,
-    criteria: Callable[[SubmissionWrapper], bool] = has_urls,
+    criteria: Callable[[SubmissionWrapper], bool] = SubmissionWrapper.has_urls,
 ) -> Iterable[SubmissionWrapper]:
     """Generates a batch of at most (amount) SubmissionWrappers from the given subreddit"""
     if amount < 1:
@@ -118,3 +112,38 @@ async def from_subreddit(
         dry=True,  # Can't/shouldn't unsave posts from subreddits
         criteria=criteria,
     )
+
+
+async def get_source(
+    client: httpx.AsyncClient,
+    source: str,
+    limit: int,
+    karma: int,
+    age: timedelta,
+    dry: bool,
+    sortby: SortOption,
+) -> Iterable[SubmissionWrapper]:
+    """Gets the program's submission source based on user args"""
+    # TODO: arg validation for source and sortby
+    source_name = source.lower()
+    if source_name == "saved":
+        return await from_saved(
+            sign_in(input("Username: "), getpass.getpass("Password: ")),
+            client,
+            amount=limit,
+            score=karma,
+            age=age,
+            dry=dry,
+        )
+    if source_name.startswith("r/"):
+        return await from_subreddit(
+            sign_in(),
+            source_name,
+            sortby,
+            client,
+            score=karma,
+            age=age,
+            amount=limit,
+        )
+    raise ValueError(f'Expected source to be "saved" or a subreddit\
+        beginning with "r/", got {source}')

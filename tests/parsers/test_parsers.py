@@ -1,7 +1,7 @@
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
-from core.parsers.parsers import find_urls, single_image_parser
+from src.parsers import find_urls, single_image_parser
 
 
 class TestParsers(unittest.IsolatedAsyncioTestCase):
@@ -26,8 +26,11 @@ class TestParsers(unittest.IsolatedAsyncioTestCase):
 
         mock_client = AsyncMock()
 
-        with patch("core.parsers.parsers.PARSERS", {parser_one, parser_two}):
-            result = await find_urls("https://example.com", mock_client)
+        result = await find_urls(
+            "https://example.com",
+            mock_client,
+            parsing_strategies=[parser_one, parser_two],
+        )
 
         self.assertEqual(result, {"a", "b"})
 

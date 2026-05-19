@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
-import core
-from core import SubmissionWrapper
-from core.reddit.reddit import _from_source
+import src
+from src.reddit import SubmissionWrapper
+from src.reddit.core import _from_source
 from tests import SubmissionMockFactory, SubmissionWrapperFactory
 
 
@@ -22,7 +22,7 @@ class TestSignIn:
         monkeypatch.setenv("REDDIT_CLIENT_SECRET", "mock reddit client secret")
 
         # Assert correct call is made when no arguments passed
-        core.reddit.sign_in()
+        src.reddit.sign_in()
         mock_praw_reddit.assert_called_with(
             client_id="mock reddit client id",
             client_secret="mock reddit client secret",
@@ -30,7 +30,7 @@ class TestSignIn:
         )
 
         # Assert correct call is made with only username
-        core.reddit.sign_in(username="username")
+        src.reddit.sign_in(username="username")
         mock_praw_reddit.assert_called_with(
             client_id="mock reddit client id",
             client_secret="mock reddit client secret",
@@ -38,7 +38,7 @@ class TestSignIn:
         )
 
         # Assert correct call is made with only password
-        core.reddit.sign_in(password="password")
+        src.reddit.sign_in(password="password")
         mock_praw_reddit.assert_called_with(
             client_id="mock reddit client id",
             client_secret="mock reddit client secret",
@@ -46,7 +46,7 @@ class TestSignIn:
         )
 
         # Assert correct call is made with username and password
-        core.reddit.sign_in(username="username", password="password")
+        src.reddit.sign_in(username="username", password="password")
         mock_praw_reddit.assert_called_with(
             client_id="mock reddit client id",
             client_secret="mock reddit client secret",
@@ -130,7 +130,7 @@ class TestFromSource(unittest.IsolatedAsyncioTestCase):
             if wrapper._submission == mock_valid_2:
                 wrapper.urls = {"mock url 2"}
 
-        with patch("core.SubmissionWrapper.find_urls", mock_find_urls):
+        with patch("src.reddit.SubmissionWrapper.find_urls", mock_find_urls):
             result = await _from_source(
                 source=mock_source, amount=10, client=mock_client
             )
@@ -183,7 +183,7 @@ class TestFromSource(unittest.IsolatedAsyncioTestCase):
             ]
         )
 
-        with patch("core.SubmissionWrapper.find_urls", mock_find_urls):
+        with patch("src.reddit.SubmissionWrapper.find_urls", mock_find_urls):
             result = await _from_source(
                 source=mock_source, amount=10, client=mock_client
             )
@@ -204,7 +204,7 @@ class TestFromSource(unittest.IsolatedAsyncioTestCase):
 
 class TestFromSaved(unittest.IsolatedAsyncioTestCase):
 
-    @patch("core.reddit.reddit._from_source")
+    @patch("src.reddit.core._from_source")
     async def test_from_saved(self, mock_from_source):
         mock_redditor = MagicMock()
         mock_redditor.saved.return_value = object()
@@ -214,7 +214,7 @@ class TestFromSaved(unittest.IsolatedAsyncioTestCase):
         mock_client = MagicMock()
 
         mock_from_source.return_value = object()
-        result = await core.from_saved(mock_redditor, mock_client)
+        result = await src.reddit.from_saved(mock_redditor, mock_client)
 
         mock_redditor.saved.assert_called_once_with(
             limit=None,
@@ -227,14 +227,14 @@ class TestFromSaved(unittest.IsolatedAsyncioTestCase):
             mock_client,
             amount=expected_amount,
             dry=True,
-            criteria=core.reddit.has_urls,
+            criteria=SubmissionWrapper.has_urls,
         )
 
         self.assertEqual(result, mock_from_source.return_value)
 
 
 class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
-    @patch("core.reddit.reddit._from_source")
+    @patch("src.reddit.core._from_source")
     async def test_from_subreddit(self, mock_from_source):
         expected_amount = 10
         expected_client = "mock client"
@@ -248,12 +248,12 @@ class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
         mock_reddit = MagicMock()
         mock_reddit.subreddit.return_value = object()
 
-        result = await core.from_subreddit(
+        result = await src.reddit.core.from_subreddit(
             mock_reddit,
             "r/mock_subreddit",
             mock_sort_by,
             expected_client,
-            criteria=core.reddit.has_urls,
+            criteria=SubmissionWrapper.has_urls,
         )
 
         self.assertEqual(result, mock_from_source.return_value)
@@ -271,7 +271,7 @@ class TestFromSubreddit(unittest.IsolatedAsyncioTestCase):
             expected_client,
             amount=expected_amount,
             dry=True,
-            criteria=core.reddit.has_urls,
+            criteria=SubmissionWrapper.has_urls,
         )
 
         self.assertEqual(result, mock_from_source.return_value)

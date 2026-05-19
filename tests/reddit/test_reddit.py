@@ -9,9 +9,18 @@ from core.reddit.reddit import _from_source
 from tests import SubmissionMockFactory, SubmissionWrapperFactory
 
 
-class TestSignIn(unittest.TestCase):
+# don't inherit from unittest.TestCase because we want to use pytest's monkeypatch fixture,
+#  which doesn't work with unittest.TestCase
+class TestSignIn:
+
+    # we previously patched the .test.env file, but that got deleted
+    # so now we patch a different way to ensure that the environment variables are correct for the test
+
     @patch("praw.Reddit")
-    def test_sign_in(self, mock_praw_reddit):
+    def test_sign_in(self, mock_praw_reddit, monkeypatch):
+        monkeypatch.setenv("REDDIT_CLIENT_ID", "mock reddit client id")
+        monkeypatch.setenv("REDDIT_CLIENT_SECRET", "mock reddit client secret")
+
         # Assert correct call is made when no arguments passed
         core.reddit.sign_in()
         mock_praw_reddit.assert_called_with(

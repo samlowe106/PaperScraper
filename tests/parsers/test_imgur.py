@@ -23,12 +23,16 @@ class TestSplitImgurURL(unittest.TestCase):
             "base_url": "imgur.com",
             "link_type": "/a/",
             "link_id": "XYz4zyX",
+            "trailing_slash": None,
+            "query_string": None,
         }
         expected2 = {
             "direct_link": None,
             "base_url": "imgur.com",
             "link_type": "/a/",
             "link_id": "aB12c3",
+            "trailing_slash": None,
+            "query_string": None,
         }
 
         self.assertDictEqual(_split_imgur_url(url1), expected1)
@@ -49,7 +53,9 @@ class TestSplitImgurURL(unittest.TestCase):
             "direct_link": None,
             "base_url": "imgur.com",
             "link_type": "/a/",
-            "link_id": "XYz4zyX",
+            "link_id": "minimal-star-wars-wallpapers-jlNpx",
+            "trailing_slash": None,
+            "query_string": None,
         }
 
         self.assertDictEqual(_split_imgur_url(url1), expected)
@@ -71,12 +77,16 @@ class TestSplitImgurURL(unittest.TestCase):
             "base_url": "imgur.com",
             "link_type": "/gallery/",
             "link_id": "XYz4zyX",
+            "trailing_slash": None,
+            "query_string": None,
         }
         expected2 = {
             "direct_link": None,
             "base_url": "imgur.com",
             "link_type": "/gallery/",
             "link_id": "aB12c3",
+            "trailing_slash": None,
+            "query_string": None,
         }
 
         self.assertDictEqual(_split_imgur_url(url1), expected1)
@@ -99,6 +109,8 @@ class TestSplitImgurURL(unittest.TestCase):
             "base_url": "imgur.com",
             "link_type": "/gallery/",
             "link_id": "feels-good-to-be-gangster-rSZlZ",
+            "trailing_slash": None,
+            "query_string": None,
         }
 
         self.assertDictEqual(_split_imgur_url(url1), expected)
@@ -120,12 +132,16 @@ class TestSplitImgurURL(unittest.TestCase):
             "base_url": "imgur.com",
             "link_type": "/",
             "link_id": "XYz4zyX",
+            "trailing_slash": None,
+            "query_string": None,
         }
         expected2 = {
             "direct_link": None,
             "base_url": "imgur.com",
             "link_type": "/",
             "link_id": "aB12c3",
+            "trailing_slash": None,
+            "query_string": None,
         }
 
         self.assertDictEqual(_split_imgur_url(url1), expected1)
@@ -146,12 +162,16 @@ class TestSplitImgurURL(unittest.TestCase):
             "base_url": "imgur.com",
             "link_type": "/",
             "link_id": "XYz4zyX",
+            "trailing_slash": None,
+            "query_string": None,
         }
         expected2 = {
             "direct_link": "i.",
             "base_url": "imgur.com",
             "link_type": "/",
             "link_id": "aB12c3",
+            "trailing_slash": None,
+            "query_string": None,
         }
 
         self.assertDictEqual(_split_imgur_url(url1), expected1)
@@ -181,9 +201,9 @@ class TestImgurParser(unittest.IsolatedAsyncioTestCase):
 
         self.single_image_url = json_data["single_image"][0]["url"]
         self.album_url = json_data["album"][0]["url"]
-        self.album_expected = json_data["album"][0]["expected"]
+        self.album_expected = set(json_data["album"][0]["expected"])
         self.gallery_url = json_data["gallery"][0]["url"]
-        self.gallery_expected = json_data["gallery"][0]["expected"]
+        self.gallery_expected = set(json_data["gallery"][0]["expected"])
 
     @pytest.mark.vcr()
     async def test_handles_single_image(self):

@@ -37,6 +37,28 @@ class TestSplitImgurURL(unittest.TestCase):
         self.assertDictEqual(_split_imgur_url(url4), expected1)
         self.assertDictEqual(_split_imgur_url(url5), expected2)
 
+    def test_regex_matches_hyphenated_album(self):
+        url1 = "https://www.imgur.com/a/minimal-star-wars-wallpapers-jlNpx"
+        url2 = "https://imgur.com/a/minimal-star-wars-wallpapers-jlNpx"
+        url3 = "http://www.imgur.com/a/minimal-star-wars-wallpapers-jlNpx"
+        url4 = "http://imgur.com/a/minimal-star-wars-wallpapers-jlNpx"
+        url5 = "imgur.com/a/minimal-star-wars-wallpapers-jlNpx"
+        url6 = "www.imgur.com/a/minimal-star-wars-wallpapers-jlNpx"
+
+        expected = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/a/",
+            "link_id": "XYz4zyX",
+        }
+
+        self.assertDictEqual(_split_imgur_url(url1), expected)
+        self.assertDictEqual(_split_imgur_url(url2), expected)
+        self.assertDictEqual(_split_imgur_url(url3), expected)
+        self.assertDictEqual(_split_imgur_url(url4), expected)
+        self.assertDictEqual(_split_imgur_url(url5), expected)
+        self.assertDictEqual(_split_imgur_url(url6), expected)
+
     def test_regex_matches_gallery(self):
         url1 = "www.imgur.com/gallery/XYz4zyX"
         url2 = "http://imgur.com/gallery/XYz4zyX"
@@ -62,6 +84,29 @@ class TestSplitImgurURL(unittest.TestCase):
         self.assertDictEqual(_split_imgur_url(url3), expected2)
         self.assertDictEqual(_split_imgur_url(url4), expected1)
         self.assertDictEqual(_split_imgur_url(url5), expected2)
+
+    def test_regex_matches_hyphenated_gallery(self):
+        url1 = "https://www.imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
+        url2 = "https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
+        url3 = "http://www.imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
+        url4 = "http://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
+        url5 = "imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
+        url6 = "www.imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
+        url6 = "https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
+
+        expected = {
+            "direct_link": None,
+            "base_url": "imgur.com",
+            "link_type": "/gallery/",
+            "link_id": "feels-good-to-be-gangster-rSZlZ",
+        }
+
+        self.assertDictEqual(_split_imgur_url(url1), expected)
+        self.assertDictEqual(_split_imgur_url(url2), expected)
+        self.assertDictEqual(_split_imgur_url(url3), expected)
+        self.assertDictEqual(_split_imgur_url(url4), expected)
+        self.assertDictEqual(_split_imgur_url(url5), expected)
+        self.assertDictEqual(_split_imgur_url(url6), expected)
 
     def test_regex_matches_non_direct_single_image(self):
         url1 = "www.imgur.com/XYz4zyX"

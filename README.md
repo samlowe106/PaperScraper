@@ -1,4 +1,4 @@
-# Paper Scraper for Reddit
+# 🖼️ Paper Scraper for Reddit
 
 Paper Scraper is a Python script that downloads images from the user's saved category on Reddit.
 
@@ -6,8 +6,9 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 ## Requirements
 
-- Python 3.11
+- Python 3.13
 - A reddit account
+- An imgur account
 
 ## Summary
 
@@ -20,21 +21,19 @@ Posts linking directly to an image or imgur page will be downloaded and unsaved;
 
 1. Clone this repository: `git clone https://github.com/samlowe106/PaperScraper.git`
 
-2. (Optional) Create a virtual environment with `python -m venv [PATH]` and activate that virtual environment with `source [PATH]/bin/activate`
+2. Ensure [uv](https://docs.astral.sh/uv/) is installed, then run setup.sh
 
-3. Install all requirements: `pip install -r requirements.txt`
+3. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
 
-4. Install pre-commit via `pre-commit install`. Ensure pre-commit is working by running `pre-commit run --all-files`
+4. Create a new app and choose **script** as the app type
 
-5. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
+5. Go to your [Applications setting](https://imgur.com/account/settings/apps) on imgur
 
-6. Create a new app and choose **script** as the app type
+6. Create a new app
 
-7. Go to your [Applications setting](https://imgur.com/account/settings/apps) on imgur
+7. Configure your Python environment variables, adding the reddit client ID as "REDDIT_CLIENT_ID", reddit client secret as "REDDIT_CLIENT_SECRET", and imgur client ID as "IMGUR_CLIENT_ID"
 
-8. Create a new app
-
-9. Configure your Python environment variables, adding the reddit client ID as "REDDIT_CLIENT_ID", reddit client secret as "REDDIT_CLIENT_SECRET", and imgur client ID as "IMGUR_CLIENT_ID"
+8. Create a file named ".env" in the directory root, then save those environment variables there
 
 ## Usage
 

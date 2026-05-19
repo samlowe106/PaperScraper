@@ -11,9 +11,7 @@ async def single_image_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     :returns: A list of all scrapeable urls found in the given webpage
     """
     response = await client.get(url)
-    if response.status_code == 200 and get_response_file_extension(
-        response
-    ).lower() in [
+    if response.status_code == 200 and get_response_file_extension(response) in [
         ".webp",
         ".png",
         ".jpg",

@@ -6,175 +6,43 @@ interactions:
       - '*/*'
       accept-encoding:
       - gzip, deflate
-      connection:
-      - keep-alive
-      host:
-      - imgur.com
-      user-agent:
-      - Mozilla/5.0
-    method: GET
-    uri: https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ
-  response:
-    body:
-      string: '<!doctype html> <html lang="en"> <head> <meta charset="utf-8"> <meta
-        name="viewport" content="width=device-width,initial-scale=1"> <link rel="icon"
-        type="image/png" href="https://s.imgur.com/images/favicon-32x32.png" sizes="32x32">
-        <link rel="icon" type="image/png" href="https://s.imgur.com/images/favicon-96x96.png"
-        sizes="96x96"> <link rel="icon" type="image/png" href="https://s.imgur.com/images/favicon-16x16.png"
-        sizes="16x16"> <link rel="apple-touch-icon-precomposed" href="https://s.imgur.com/images/favicon-152.png">
-        <meta name="msapplication-TileColor" content="#2cd63c"> <meta name="msapplication-TileImage"
-        content="https://s.imgur.com/images/favicon-144.png"> <link rel="alternate"
-        media="only screen and (max-width: 640px)" href="https://imgur.com/"> <meta
-        name="p:domain_verify" content="834554521765408b9effdc758b69c5ee"/> <meta
-        property="og:site_name" content="Imgur"/> <meta property="fb:admins" content="12331492"/>
-        <meta property="fb:admins" content="12301369"/> <meta property="fb:app_id"
-        content="127621437303857"/> <meta property="al:android:url" content="imgur://imgur.com/?from=fbreferral"/>
-        <meta property="al:android:app_name" content="Imgur"/> <meta property="al:android:package"
-        content="com.imgur.mobile"/> <meta property="al:ios:url" content="imgur://imgur.com/?from=fbreferral"/>
-        <meta property="al:ios:app_store_id" content="639881495"/> <meta property="al:ios:app_name"
-        content="Imgur"/> <meta property="al:web:url" content="https://imgur.com/"/>
-        <meta name="twitter:site" content="@imgur"/> <meta name="twitter:domain" content="imgur.com"/>
-        <meta name="twitter:app:id:googleplay" content="com.imgur.mobile"/> <meta
-        property="author" content="Imgur"/> <meta property="article:author" content="Imgur"/>
-        <meta property="article:publisher" content="https://www.facebook.com/imgur">
-        <meta name="apple-itunes-app" content="app-id=639881495"> <title>Damn, it
-        feels good to be a gangster. - Album on Imgur</title><meta property="og:url"
-        data-react-helmet="true" content="https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"><meta
-        name="twitter:image" data-react-helmet="true" content="https://i.imgur.com/NVQ1nuuh.jpg"><link
-        rel="alternate" type="application/json+oembed" href="https://api.imgur.com/oembed.json?url=https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
-        title="Damn, it feels good to be a gangster. - Album on Imgur"><link rel="alternate"
-        type="application/xml+oembed" href="https://api.imgur.com/oembed.xml?url=https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ"
-        title="Damn, it feels good to be a gangster. - Album on Imgur"><meta property="article:tag"
-        data-react-helmet="true" content="Wallpaper"><meta property="article:tag"
-        data-react-helmet="true" content=""><meta property="article:tag" data-react-helmet="true"
-        content=""><link rel="canonical" href="https://imgur.com/gallery/rSZlZ" data-react-helmet="true"
-        ><meta property="og:image:width" data-react-helmet="true" content="600"><meta
-        property="og:image:height" data-react-helmet="true" content="315"><meta property="og:image"
-        data-react-helmet="true" content="https://i.imgur.com/NVQ1nuu.png?fb"><meta
-        property="og:type" data-react-helmet="true" content="article"><meta name="twitter:card"
-        data-react-helmet="true" content="summary_large_image"><meta name="description"
-        data-react-helmet="true" content="Discover topics like Wallpaper, rep ost,
-        reposttimesamillion, and the magic of the internet at Imgur, a community powered
-        entertainment destination. Lift your spirits with funny jokes, trending memes,
-        entertaining gifs, inspiring stories, viral videos, and so much more from
-        users."><meta name="twitter:title" data-react-helmet="true" content="Damn,
-        it feels good to be a gangster."><meta name="twitter:description" data-react-helmet="true"
-        content="Discover topics like Wallpaper, rep ost, reposttimesamillion, and
-        the magic of the internet at Imgur, a community powered entertainment destination.
-        Lift your spirits with funny jokes, trending memes, entertaining gifs, inspiring
-        stories, viral videos, and so much more from users."><meta property="og:title"
-        data-react-helmet="true" content="Damn, it feels good to be a gangster."><meta
-        property="og:description" data-react-helmet="true" content="Discover topics
-        like Wallpaper, rep ost, reposttimesamillion, and the magic of the internet
-        at Imgur, a community powered entertainment destination. Lift your spirits
-        with funny jokes, trending memes, entertaining gifs, inspiring stories, viral
-        videos, and so much more from users."><script>window.postDataJSON="{\"id\":\"rSZlZ\",\"account_id\":0,\"title\":\"Damn,
-        it feels good to be a gangster.\",\"seo_title\":\"feels-good-to-be-gangster\",\"description\":\"\",\"view_count\":693598,\"upvote_count\":11921,\"downvote_count\":230,\"point_count\":11691,\"image_count\":9,\"comment_count\":169,\"favorite_count\":10380,\"virality\":8883.08862112853,\"score\":12610.1865,\"in_most_viral\":true,\"is_album\":true,\"is_mature\":false,\"cover_id\":\"NVQ1nuu\",\"created_at\":\"2015-03-22T13:49:03Z\",\"updated_at\":null,\"url\":\"https://imgur.com/gallery/feels-good-to-be-gangster-rSZlZ\",\"privacy\":\"public\",\"vote\":null,\"favorite\":false,\"is_ad\":false,\"ad_type\":0,\"ad_url\":\"\",\"include_album_ads\":false,\"shared_with_community\":true,\"is_pending\":false,\"platform\":\"api\",\"ad_config\":{\"show_ads\":true,\"show_ad_level\":2,\"ad_sense_client_id\":\"\",\"nsfw_score\":0.1,\"safe_flags\":[\"in_gallery\",\"page_load\",\"album\"],\"high_risk_flags\":[],\"unsafe_flags\":[],\"wall_unsafe_flags\":[]},\"cover\":{\"id\":\"NVQ1nuu\",\"account_id\":0,\"mime_type\":\"image/png\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/NVQ1nuu.png\",\"ext\":\"png\",\"width\":1920,\"height\":1080,\"size\":465378,\"metadata\":{\"title\":\"Michael
-        Bidwell resorting to threats to sign Cousins [shitpost]\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:07Z\",\"updated_at\":null},\"tags\":[{\"tag\":\"wallpaper\",\"display\":\"Wallpaper\",\"background_id\":\"m0iKfvv\",\"accent\":\"B16AC1\",\"is_promoted\":false},{\"tag\":\"rep_ost\",\"display\":\"rep
-        ost\",\"background_id\":\"YDS5rp4\",\"accent\":\"24565E\",\"is_promoted\":false},{\"tag\":\"reposttimesamillion\",\"display\":\"reposttimesamillion\",\"background_id\":\"CXErE2G\",\"accent\":\"5A3D74\",\"is_promoted\":false}],\"media\":[{\"id\":\"NVQ1nuu\",\"account_id\":0,\"mime_type\":\"image/png\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/NVQ1nuu.png\",\"ext\":\"png\",\"width\":1920,\"height\":1080,\"size\":465378,\"metadata\":{\"title\":\"Michael
-        Bidwell resorting to threats to sign Cousins [shitpost]\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:07Z\",\"updated_at\":null},{\"id\":\"rDQ6BEA\",\"account_id\":0,\"mime_type\":\"image/jpeg\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/rDQ6BEA.jpeg\",\"ext\":\"jpeg\",\"width\":1920,\"height\":1080,\"size\":64640,\"metadata\":{\"title\":\"\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:09Z\",\"updated_at\":null},{\"id\":\"gIMtb0Z\",\"account_id\":0,\"mime_type\":\"image/png\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/gIMtb0Z.png\",\"ext\":\"png\",\"width\":1280,\"height\":800,\"size\":192261,\"metadata\":{\"title\":\"\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:12Z\",\"updated_at\":null},{\"id\":\"GeZmbJA\",\"account_id\":0,\"mime_type\":\"image/png\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/GeZmbJA.png\",\"ext\":\"png\",\"width\":1920,\"height\":1080,\"size\":324671,\"metadata\":{\"title\":\"\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:16Z\",\"updated_at\":null},{\"id\":\"AGWHnX0\",\"account_id\":0,\"mime_type\":\"image/jpeg\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/AGWHnX0.jpeg\",\"ext\":\"jpeg\",\"width\":1920,\"height\":1200,\"size\":148099,\"metadata\":{\"title\":\"\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:18Z\",\"updated_at\":null},{\"id\":\"yt86fMB\",\"account_id\":0,\"mime_type\":\"image/jpeg\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/yt86fMB.jpeg\",\"ext\":\"jpeg\",\"width\":1920,\"height\":1080,\"size\":198933,\"metadata\":{\"title\":\"\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:21Z\",\"updated_at\":null},{\"id\":\"cG9eXMk\",\"account_id\":0,\"mime_type\":\"image/jpeg\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/cG9eXMk.jpeg\",\"ext\":\"jpeg\",\"width\":1920,\"height\":1080,\"size\":133261,\"metadata\":{\"title\":\"Can
-        someone give Big Boss feature to this? (More info in comments)\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:24Z\",\"updated_at\":null},{\"id\":\"4gdcscj\",\"account_id\":0,\"mime_type\":\"image/jpeg\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/4gdcscj.jpeg\",\"ext\":\"jpeg\",\"width\":1920,\"height\":1080,\"size\":271057,\"metadata\":{\"title\":\"Gangster
-        fox wallpaper(NSFW language)\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:28Z\",\"updated_at\":null},{\"id\":\"uA1NSv3\",\"account_id\":0,\"mime_type\":\"image/png\",\"type\":\"image\",\"name\":\"\",\"basename\":\"\",\"url\":\"https://i.imgur.com/uA1NSv3.png\",\"ext\":\"png\",\"width\":1920,\"height\":1080,\"size\":323434,\"metadata\":{\"title\":\"\",\"description\":\"\",\"is_animated\":false,\"is_looping\":false,\"duration\":0,\"has_sound\":false},\"created_at\":\"2015-03-22T13:49:32Z\",\"updated_at\":null}],\"display\":[]}"</script>
-        <link rel="preconnect" href="https://fonts.googleapis.com"> <link rel="preconnect"
-        href="https://fonts.gstatic.com" crossorigin> <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
-        rel="stylesheet"> <script>//!SSR:no </script> <script>-1===["i".concat("mgur.com"),"i".concat("mgur-stg.com"),"localhost"].indexOf(window.location.hostname)&&window.location.replace("https://i".concat("mgur.com"))</script>
-        <script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var
-        g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-M6N38SF",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script>
-        <script async src="https://ced.sascdn.com/tag/3370/smart.js"></script> <script
-        async src="https://ced-ns.sascdn.com/diff/templates/ts/dist/viewability/sas-viewability-1.1.js"></script>
-        <script async src="https://d3c8j8snkzfr1n.cloudfront.net/script.js"></script>
-        <script async src="https://js.assemblyexchange.com/wana.5.30.0.js"></script>
-        <script>document.addEventListener("ANAReady",()=>{initAssembly()});const initAssembly=()=>{let
-        e={};try{const n=new URL(document.location).searchParams.get("campaign_id");n&&(e.campaign_id=n)}catch(e){console.error(e)}const
-        n={enableSingleRequest:!0,sandboxIframe:!0,collapseEmptyDivs:!0,globalTargeting:e};window.ANA=new
-        ANAWeb({gptOptions:n,syncCookies:!0,propertyId:"localhost"===window.location.hostname?"imgur.com":window.location.hostname,unifiedIdEnabled:!0})}</script>
-        <script>!function(e,t){e[t]=e[t]||function e(){(e.q=e.q||[]).push(arguments)},e[t].v=e[t].v||2,function(e,c,n,o,d,i){function
-        a(o,d){(o=function(c,n){try{if(n=(c=e.localStorage).getItem("_aQS02MzZCRjlDNzlEMDIyRDZGNjU3RkI3N0EtNA"))return
-        JSON.parse(n).lgk||[];if((c.getItem(decodeURI(decodeURI("%76%253%34a%256%33%31%2565iZ%72%30")))||"").split(",")[4]>0)return[[t+"-engaged","true"]]}catch(e){}}())&&typeof
-        o.forEach===n&&(d=e[c].pubads())&&o.forEach(function(e){e&&e[0]&&d.setTargeting(e[0],e[1]||"")})}try{(i=e[c]=e[c]||{}).cmd=i.cmd||[],typeof
-        i.pubads===n?a():typeof i.cmd.unshift===n?i.cmd.unshift(a):i.cmd.push(a)}catch(e){}}(window,"googletag","function")}(window,decodeURI(decodeURI("%61%256%34%6di%25%372%61%256%63"))),function(e,t,c){c=e.createElement(t),e=e.getElementsByTagName(t)[0],c.async=1,c.src="https://quicklyedit.com/bundles/2f7d64b38b67/80b678c0231f11359553eba6.v1.js",e.parentNode.insertBefore(c,e)}(document,"script")</script>
-        <script>dataLayer=[];var pbjs=pbjs||{};pbjs.que=pbjs.que||[]</script> <script>window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new
-        Date,ga("create","UA-6671908-2","auto")</script> <script async src="https://www.google-analytics.com/analytics.js"></script>
-        <script src="https://btloader.com/tag?o=6282837909569536&upapi=true" async></script>
-        <script defer="defer" src="https://s.imgur.com/desktop-assets/js/main.6373ac0a46b25cf1b021.js"></script><link
-        href="https://s.imgur.com/desktop-assets/css/styles.5c1f1e56c11992332cd0.css"
-        rel="stylesheet"></head> <body> <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M6N38SF"
-        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-        <noscript>If you''re seeing this message, that means <strong>JavaScript has
-        been disabled on your browser</strong>, please <strong>enable JS</strong>
-        to make Imgur work. </noscript> <div id="root"></div> <script src="https://s.imgur.com/desktop-assets/scripts/primis-integration.js"></script>
-        </body> </html> '
-    headers:
-      Access-Control-Allow-Credentials:
-      - 'false'
-      Access-Control-Allow-Origin:
-      - https://imgur.com
-      Age:
-      - '371'
-      Cache-Control:
-      - max-age=60, stale-while-revalidate=600, stale-if-error=86400, public
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - upgrade-insecure-requests
-      Date:
-      - Mon, 18 May 2026 20:54:38 GMT
-      Reporting-Endpoints:
-      - default="https://chrome-reporting-server-qiu4epv3ia-uc.a.run.app/report"
-      Server:
-      - cat factory 1.0
-      Set-Cookie:
-      - postpagebeta=1; Expires=Mon, 4 Sep 2090 20:00:00 GMT; path=/; domain=.imgur.com;
-      Strict-Transport-Security:
-      - max-age=300
-      Vary:
-      - Accept-Encoding
-      X-Cache:
-      - MISS, HIT
-      X-Cache-Hits:
-      - 0, 1
-      X-Frame-Options:
-      - DENY
-      X-Served-By:
-      - cache-bos-kbos510021-BOS, cache-bos-kbos510020-BOS
-      X-Timer:
-      - S1779137678.327847,VS0,VE1
-      content-type:
-      - text/html
-      etag:
-      - '"51ba20e2b63c2cab6d776382a7f870e3"'
-      last-modified:
-      - Wed, 25 Mar 2026 15:33:51 GMT
-      transfer-encoding:
-      - chunked
-    status:
-      code: 200
-      message: OK
-- request:
-    body: ''
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
       authorization:
-      - Client-ID mock imgur client id
+      - Client-ID e0840fd374d5752
       connection:
       - keep-alive
-      cookie:
-      - postpagebeta=1
       host:
       - api.imgur.com
       user-agent:
       - Mozilla/5.0
     method: GET
-    uri: https://api.imgur.com/3/album/feels-good-to-be-gangster-rSZlZ
+    uri: https://api.imgur.com/3/gallery/album/rSZlZ
   response:
     body:
       string: !!binary |
-        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
+        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
+        AAA=
     headers:
       Accept-Ranges:
       - bytes
@@ -186,87 +54,14 @@ interactions:
         X-Imgur-Defender-Bypass
       Access-Control-Allow-Origin:
       - '*'
+      Age:
+      - '0'
       Connection:
       - keep-alive
       Content-Length:
-      - '144'
+      - '1313'
       Date:
-      - Mon, 18 May 2026 20:54:38 GMT
-      Server:
-      - cat factory 1.0
-      X-Cache:
-      - MISS
-      X-Cache-Hits:
-      - '0'
-      X-Frame-Options:
-      - DENY
-      X-Served-By:
-      - cache-bos-kbos510032-BOS
-      X-Timer:
-      - S1779137678.391746,VS0,VE19
-      access-control-allow-methods:
-      - GET, PUT, POST, PATCH, DELETE, OPTIONS
-      content-encoding:
-      - gzip
-      content-type:
-      - application/vnd.imgur.v1+json
-      imgur-media-type:
-      - imgur.v1; param=full; format=json
-      x-ratelimit-clientlimit:
-      - '12500'
-      x-ratelimit-clientremaining:
-      - '0'
-      x-ratelimit-clientreset:
-      - '48123'
-      x-ratelimit-userlimit:
-      - '500'
-      x-ratelimit-userremaining:
-      - '499'
-      x-ratelimit-userreset:
-      - '3600'
-    status:
-      code: 429
-      message: Too Many Requests
-- request:
-    body: ''
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      authorization:
-      - Client-ID mock imgur client id
-      connection:
-      - keep-alive
-      cookie:
-      - postpagebeta=1
-      host:
-      - api.imgur.com
-      user-agent:
-      - Mozilla/5.0
-    method: GET
-    uri: https://api.imgur.com/3/gallery/feels-good-to-be-gangster-rSZlZ/images
-  response:
-    body:
-      string: !!binary |
-        H4sIAAAAAAAAAw3MwQrCMAyA4VeRnFcqzNPuIp71NAojrlktZCsmqSBj726PHz/8O0Q0hGEHEikC
-        A9y3L3KOp5kzbTblCB0IfSqptRp8H3xCZpJf8AsRq0ulRGfFvcgl3JIaiZPHyGPwecVE2g4r2bvE
-        Nrhdn3B0oHWeSRWGBVmp2dBq4+XcH3/RVxjglAAAAA==
-    headers:
-      Accept-Ranges:
-      - bytes
-      Access-Control-Allow-Credentials:
-      - 'true'
-      Access-Control-Allow-Headers:
-      - Authorization, Content-Type, Accept, X-Mashape-Authorization, IMGURPLATFORM,
-        IMGURUIDJAFO, sessionCount, IMGURMWBETA, IMGURMWBETAOPTIN, X-expSNKPK127,
-        X-Imgur-Defender-Bypass
-      Access-Control-Allow-Origin:
-      - '*'
-      Connection:
-      - keep-alive
-      Date:
-      - Mon, 18 May 2026 20:54:38 GMT
+      - Tue, 19 May 2026 05:00:07 GMT
       Server:
       - cat factory 1.0
       Vary:
@@ -278,9 +73,9 @@ interactions:
       X-Frame-Options:
       - DENY
       X-Served-By:
-      - cache-bos-kbos510032-BOS
+      - cache-bos-kbos510043-BOS
       X-Timer:
-      - S1779137678.458216,VS0,VE24
+      - S1779166807.328451,VS0,VE64
       access-control-allow-methods:
       - GET, PUT, POST, PATCH, DELETE, OPTIONS
       access-control-expose-headers:
@@ -288,16 +83,24 @@ interactions:
         X-RateLimit-UserRemaining, X-RateLimit-UserReset, Geo-City, Geo-Region, Geo-Metro-Code,
         Geo-Country-Code
       cache-control:
-      - no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+      - max-age=60, stale-while-revalidate=600, stale-if-error=86400, public
       content-encoding:
       - gzip
       content-type:
       - application/json
       etag:
-      - W/"a2064d4c8142ed2b87b2be84ee25e1c58364e732"
-      transfer-encoding:
-      - chunked
+      - W/"9b25b324499a21adfa94fd292da45e6e1da01334"
+      x-ratelimit-clientlimit:
+      - '12500'
+      x-ratelimit-clientremaining:
+      - '12496'
+      x-ratelimit-userlimit:
+      - '500'
+      x-ratelimit-userremaining:
+      - '496'
+      x-ratelimit-userreset:
+      - '1779169064'
     status:
-      code: 403
-      message: Permission Denied
+      code: 200
+      message: OK
 version: 1

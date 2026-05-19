@@ -2,6 +2,9 @@
 .idea
 .vscode
 
+# pytest cache
+.pytest_cache/
+
 # Environment variables
 .env
 

@@ -130,10 +130,10 @@ async def get_source(
         return await from_saved(
             sign_in(input("Username: "), getpass.getpass("Password: ")),
             client,
-            amount=limit,
             score=karma,
             age=age,
             dry=dry,
+            amount=limit,
         )
     if source_name.startswith("r/"):
         return await from_subreddit(

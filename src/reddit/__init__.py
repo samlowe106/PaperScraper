@@ -3,6 +3,7 @@ from .core import (
     SubmissionWrapper,
     from_saved,
     from_subreddit,
+    get_source,
     sign_in,
 )
 
@@ -11,5 +12,6 @@ _all__ = [
     "SubmissionWrapper",
     "from_saved",
     "from_subreddit",
+    "get_source",
     "sign_in",
 ]

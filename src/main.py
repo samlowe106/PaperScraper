@@ -3,21 +3,38 @@ import asyncio
 import os
 
 import httpx
-from core import get_source
-from core.reddit import SortOption, SubmissionWrapper
 from dotenv import load_dotenv
+
+from src.reddit import SortOption, SubmissionWrapper, get_source
 
 LOG_PATH = os.path.join("Logs", "log.txt")
 
 
-async def main() -> None:
+async def main(args) -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
+
+    # TODO: handle age argument and prevent user from entering multiple age args at once
+    age = None
+    if args.hours:
+        age = args.hours * 3600
+    elif args.days:
+        age = args.days * 3600 * 24
+    elif args.years:
+        age = args.years * 3600 * 24 * 365
 
     os.makedirs(args.directory, exist_ok=True)
     os.chdir(args.directory)
 
     async with httpx.AsyncClient() as client:
-        batch = await get_source(client)
+        batch = await get_source(
+            client,
+            args.source,
+            args.limit,
+            args.karma,
+            age,
+            args.dry,
+            args.sortby,
+        )
         results = await asyncio.gather(
             *(
                 handle_wrapped(wrapped, client, args.organize, args.title, LOG_PATH)
@@ -119,10 +136,19 @@ if __name__ == "__main__":
     )
     """
     parser.add_argument(
-        "--age",
-        type=str,
-        # TODO: hours, days, months, etc?
+        "--hours",
+        type=int,
         help="specify the maximum age in hours a post can be to be downloaded",
+    )
+    parser.add_argument(
+        "--days",
+        type=int,
+        help="specify the maximum age in days a post can be to be downloaded",
+    )
+    parser.add_argument(
+        "--years",
+        type=int,
+        help="specify the maximum age in years a post can be to be downloaded",
     )
     """
 
@@ -130,4 +156,4 @@ if __name__ == "__main__":
 
     # endregion
 
-    asyncio.run(main())
+    asyncio.run(main(args))

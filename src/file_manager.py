@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-DownloadsExtensions = list[tuple[bytes, str]]
+type DownloadsExtensions = list[tuple[bytes, str]]
 
 
 class UniqueDirectoryFileManager:

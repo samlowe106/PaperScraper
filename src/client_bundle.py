@@ -14,15 +14,15 @@ class ImgurClient:
 
 
 @dataclass
-class ClientBundle:
+class AsyncClientBundle:
     """
     A bundle of clients for different services. Currently includes:
-    - http client (httpx)
+    - http client (httpx.AsyncClient)
     - reddit client (praw)
     - imgur client (client id and secret)
     """
 
-    def __init__(self, http_client: httpx.BaseClient, reddit_sign_in=False):
+    def __init__(self, http_client: httpx.AsyncClient, reddit_sign_in=False):
 
         self.http = http_client
 

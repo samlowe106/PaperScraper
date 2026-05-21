@@ -7,10 +7,12 @@ import httpx
 
 from .flickr import flickr_parser
 from .imgur import imgur_parser
+from .reddit import reddit_parser
 from .single_image import get_response_file_extension, single_image_parser
 
 parsing_strategies = (
     single_image_parser,
+    reddit_parser,
     imgur_parser,
     flickr_parser,
 )
@@ -22,7 +24,9 @@ async def find_urls(
     parsing_strategies: Iterable[
         Callable[[str, httpx.AsyncClient], Coroutine[Any, Any, set[str]]]
     ] = parsing_strategies,
-) -> set[str]:
+    *args,
+    **kwargs,
+) -> set[str]:  # we use sets to avoid duplicates
     """
     Attempts to find images on a linked page
     Currently supports directly linked images and imgur pages
@@ -31,7 +35,11 @@ async def find_urls(
     :return: a list of direct links to images found on that webpage
     """
     return set().union(
-        *(await asyncio.gather(*(parser(url, client) for parser in parsing_strategies)))
+        *(
+            await asyncio.gather(
+                *(parser(url, client, *args, **kwargs) for parser in parsing_strategies)
+            )
+        )
     )
 
 

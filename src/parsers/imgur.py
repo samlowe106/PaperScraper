@@ -5,12 +5,14 @@ from typing import Dict, Optional, Set
 import httpx
 from dotenv import load_dotenv
 
+from ..client_bundle import AsyncClientBundle
+
 API_ROOT = "https://api.imgur.com/3/"
 IMAGE_API = API_ROOT + "image/"
 ALBUM_API = API_ROOT + "album/"
 GALLERY_API = API_ROOT + "gallery/"
 
-IMGUR_REGEX = re.compile(
+_IMGUR_REGEX = re.compile(
     r"^(http(s)?://)?(www\.)?(?P<direct_link>i\.)?(?P<base_url>imgur\.com)"
     + r"(?P<link_type>/a/|/gallery/|/)(?P<link_id>[^/?#]+)"
     + r"(?P<trailing_slash>/)?"
@@ -21,7 +23,7 @@ load_dotenv()
 
 
 def _split_imgur_url(url: str) -> Optional[Dict[str, str]]:
-    m = IMGUR_REGEX.match(url)
+    m = _IMGUR_REGEX.match(url)
     return m.groupdict() if m else None
 
 
@@ -104,7 +106,7 @@ async def _handle_gallery(match: Dict[str, str], client: httpx.AsyncClient) -> S
     }
 
 
-async def imgur_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
+async def imgur_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
     """
     Parse an Imgur link using the Imgur API.
 
@@ -119,12 +121,12 @@ async def imgur_parser(url: str, client: httpx.AsyncClient) -> Set[str]:
     GALLERY_LINK = "/gallery/"
 
     if match["link_type"] == SINGLE_IMAGE_LINK:
-        return await _handle_single_image(url, match, client)
+        return await _handle_single_image(url, match, clients.http)
 
     if match["link_type"] == ALBUM_LINK:
-        return await _handle_album(match, client)
+        return await _handle_album(match, clients.http)
 
     if match["link_type"] == GALLERY_LINK:
-        return await _handle_gallery(match, client)
+        return await _handle_gallery(match, clients.http)
 
     return set()

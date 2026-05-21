@@ -5,12 +5,15 @@ from typing import Any, Callable, Coroutine, Generator, Iterable
 
 import httpx
 
+from ..client_bundle import AsyncClientBundle
 from .flickr import flickr_parser
 from .imgur import imgur_parser
 from .reddit import reddit_parser
 from .single_image import get_response_file_extension, single_image_parser
 
-parsing_strategies = (
+type Parser = Callable[[str, AsyncClientBundle], Coroutine[Any, Any, set[str]]]
+
+parsers = (
     single_image_parser,
     reddit_parser,
     imgur_parser,
@@ -20,12 +23,8 @@ parsing_strategies = (
 
 async def find_urls(
     url: str,
-    client: httpx.AsyncClient,
-    parsing_strategies: Iterable[
-        Callable[[str, httpx.AsyncClient], Coroutine[Any, Any, set[str]]]
-    ] = parsing_strategies,
-    *args,
-    **kwargs,
+    clients: AsyncClientBundle,
+    parsers: Iterable[Parser] = parsers,
 ) -> set[str]:  # we use sets to avoid duplicates
     """
     Attempts to find images on a linked page
@@ -35,11 +34,7 @@ async def find_urls(
     :return: a list of direct links to images found on that webpage
     """
     return set().union(
-        *(
-            await asyncio.gather(
-                *(parser(url, client, *args, **kwargs) for parser in parsing_strategies)
-            )
-        )
+        *(await asyncio.gather(*(parser(url, clients) for parser in parsers)))
     )
 
 

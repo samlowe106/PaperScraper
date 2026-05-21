@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 
+DownloadsExtensions = list[tuple[bytes, str]]
+
 
 class UniqueDirectoryFileManager:
     def __init__(self, directory, organize=False):
@@ -17,7 +19,7 @@ class UniqueDirectoryFileManager:
     async def save_files(
         self,
         title: str,
-        contents: list[tuple[bytes, str]],
+        downloads: DownloadsExtensions,
         subreddit: str = None,
     ) -> list[str]:
         """
@@ -28,18 +30,18 @@ class UniqueDirectoryFileManager:
         :return: a list of filepaths to which the files were saved
         """
 
-        if not contents:
+        if not downloads:
             return []
 
         directory = os.path.join(self.directory, subreddit if self.organize else "")
         os.makedirs(directory, exist_ok=True)  # subreddit directory need not be unique
 
-        if len(contents) == 1:
+        if len(downloads) == 1:
             # just one file, no need for a directory
-            content, extension = contents[0]
+            download, extension = downloads[0]
             filepath = self.get_unique_filepath(directory, title, extension)
             with open(filepath, "wb") as f:
-                f.write(content)
+                f.write(download)
             return [filepath]
 
         # album, need a directory to hold all the files
@@ -47,10 +49,10 @@ class UniqueDirectoryFileManager:
         os.makedirs(directory, exist_ok=False)  # album directory should be unique
 
         filepaths = []
-        for i, (content, extension) in enumerate(contents):
+        for i, (download, extension) in enumerate(downloads):
             destination = os.path.join(directory, f"{i}.{extension}")
             with open(destination, "wb") as f:
-                f.write(content)
+                f.write(download)
             filepaths.append(destination)
 
         return filepaths

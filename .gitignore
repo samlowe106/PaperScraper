@@ -5,6 +5,9 @@
 # pytest cache
 .pytest_cache/
 
+# coverage file
+.coverage
+
 # Environment variables
 .env
 

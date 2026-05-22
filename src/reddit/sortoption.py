@@ -1,6 +1,6 @@
 from enum import Enum
 
-from praw.models.subreddits import Subreddit
+from asyncpraw.models.subreddits import Subreddit
 
 
 class SortOption(Enum):
@@ -29,7 +29,7 @@ class SortOption(Enum):
     NEW = Subreddit.new
     HOT = Subreddit.hot
     CONTROVERSIAL = Subreddit.controversial
-    GILDED = Subreddit.gilded
+    GILDED = Subreddit.gilded  # probably deprecated?
 
     def __call__(self, *args, **kwargs):
         self.value(*args, **kwargs)

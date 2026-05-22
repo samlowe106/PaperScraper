@@ -45,8 +45,11 @@ repos:
     rev: "v2.1.0"
     hooks:
       - id: mypy
+        pass_filenames: false
         args:
           [
+            src,
+            tests,
             --no-strict-optional,
             --ignore-missing-imports,
             --install-types,

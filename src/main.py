@@ -1,49 +1,120 @@
 import argparse
 import asyncio
 import os
+from getpass import getpass
 
 import httpx
 from dotenv import load_dotenv
 
-from src.reddit import SortOption, SubmissionWrapper, get_source
+from .core import AsyncClientBundle, UniqueDirectoryFileManager
+
+# from parsing import parsers
+from .reddit import SortOption, StreamBuilder, SubmissionWrapper  # get_source
 
 LOG_PATH = os.path.join("Logs", "log.txt")
+
+MAX_FINDERS = 10
+MAX_DOWNLOADS = 100
+
+find_urls_sem = asyncio.Semaphore(MAX_FINDERS)
+download_sem = asyncio.Semaphore(MAX_DOWNLOADS)
 
 
 async def main(args) -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
 
     # TODO: handle age argument and prevent user from entering multiple age args at once
-    age = None
-    if args.hours:
-        age = args.hours * 3600
-    elif args.days:
-        age = args.days * 3600 * 24
-    elif args.years:
-        age = args.years * 3600 * 24 * 365
+    # age = None
+    # if args.hours:
+    #    age = args.hours * 3600
+    # elif args.days:
+    #    age = args.days * 3600 * 24
+    # elif args.years:
+    #    age = args.years * 3600 * 24 * 365
 
-    os.makedirs(args.directory, exist_ok=True)
-    os.chdir(args.directory)
+    # os.makedirs(args.directory, exist_ok=True)
+    # os.chdir(args.directory)
+    file_manager = UniqueDirectoryFileManager(args.directory, organize=args.organize)
 
-    async with httpx.AsyncClient() as client:
-        batch = await get_source(
-            client,
-            args.source,
-            args.limit,
-            args.karma,
-            age,
-            args.dry,
-            args.sortby,
-        )
-        results = await asyncio.gather(
-            *(
-                handle_wrapped(wrapped, client, args.organize, args.title, LOG_PATH)
-                for wrapped in batch
+    async with asyncio.TaskGroup() as task_group, httpx.AsyncClient as client:
+
+        clients = AsyncClientBundle(http_client=client)
+        builder = StreamBuilder()
+
+        if args.saved:
+            builder.set_redditor(input("Reddit Username: "), getpass("Password: "))
+
+        for subreddit in args.subreddit:
+            builder.add_subreddit(subreddit, args.sortby)
+
+        stream = builder.build(clients)
+
+        results: list[str] = []
+        async for wrapped in stream:
+            task_group.create_task(
+                process_source(wrapped, client, task_group, file_manager)
             )
-        )
+
+            # rework this to do all downloads at once:
+            # 1) the batching,
+            # 2) the url finding, and
+            # 3) the downloading
+            # to maximize concurrency and minimize the time spent waiting for a blocking response
+
+            # the solution is that the batch should be the batch of SubmissionWrappers
+            # with their urls already found, and then we can just do a big batch of downloads for
+            # all the urls in that batch and save them all at once with the file manager
+
+            results += file_manager.save_files(
+                title=wrapped.title,
+                downloads=await wrapped.download(client),
+                subreddit=wrapped.subreddit,
+            )
+
+        # results = await download_all(await get_source(), client)
 
     for i, result in enumerate(results):
         print(f"({i}) {result}")
+
+
+async def process_source(
+    wrapped: SubmissionWrapper,
+    client: httpx.AsyncClient,
+    task_group: asyncio.TaskGroup,
+    file_manager: UniqueDirectoryFileManager,
+):
+    async with find_urls_sem:
+        await wrapped.find_urls(client)
+
+    task_group.create_task(process_download(wrapped, client, file_manager))
+
+
+async def process_download(
+    wrapped: SubmissionWrapper,
+    client: httpx.AsyncClient,
+    file_manager: UniqueDirectoryFileManager,
+):
+    async with download_sem:
+        downloads_extensions = await wrapped.download(client)
+
+    # ensure file writing is non-blocking
+    return await asyncio.to_thread(
+        file_manager.save_files,
+        wrapped.title,
+        downloads_extensions,
+        subreddit=wrapped.subreddit,
+    )
+
+
+# async def download_all(
+#    source: Iterable[SubmissionWrapper], client: httpx.AsyncClient
+# ) -> list[tuple[SubmissionWrapper, list[tuple[bytes, str]]]]:
+#    return await asyncio.gather(
+#        *(
+#            (wrapped, await wrapped.find_urls(parsers).download(client))
+#            for wrapped in source
+#        )
+#    )
 
 
 async def handle_wrapped(
@@ -55,14 +126,9 @@ async def handle_wrapped(
 ) -> str:
     exception = ""
     try:
-        download_dir = "" if not organize else wrapped.subreddit
-        await wrapped.download_all(
-            download_dir,
-            client,
-            title=title,
-            organize=organize,
-        )
-        if wrapped.can_unsave:
+        # download_dir = "" if not organize else wrapped.subreddit
+        await wrapped.download(client)
+        if not args.dry:
             wrapped.unsave()
         return wrapped.summary_string()
     except Exception as e:
@@ -80,26 +146,35 @@ if __name__ == "__main__":
     # region Argument Parsing
 
     parser = argparse.ArgumentParser(description="Scrapes images from Reddit")
-
-    parser.add_argument("--logging", action="store_true", help="enable logging")
+    parser.add_argument("--nolog", action="store_false", help="enable logging")
     parser.add_argument(
-        "source",
-        type=str,
-        help="specify where posts should be taken from. choices are:"
-        "saved: user saved posts"
-        "r/<subreddit>: posts from <>",
+        "-u",
+        "--saved",
+        action="store_true",
+        help="include saved posts from a reddit acount (requires login)",
     )
     parser.add_argument(
-        "--limit", type=int, default=1000, help="max number of images to download"
+        "-r",
+        "--subreddit",
+        action="append",
+        default=[],
+        help="include posts from subreddit (repeatable)",
     )
     parser.add_argument(
-        "--directory",
+        "--limit",
+        type=int,
+        default=10,
+        help="max number of images to download from each source",
+    )
+    parser.add_argument(
+        "-d",
+        "--dir",
         type=str,
         default="Output",
         help="directory that files should be saved to",
     )
     parser.add_argument(
-        "--title",
+        "-t" "--title",
         type=str,
         default="%T",
         help="specify how the title should be saved. specifiers are:"
@@ -113,6 +188,7 @@ if __name__ == "__main__":
         "%%: %",
     )
     parser.add_argument(
+        "-k",
         "--karma",
         type=int,
         help="specify the minimum score a post must have to be downloaded",
@@ -121,17 +197,16 @@ if __name__ == "__main__":
         "--sortby",
         choices=SortOption,
         default="hot",
-        help="specify how to sort the given source if it's a subreddit",
+        help="specify how to sort the given subreddits",
     )
     parser.add_argument(
         "--dry",
         action="store_false",
         help="do not unsave any posts, even those that were completely parsed",
     )
-
     parser.add_argument(
         "--organize",
-        action="store_false",
+        action="store_true",
         help="organize images from saved into folders by subreddit",
     )
     """
@@ -151,7 +226,6 @@ if __name__ == "__main__":
         help="specify the maximum age in years a post can be to be downloaded",
     )
     """
-
     args = parser.parse_args()
 
     # endregion

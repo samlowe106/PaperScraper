@@ -1,15 +1,13 @@
 import asyncio
 import json
-import os
 import re
 from asyncio import Future
 from dataclasses import dataclass
-from typing import Optional
 
+import asyncpraw
 import httpx
-from praw.models import Submission
 
-from .. import parsers
+import core
 
 INVALID_WINDOWS_CHARS = r'<>:"/\|?*'
 
@@ -56,7 +54,7 @@ async def urls_responses(
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
 
-    _submission: Submission
+    _submission: asyncpraw.models.Submission
     title: str
     subreddit: str
     url: str
@@ -66,10 +64,12 @@ class SubmissionWrapper:
     # created_utc: ???
     urls: set[str]
     response: httpx.Response
-    can_unsave: bool
 
     def __init__(
-        self, submission: Submission, client: httpx.AsyncClient, dry: bool = True
+        self,
+        submission: asyncpraw.models.Submission,
+        client: httpx.AsyncClient,
+        dry: bool = True,
     ):
         self._submission = submission
 
@@ -82,68 +82,42 @@ class SubmissionWrapper:
         self.score = submission.score
         self.created_utc = submission.created_utc
         self.urls = set()
+        self.unsave = self._submission.unsave
 
         # relevant to parsing
         self.base_file_title = retitle(self._submission.title)
-        self.response: httpx.Response = None
+        self.response = None
 
-        # whether this post can be unsaved or not
-        self.can_unsave = not dry
-
-    async def find_urls(self, client: httpx.AsyncClient) -> None:
-        self.urls = await parsers.find_urls(self.url, client)
-
-    async def download_all(
+    async def download(
         self,
-        directory: str,
         client: httpx.AsyncClient,
-        title: str = None,
-        organize: bool = False,
-    ) -> dict[str, Optional[str]]:
+    ) -> list[tuple[bytes, str]]:
         """
-        Downloads all urls and bundles them with their results
-        :param directory: directory in which to download each file
-        :client: the httpx.AsyncClient to use for downloading
-        :param title: title that the final file should have
-        :param organize: whether or not to organize the download directory by subreddit
-        :return: a dictionary where the keys are this submission's urls and the values are the
-        filepaths to which those images were downloaded or None if the download failed
+        Downloads all urls and bundles them with their file extension
+        :client: the httpx client to use for downloading
+        :return: a list of tuples, where the first element is
+        the content of the downloaded file and the second element is the file extension
         """
+        # TODO: add this to task_group?
 
         if not self.urls:
-            return dict()
-        if organize:
-            directory = os.path.join(directory, self.subreddit)
-        os.makedirs(directory, exist_ok=True)
-        if not title:
-            title = self.title
-        urls_filepaths: dict[str, Optional[str]] = dict()
-        filename = title + parsers.get_response_file_extension(self.response)
+            return list()
 
-        async def zip_result(url: str) -> tuple[str, httpx.Response]:
-            return (url, await client.get(url, timeout=10))
-
-        urls_responses: list[tuple[str, Optional[httpx.Response]]] = (
-            await asyncio.gather(*(zip_result(url) for url in self.urls))
+        responses = await asyncio.gather(
+            *(client.get(url, timeout=10) for url in self.urls)
         )
 
-        offset = 0
-        for url, response in urls_responses:
-            if response is None or response.status_code != 200:
-                urls_filepaths[url] = None
-                continue
+        return [
+            (
+                response.content,
+                core.get_response_file_extension(response),
+            )
+            for response in responses
+            if response.status_code == 200
+        ]
 
-            # Determine filename
-            while filename in os.listdir(directory):
-                offset += 1
-                filename = f"{title} ({offset}){parsers.get_response_file_extension(self.response)}"
-
-            destination = os.path.join(directory, filename)
-            with open(destination, "wb") as image_file:
-                image_file.write(response.content)
-            urls_filepaths[url] = destination
-
-        return urls_filepaths
+    async def find_urls(client, *args, **kwargs):
+        pass
 
     def log(self, file: str, exception: str = "") -> None:
         """
@@ -187,17 +161,6 @@ class SubmissionWrapper:
     def summary_string(self) -> str:
         """Generates a string that summarizes this post"""
         return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
-
-    def unsave(self, force=False) -> bool:
-        """
-        Unsaves this submission
-        :param force: True to unsave this submission, even if can_unsave is False
-        :return: True if the submission was unsaved, else False
-        """
-        if force or self.can_unsave:
-            self._submission.unsave()
-            return True
-        return False
 
     def has_urls(self) -> bool:
         """

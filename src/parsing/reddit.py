@@ -1,7 +1,7 @@
 from typing import Set
 from urllib.parse import urlparse
 
-from ..client_bundle import AsyncClientBundle
+from ..core import AsyncClientBundle
 
 # _REDDIT_REGEX = re.compile(
 #    r"^https?://(www\.)?reddit\.com/r/(?P<subreddit>[^/]+)/comments/(?P<submission_id>[^/]+)/[^/]+/)?$"

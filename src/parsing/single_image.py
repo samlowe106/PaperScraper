@@ -1,8 +1,6 @@
 from typing import Set
 
-import httpx
-
-from ..client_bundle import AsyncClientBundle
+from ..core import AsyncClientBundle, get_response_file_extension
 
 
 # TODO: this could just work for any filetype, not just images
@@ -22,12 +20,3 @@ async def single_image_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
     ]:
         return {response.url}
     return set()
-
-
-def get_response_file_extension(response: httpx.Response) -> str:
-    """
-    Gets the extension of the content in the specified response
-    :param r: valid request object
-    :return: the filetype of the content stored in that request, in lowercase
-    """
-    return "." + response.headers["Content-type"].split("/")[1].lower()

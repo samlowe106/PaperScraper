@@ -5,7 +5,7 @@ from typing import Dict, Optional, Set
 import httpx
 from dotenv import load_dotenv
 
-from ..client_bundle import AsyncClientBundle
+from ..core import AsyncClientBundle
 
 API_ROOT = "https://api.imgur.com/3/"
 IMAGE_API = API_ROOT + "image/"

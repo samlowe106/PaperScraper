@@ -5,7 +5,7 @@ from typing import Optional, Set
 
 import httpx
 
-from ..client_bundle import AsyncClientBundle
+from ..core import AsyncClientBundle
 
 # first group is user's name, second is image id
 _FLICKR_REGEX = re.compile(

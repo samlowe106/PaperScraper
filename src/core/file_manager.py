@@ -16,7 +16,7 @@ class UniqueDirectoryFileManager:
         os.makedirs(self.directory, exist_ok=False)
         self.organize = organize
 
-    async def save_files(
+    def save_files(
         self,
         title: str,
         downloads: DownloadsExtensions,

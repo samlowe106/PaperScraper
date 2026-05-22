@@ -2,6 +2,7 @@ files: ".py$"
 default_stages: [pre-commit]
 
 repos:
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -14,6 +15,12 @@ repos:
     hooks:
       - id: black
         args: [--safe]
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 9.0.0a3
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
 
   - repo: https://github.com/pycqa/flake8
     rev: 7.3.0
@@ -34,12 +41,6 @@ repos:
   #          --ensure-newline-before-comments,
   #        ]
 
-  - repo: https://github.com/PyCQA/isort
-    rev: 9.0.0a3
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
-
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v2.1.0"
     hooks:
@@ -50,4 +51,5 @@ repos:
             --ignore-missing-imports,
             --install-types,
             --non-interactive,
+            --config-file=pyproject.toml
           ]

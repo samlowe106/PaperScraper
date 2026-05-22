@@ -1,0 +1,36 @@
+{
+  "single_image": [
+    {
+      "url": "https://www.reddit.com/r/wallpapers/comments/5sxyo3/my_friend_asked_why_i_was_staring_at_my_desktop/",
+      "expected": [
+        "https://i.redd.it/n1ci0trfgrey.jpg"
+      ]
+    },
+    {
+      "url": "https://www.reddit.com/media?url=https%3A%2F%2Fi.redd.it%2Fn1ci0trfgrey.jpg",
+      "expected": [
+        "https://i.redd.it/n1ci0trfgrey.jpg"
+      ]
+    }
+  ],
+  "album": [
+    {
+      "url": "https://www.reddit.com/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/",
+      "expected": [
+        "https://preview.redd.it/rt7l2yg7kn2e1.jpg",
+        "https://preview.redd.it/7p0irzg7kn2e1.jpg",
+        "https://preview.redd.it/ibn4nmi7kn2e1.jpg",
+        "https://preview.redd.it/ichoj6h7kn2e1.jpg",
+        "https://preview.redd.it/07i9t7h7kn2e1.jpg",
+        "https://preview.redd.it/i6hwv6h7kn2e1.jpg",
+        "https://preview.redd.it/721piluakn2e1.jpg",
+        "https://preview.redd.it/4swuuluakn2e1.jpg",
+        "https://preview.redd.it/jn9qrouakn2e1.jpg",
+        "https://preview.redd.it/b3zf0puakn2e1.jpg",
+        "https://preview.redd.it/z2cpnsuakn2e1.jpg",
+        "https://preview.redd.it/8rvvsyuakn2e1.jpg"
+      ]
+    }
+  ]
+}
+

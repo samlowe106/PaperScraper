@@ -47,7 +47,7 @@ class AsyncClientBundle:
             client_id=os.environ.get("REDDIT_CLIENT_ID"),
             client_secret=os.environ.get("REDDIT_CLIENT_SECRET"),
             user_agent="PaperScraper",
-            username=username if username else None,
-            password=password if password else None,
+            username=username if username and password else None,
+            password=password if username and password else None,
         )
         return self.reddit

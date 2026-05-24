@@ -1,5 +1,5 @@
+import datetime
 import os
-from datetime import datetime
 
 type DownloadsExtensions = list[tuple[bytes, str]]
 

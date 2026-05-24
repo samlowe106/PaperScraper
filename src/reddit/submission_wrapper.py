@@ -82,11 +82,16 @@ class SubmissionWrapper:
         self.score = submission.score
         self.created_utc = submission.created_utc
         self.urls = set()
-        self.unsave = self._submission.unsave
 
         # relevant to parsing
         self.base_file_title = retitle(self._submission.title)
         self.response = None
+
+    async def unsave(self):
+        """
+        Unsaves this object
+        """
+        return await self._submission.unsave()
 
     async def download(
         self,

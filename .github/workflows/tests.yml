@@ -55,4 +55,4 @@ jobs:
         run: uv sync
 
       - name: Run tests
-        run: uv run pytest --verbose --block-network --cov=. tests/
+        run: uv run pytest tests/ --verbose --block-network --cov=src/

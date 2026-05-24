@@ -1,13 +1,11 @@
-from collections.abc import AsyncIterable, AsyncIterator
-from typing import Callable, Self
+from collections.abc import AsyncIterable
+from typing import Self
 
 import asyncpraw
 
 from ..core import AsyncClientBundle, Predicate, afilter, amap, merge
 from .sortoption import SortOption
 from .submission_wrapper import SubmissionWrapper
-
-# TODO these two classes are identical if we can bundle subreddit and sortby
 
 
 class StreamBuilder:
@@ -70,6 +68,7 @@ class StreamBuilder:
         return afilter(self.predicate, amap(mapfunc, stream))
 
 
+"""
 class SubredditStream:
 
     def __init__(
@@ -113,7 +112,7 @@ class SavedStream:
                 yield wrapped
 
 
-"""from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
 
 @dataclass

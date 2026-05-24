@@ -10,8 +10,6 @@ from ..core import get_response_file_extension
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
 
-    # created_utc: ???
-
     def __init__(
         self,
         submission: asyncpraw.models.Submission,

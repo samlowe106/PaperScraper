@@ -196,7 +196,7 @@ class TestImgurParser(unittest.IsolatedAsyncioTestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        with open("tests/parsers/imgur_test_data.json") as f:
+        with open("tests/parsing/imgur_test_data.json") as f:
             json_data = json.load(f)
 
         self.single_image_url = json_data["single_image"][0]["url"]

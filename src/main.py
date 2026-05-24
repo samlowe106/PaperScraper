@@ -39,20 +39,14 @@ async def main(args) -> None:
     async with asyncio.TaskGroup() as task_group, httpx.AsyncClient as client:
 
         clients = AsyncClientBundle(http_client=client)
-        builder = StreamBuilder()
 
-        if args.saved:
-            builder.set_redditor(input("Reddit Username: "), getpass("Password: "))
-
-        for subreddit in args.subreddit:
-            builder.add_subreddit(subreddit, args.sortby)
-
-        stream = builder.build(clients)
+        stream = build_stream(args, clients)
+        # endregion
 
         results: list[str] = []
         async for wrapped in stream:
             task_group.create_task(
-                process_source(wrapped, client, task_group, file_manager)
+                process_submission(wrapped, client, task_group, file_manager)
             )
 
             # rework this to do all downloads at once:
@@ -65,11 +59,11 @@ async def main(args) -> None:
             # with their urls already found, and then we can just do a big batch of downloads for
             # all the urls in that batch and save them all at once with the file manager
 
-            results += file_manager.save_files(
-                title=wrapped.title,
-                downloads=await wrapped.download(client),
-                subreddit=wrapped.subreddit,
-            )
+            # results += file_manager.save_files(
+            #    title=wrapped.title,
+            #    downloads=await wrapped.download(client),
+            #    subreddit=wrapped.subreddit,
+            # )
 
         # results = await download_all(await get_source(), client)
 
@@ -77,7 +71,19 @@ async def main(args) -> None:
         print(f"({i}) {result}")
 
 
-async def process_source(
+def build_stream(args, clients):
+    builder = StreamBuilder()
+
+    if args.saved:
+        builder.set_redditor(input("Reddit Username: "), getpass("Password: "))
+
+    for subreddit in args.subreddit:
+        builder.add_subreddit(subreddit, args.sortby)
+
+    return builder.build(clients)
+
+
+async def process_submission(
     wrapped: SubmissionWrapper,
     client: httpx.AsyncClient,
     task_group: asyncio.TaskGroup,
@@ -95,15 +101,13 @@ async def process_download(
     file_manager: UniqueDirectoryFileManager,
 ):
     async with download_sem:
-        downloads_extensions = await wrapped.download(client)
-
-    # ensure file writing is non-blocking
-    return await asyncio.to_thread(
-        file_manager.save_files,
-        wrapped.title,
-        downloads_extensions,
-        subreddit=wrapped.subreddit,
-    )
+        # ensure file writing is non-blocking
+        return await asyncio.to_thread(
+            file_manager.save_files,
+            wrapped.title,
+            await wrapped.download(client),
+            subreddit=wrapped.subreddit,
+        )
 
 
 # async def download_all(
@@ -115,6 +119,21 @@ async def process_download(
 #            for wrapped in source
 #        )
 #    )
+
+# async def urls_responses(
+#    urls: str, client: httpx.AsyncClient
+# ) -> Future[list[tuple[str, httpx.Response]]]:
+#    """
+#    Gets the responses for a list of urls
+#    :param urls: a list of urls to get responses for
+#    :param client: the httpx.AsyncClient to use for getting responses
+#    :return: a list of tuples, where the first element is the url and the second element is the response for that url
+#    """
+#
+#    async def fetch(url: str) -> tuple[str, httpx.Response]:
+#        return url, await client.get(url, timeout=10)
+#
+#    return asyncio.gather(*(fetch(url) for url in urls))
 
 
 async def handle_wrapped(
@@ -130,7 +149,7 @@ async def handle_wrapped(
         await wrapped.download(client)
         if not args.dry:
             wrapped.unsave()
-        return wrapped.summary_string()
+        return str(wrapped)  # .summary_string()
     except Exception as e:
         exception = str(e)
         return f"Encountered exception parsing {wrapped.url}:\n{exception}"

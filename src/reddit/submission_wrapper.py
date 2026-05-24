@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import asyncpraw
 import httpx
 
-import core
+from ..core import get_response_file_extension
 
 INVALID_WINDOWS_CHARS = r'<>:"/\|?*'
 
@@ -110,7 +110,7 @@ class SubmissionWrapper:
         return [
             (
                 response.content,
-                core.get_response_file_extension(response),
+                get_response_file_extension(response),
             )
             for response in responses
             if response.status_code == 200

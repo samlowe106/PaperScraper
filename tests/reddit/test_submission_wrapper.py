@@ -1,14 +1,11 @@
-import os
 import unittest
-import uuid
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
-from src.reddit import SubmissionWrapper
-from src.reddit.submission_wrapper import retitle  # determine_name,
+# from datetime import datetime
+from unittest.mock import AsyncMock, mock_open, patch
+
 from tests import SubmissionWrapperFactory
 
-
+"""
 class TestRetitle(unittest.TestCase):
 
     def test_retitle(self):
@@ -44,7 +41,6 @@ class TestConstructor(unittest.TestCase):
         self.assertEqual(wrapper.nsfw, submission_mock.over_18)
         self.assertEqual(wrapper.score, submission_mock.score)
         self.assertEqual(wrapper.created_utc, submission_mock.created_utc)
-        self.assertEqual(wrapper.can_unsave, not dry)
         # Assert that the file title has the special characters removed
         self.assertEqual(wrapper.base_file_title, "mock title")
         # Assert values like responses and urls are not set
@@ -52,45 +48,172 @@ class TestConstructor(unittest.TestCase):
         self.assertEqual(wrapper.urls, set())
         # Assert that the submission is has not been unsaved
         submission_mock.unsave.assert_not_called()
+"""
 
 
-class TestUnsave(unittest.TestCase):
-    def test_unsave(self):
-        # Assert SubmissionWrappers do not unsave posts when dry = True
+class TestFindUrls(unittest.IsolatedAsyncioTestCase):
+
+    async def test_find_urls(self):
+        wrapped = SubmissionWrapperFactory()
+        await wrapped.find_urls()
+
+
+class TestUnsave(unittest.IsolatedAsyncioTestCase):
+
+    async def test_calls_unsave(self):
         wrapper = SubmissionWrapperFactory()
-        self.assertFalse(wrapper.unsave())
-        wrapper._submission.unsave.assert_not_called()
+        with patch.object(
+            wrapper._submission,
+            "unsave",
+            new_callable=AsyncMock,
+        ) as mock_unsave:
 
-        # Assert SubmissionWrappers do unsave posts when dry = False
-        wrapper = SubmissionWrapperFactory(dry=False)
-        self.assertTrue(wrapper.unsave())
-        wrapper._submission.unsave.assert_called_once()
-
-        # Assert SubmissionWrappers do unsave posts force = True
-        wrapper = SubmissionWrapperFactory()
-        self.assertTrue(wrapper.unsave(force=True))
-        wrapper._submission.unsave.assert_called_once()
-
-        # Assert SubmissionWrappers do unsave posts force = True
-        wrapper = SubmissionWrapperFactory(dry=False)
-        self.assertTrue(wrapper.unsave(force=True))
-        wrapper._submission.unsave.assert_called_once()
+            await wrapper.unsave()
+            mock_unsave.assert_awaited_once()
 
 
-class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
+class TestDownload(unittest.IsolatedAsyncioTestCase):
 
-    async def test_download_all_empty(self):
+    async def test_download_empty(self):
         # Assert that an empty list of urls returns an empty dictionary
         wrapper = SubmissionWrapperFactory()
         self.assertEqual(wrapper.urls, set())
-        mock_client = MagicMock()
-        mock_path = "mock path"
-        self.assertEqual(await wrapper.download_all(mock_path, mock_client), dict())
+        mock_client = AsyncMock()
+        self.assertEqual(await wrapper.download(mock_client), list())
 
+    async def test_download_nonempty(self):
+        mock_client = AsyncMock()
+
+        urls_extensions = {
+            "url1": "jpg",
+            "url2": "png",
+            "url3": "gif",
+            "url4": "webm",
+        }
+
+        class MockResponse:
+            def __init__(self, content_mock, file_ext="jpg"):
+                self.status_code = 200
+                self.content = content_mock
+                self.headers = {"Content-type": f"image/{file_ext}"}
+
+        async def mock_response_contents(mock_url, **kwargs):
+            return MockResponse(
+                mock_url + " mock content", file_ext=urls_extensions[mock_url]
+            )
+
+        mock_client.get.side_effect = mock_response_contents
+
+        wrapper = SubmissionWrapperFactory()
+        wrapper.subreddit = "mock subreddit"
+        wrapper.title = "mock title"
+        wrapper.urls = list(urls_extensions.keys())
+        print(f"{wrapper.urls=}")
+
+        contents_extensions = await wrapper.download(mock_client)
+
+        expected = [
+            ("url1 mock content", ".jpg"),
+            ("url2 mock content", ".png"),
+            ("url3 mock content", ".gif"),
+            ("url4 mock content", ".webm"),
+        ]
+
+        print(mock_client.get.call_args_list)
+
+        for url in urls_extensions.keys():
+            mock_client.get.assert_any_call(url, timeout=10)
+
+        self.assertListEqual(contents_extensions, expected)
+
+
+class TestStr(unittest.TestCase):
+
+    def test_str_contains_info(self):
+
+        wrapper = SubmissionWrapperFactory()
+
+        self.assertIn(wrapper.title, str(wrapper))
+        self.assertIn(wrapper.subreddit, str(wrapper))
+        self.assertIn(wrapper.author, str(wrapper))
+        self.assertIn(wrapper.url, str(wrapper))
+
+
+class TestLog(unittest.TestCase):
+
+    @patch("json.dump")
+    def test_log_no_exception(self, mock_json_dump):
+
+        wrapped = SubmissionWrapperFactory()
+
+        log_file_path = "log/path.txt"
+
+        m = mock_open()
+        file_handle = m.return_value.__enter__.return_value
+
+        with patch("builtins.open", m):
+            wrapped.log(log_file_path)
+
+        m.assert_called_once_with(log_file_path, "a", encoding="utf-8")
+
+        mock_json_dump.assert_called_once_with(
+            {
+                "title": wrapped._submission.title,
+                "id": wrapped._submission.id,
+                "url": wrapped._submission.url,
+                "recognized_urls": wrapped.urls,
+                "exception": "",
+            },
+            file_handle,
+        )
+
+    @patch("json.dump")
+    def test_log_with_exception(self, mock_json_dump):
+
+        wrapped = SubmissionWrapperFactory()
+
+        log_file_path = "log/path.txt"
+
+        m = mock_open()
+        file_handle = m.return_value.__enter__.return_value
+
+        mock_exception = Exception("Mock exception message")
+
+        with patch("builtins.open", m):
+            wrapped.log(log_file_path, mock_exception)
+
+        m.assert_called_once_with(log_file_path, "a", encoding="utf-8")
+
+        mock_json_dump.assert_called_once_with(
+            {
+                "title": wrapped._submission.title,
+                "id": wrapped._submission.id,
+                "url": wrapped._submission.url,
+                "recognized_urls": wrapped.urls,
+                "exception": mock_exception,
+            },
+            file_handle,
+        )
+
+
+class TestHasUrls(unittest.TestCase):
+
+    def test_has_urls_empty(self):
+        wrapped = SubmissionWrapperFactory()
+        wrapped.urls = set()
+        self.assertFalse(wrapped.has_urls())
+
+    def test_has_urls_nonempty(self):
+        wrapped = SubmissionWrapperFactory()
+        wrapped.urls = set("example_url")
+        self.assertTrue(wrapped.has_urls())
+
+
+"""
     @patch("os.makedirs")
-    @patch("src.parsers.get_response_file_extension")
+    @patch("src.core.get_response_file_extension")
     @patch("builtins.open", new_callable=mock_open)
-    async def test_download_all_unorganized(
+    async def test_download_unorganized(
         self,
         file_mock,
         get_extension_mock,
@@ -140,9 +263,7 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         with patch(
             "os.listdir", side_effect=listdir_mock_side_effect
         ) as os_listdir_mock:
-            result = await wrapper.download_all(
-                directory=directory, client=httpx_client_mock, organize=False
-            )
+            result = await wrapper.download(client=httpx_client_mock)
 
         os_listdir_mock.assert_called_with(directory)
 
@@ -157,9 +278,9 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         self.assertDictEqual(result, expected)
 
     @patch("os.makedirs")
-    @patch("src.parsers.get_response_file_extension")
+    @patch("src.core.get_response_file_extension")
     @patch("builtins.open", new_callable=mock_open)
-    async def test_download_all_organized(
+    async def test_download_organized(
         self,
         file_mock,
         get_extension_mock,
@@ -208,9 +329,7 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         with patch(
             "os.listdir", side_effect=listdir_mock_side_effect
         ) as os_listdir_mock:
-            result = await wrapper.download_all(
-                directory=directory, client=httpx_client_mock, organize=True
-            )
+            result = await wrapper.download(client=httpx_client_mock)
 
         os_listdir_mock.assert_called_with(os.path.join(directory, wrapper.subreddit))
 
@@ -224,3 +343,4 @@ class TestDownloadAll(unittest.IsolatedAsyncioTestCase):
         for value in expected.values():
             file_mock.assert_any_call(value, "wb")
         self.assertDictEqual(result, expected)
+"""

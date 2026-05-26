@@ -15,8 +15,6 @@ class TestRedditParser(unittest.IsolatedAsyncioTestCase):
         with open("tests/parsing/reddit_test_data.json") as f:
             json_data = json.load(f)
 
-        self.client_bundle = AsyncClientBundle()
-
         self.single_image_url = json_data["single_image"][0]["url"]
         self.single_image_expected = set(json_data["single_image"][0]["expected"])
         self.gallery_url = json_data["gallery"][0]["url"]
@@ -24,13 +22,20 @@ class TestRedditParser(unittest.IsolatedAsyncioTestCase):
 
     @pytest.mark.vcr()
     async def test_single_image(self):
-        actual = await reddit_parser(self.single_image_url, self.client_bundle)
-        self.assertSetEqual(self.single_image_expected, actual)
+
+        async with AsyncClientBundle() as client_bundle:
+            client_bundle.set_reddit()
+
+            actual = await reddit_parser(self.single_image_url, client_bundle)
+            self.assertSetEqual(self.single_image_expected, actual)
 
     @pytest.mark.vcr()
     async def test_gallery(self):
-        actual = await reddit_parser(self.gallery_url, self.client_bundle)
-        self.assertSetEqual(self.gallery_expected, actual)
+        async with AsyncClientBundle() as client_bundle:
+            client_bundle.set_reddit()
+
+            actual = await reddit_parser(self.gallery_url, client_bundle)
+            self.assertSetEqual(self.gallery_expected, actual)
 
 
 """

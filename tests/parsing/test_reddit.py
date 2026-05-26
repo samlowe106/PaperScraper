@@ -1,6 +1,11 @@
 import json
 import unittest
 
+import pytest
+
+from src.core import AsyncClientBundle
+from src.parsing import imgur_parser
+
 
 class TestRedditParser(unittest.IsolatedAsyncioTestCase):
 
@@ -10,16 +15,22 @@ class TestRedditParser(unittest.IsolatedAsyncioTestCase):
         with open("tests/parsing/reddit_test_data.json") as f:
             json_data = json.load(f)
 
+        self.client_bundle = AsyncClientBundle()
+
         self.single_image_url = json_data["single_image"][0]["url"]
-        self.single_image_url = set(json_data["single_image"][0]["expected"])
+        self.single_image_expected = set(json_data["single_image"][0]["expected"])
         self.gallery_url = json_data["gallery"][0]["url"]
         self.gallery_expected = set(json_data["gallery"][0]["expected"])
 
-    def test_single_image(self):
-        pass
+    @pytest.mark.vcr()
+    async def test_single_image(self):
+        actual = await imgur_parser(self.single_image_url, self.client_bundle)
+        self.assertSetEqual(self.single_image_expected, actual)
 
-    def test_gallery(self):
-        pass
+    @pytest.mark.vcr()
+    async def test_gallery(self):
+        actual = await imgur_parser(self.gallery_url, self.client_bundle)
+        self.assertSetEqual(self.gallery_expected, actual)
 
 
 """

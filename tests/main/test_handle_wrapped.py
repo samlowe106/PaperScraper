@@ -11,11 +11,12 @@ class TestMain(unittest.IsolatedAsyncioTestCase):
         mock_client = AsyncMock()
         mock_client.get.side_effect = Exception("Test exception")
 
-        wrapped = MagicMock()
+        wrapped = AsyncMock()
         wrapped.url = "https://example.com"
-        wrapped.download_all.side_effect = Exception("Test exception")
+        wrapped.download.side_effect = Exception("Test exception")
         wrapped.can_unsave = False
         wrapped.log = MagicMock()
+        wrapped.__str__.return_value = "Summary string"
 
         result = asyncio.run(
             handle_wrapped(wrapped, mock_client, False, "test_title", "test_log_path")
@@ -24,56 +25,71 @@ class TestMain(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Encountered exception parsing https://example.com", result)
         self.assertIn("Test exception", result)
         wrapped.log.assert_called_once_with("test_log_path", exception="Test exception")
-        wrapped.download_all.assert_called_once_with(
-            "", mock_client, title="test_title", organize=False
-        )
+        wrapped.download.assert_called_once_with(mock_client)
 
     async def test_returns_summary_string(self):
-        mock_client = MagicMock()
+        mock_client = AsyncMock()
 
-        wrapped = MagicMock()
+        wrapped = AsyncMock()
         wrapped.url = "https://example.com"
-        wrapped.download_all = AsyncMock()
-        wrapped.download_all.return_value = None
+        wrapped.download = AsyncMock()
+        wrapped.download.return_value = None
         wrapped.can_unsave = False
-        wrapped.summary_string.return_value = "Summary string"
+        wrapped.__str__.return_value = "Summary string"
 
         result = await handle_wrapped(wrapped, mock_client, False, "test_title")
 
         self.assertEqual(result, "Summary string")
-        wrapped.download_all.assert_called_once_with(
-            "", mock_client, title="test_title", organize=False
-        )
+        wrapped.download.assert_called_once_with(mock_client)
 
     async def test_unsaves(self):
-        mock_client = MagicMock()
+        mock_client = AsyncMock()
 
-        wrapped = MagicMock()
+        wrapped = AsyncMock()
         wrapped.url = "https://example.com"
-        wrapped.download_all = AsyncMock()
-        wrapped.download_all.return_value = None
+        wrapped.download = AsyncMock()
+        wrapped.download.return_value = None
         wrapped.can_unsave = True
-        wrapped.unsave = MagicMock()
-        wrapped.summary_string.return_value = "Summary string"
+        wrapped.unsave = AsyncMock()
+        wrapped.__str__.return_value = "Summary string"
 
-        result = await handle_wrapped(wrapped, mock_client, False, "test_title")
+        result = await handle_wrapped(
+            wrapped, mock_client, False, "test_title", dry=False
+        )
 
         self.assertEqual(result, "Summary string")
-        wrapped.download_all.assert_called_once_with(
-            "", mock_client, title="test_title", organize=False
-        )
+        wrapped.download.assert_called_once_with(mock_client)
         wrapped.unsave.assert_called_once()
 
-    # todo: test with different parameters that should be passed to download_all
-    async def test_organize_parameter(self):
-        mock_client = MagicMock()
+    async def test_does_not_unsave_if_dry_false(self):
+        mock_client = AsyncMock()
 
-        wrapped = MagicMock()
+        wrapped = AsyncMock()
         wrapped.url = "https://example.com"
-        wrapped.download_all = AsyncMock()
-        wrapped.download_all.return_value = None
+        wrapped.download = AsyncMock()
+        wrapped.download.return_value = None
+        wrapped.can_unsave = True
+        wrapped.unsave = AsyncMock()
+        wrapped.__str__.return_value = "Summary string"
+
+        result = await handle_wrapped(
+            wrapped, mock_client, False, "test_title", dry=True
+        )
+
+        self.assertEqual(result, "Summary string")
+        wrapped.download.assert_called_once_with(mock_client)
+        wrapped.unsave.assert_not_called()
+
+    # todo: test with different parameters that should be passed to download
+    async def test_organize_parameter(self):
+        mock_client = AsyncMock()
+
+        wrapped = AsyncMock()
+        wrapped.url = "https://example.com"
+        wrapped.download = AsyncMock()
+        wrapped.download.return_value = None
         wrapped.can_unsave = False
-        wrapped.summary_string.return_value = "Summary string"
+        wrapped.__str__.return_value = "Summary string"
         wrapped.subreddit = "mock_subreddit"
 
         result = await handle_wrapped(
@@ -81,9 +97,7 @@ class TestMain(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(result, "Summary string")
-        wrapped.download_all.assert_called_once_with(
-            "mock_subreddit", mock_client, title="test_title", organize=True
-        )
+        wrapped.download.assert_called_once_with(mock_client)
 
 
 """
@@ -97,7 +111,7 @@ async def handle_wrapped(
     exception = ""
     try:
         download_dir = "" if not organize else wrapped.subreddit
-        await wrapped.download_all(
+        await wrapped.download(
             download_dir,
             client,
             title=title,

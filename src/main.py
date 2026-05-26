@@ -140,13 +140,14 @@ async def handle_wrapped(
     organize: bool,
     title: str,
     log_path: str = None,
+    dry: bool = True,
 ) -> str:
     exception = ""
     try:
         # download_dir = "" if not organize else wrapped.subreddit
         await wrapped.download(client)
-        if not args.dry:
-            wrapped.unsave()
+        if not dry:
+            await wrapped.unsave()
         return str(wrapped)  # .summary_string()
     except Exception as e:
         exception = str(e)

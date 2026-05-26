@@ -186,6 +186,7 @@ class TestSplitImgurURL(unittest.TestCase):
         self.assertIsNone(_split_imgur_url(""))
 
 
+# TODO: test if imgur api sends back weird responses
 class TestImgurParser(unittest.IsolatedAsyncioTestCase):
     """
     Because this relies on the structure of imgur's website,

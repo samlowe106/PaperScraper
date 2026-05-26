@@ -4,7 +4,7 @@ import unittest
 import pytest
 
 from src.core import AsyncClientBundle
-from src.parsing import imgur_parser
+from src.parsing import reddit_parser
 
 
 class TestRedditParser(unittest.IsolatedAsyncioTestCase):
@@ -24,12 +24,12 @@ class TestRedditParser(unittest.IsolatedAsyncioTestCase):
 
     @pytest.mark.vcr()
     async def test_single_image(self):
-        actual = await imgur_parser(self.single_image_url, self.client_bundle)
+        actual = await reddit_parser(self.single_image_url, self.client_bundle)
         self.assertSetEqual(self.single_image_expected, actual)
 
     @pytest.mark.vcr()
     async def test_gallery(self):
-        actual = await imgur_parser(self.gallery_url, self.client_bundle)
+        actual = await reddit_parser(self.gallery_url, self.client_bundle)
         self.assertSetEqual(self.gallery_expected, actual)
 
 

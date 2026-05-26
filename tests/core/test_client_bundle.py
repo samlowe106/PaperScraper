@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-import asyncpraw
 import httpx
 import pytest
 
@@ -22,12 +21,11 @@ class TestConstructor:
     async def test_http_client_is_not_none(self, monkeypatch):
         monkeypatch.setenv("IMGUR_CLIENT_ID", "mock imgur client id")
         monkeypatch.setenv("IMGUR_CLIENT_SECRET", "mock imgur client secret")
-        async with httpx.AsyncClient() as client:
-            client_bundle = AsyncClientBundle(client)
-            assert client_bundle.http == client
-            assert client_bundle.imgur.client_id == "mock imgur client id"
-            assert client_bundle.imgur.client_secret == "mock imgur client secret"
-            assert client_bundle.reddit is None
+        async with AsyncClientBundle() as clients:
+            assert isinstance(clients.http, httpx.AsyncClient)
+            assert clients.imgur.client_id == "mock imgur client id"
+            assert clients.imgur.client_secret == "mock imgur client secret"
+            assert clients.reddit is None
 
 
 class TestSetReddit:
@@ -43,8 +41,9 @@ class TestSetReddit:
         client_bundle = AsyncClientBundle()
         assert client_bundle.reddit is None
 
-        with patch.object(
-            asyncpraw.Reddit, "__new__", return_value=self.reddit_sentinel
+        # don't patch __new__, it's super invasive and messes up later tests
+        with patch(
+            "asyncpraw.Reddit", return_value=self.reddit_sentinel
         ) as mock_reddit:
             reddit = client_bundle.set_reddit()
             mock_reddit.assert_called_once()
@@ -59,12 +58,11 @@ class TestSetReddit:
         client_bundle = AsyncClientBundle()
         assert client_bundle.reddit is None
 
-        with patch.object(
-            asyncpraw.Reddit, "__new__", return_value=self.reddit_sentinel
+        with patch(
+            "asyncpraw.Reddit", return_value=self.reddit_sentinel
         ) as mock_reddit:
             reddit = client_bundle.set_reddit()
             mock_reddit.assert_called_once_with(
-                asyncpraw.reddit.Reddit,
                 client_id="mock reddit client id",
                 client_secret="mock reddit client secret",
                 user_agent="PaperScraper",
@@ -81,12 +79,11 @@ class TestSetReddit:
         monkeypatch.setenv("IMGUR_CLIENT_SECRET", "mock imgur client secret")
         client_bundle = AsyncClientBundle()
         assert client_bundle.reddit is None
-        with patch.object(
-            asyncpraw.Reddit, "__new__", return_value=self.reddit_sentinel
+        with patch(
+            "asyncpraw.Reddit", return_value=self.reddit_sentinel
         ) as mock_reddit:
             reddit = client_bundle.set_reddit(username="username")
             mock_reddit.assert_called_once_with(
-                asyncpraw.reddit.Reddit,
                 client_id="mock reddit client id",
                 client_secret="mock reddit client secret",
                 user_agent="PaperScraper",
@@ -103,12 +100,11 @@ class TestSetReddit:
         monkeypatch.setenv("IMGUR_CLIENT_SECRET", "mock imgur client secret")
         client_bundle = AsyncClientBundle()
         assert client_bundle.reddit is None
-        with patch.object(
-            asyncpraw.Reddit, "__new__", return_value=self.reddit_sentinel
+        with patch(
+            "asyncpraw.Reddit", return_value=self.reddit_sentinel
         ) as mock_reddit:
             reddit = client_bundle.set_reddit(password="password")
             mock_reddit.assert_called_once_with(
-                asyncpraw.reddit.Reddit,
                 client_id="mock reddit client id",
                 client_secret="mock reddit client secret",
                 user_agent="PaperScraper",
@@ -125,12 +121,11 @@ class TestSetReddit:
         monkeypatch.setenv("IMGUR_CLIENT_SECRET", "mock imgur client secret")
         client_bundle = AsyncClientBundle()
         assert client_bundle.reddit is None
-        with patch.object(
-            asyncpraw.Reddit, "__new__", return_value=self.reddit_sentinel
+        with patch(
+            "asyncpraw.Reddit", return_value=self.reddit_sentinel
         ) as mock_reddit:
             reddit = client_bundle.set_reddit(username="username", password="password")
             mock_reddit.assert_called_once_with(
-                asyncpraw.reddit.Reddit,
                 client_id="mock reddit client id",
                 client_secret="mock reddit client secret",
                 user_agent="PaperScraper",

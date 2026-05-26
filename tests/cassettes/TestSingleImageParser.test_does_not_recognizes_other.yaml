@@ -1,0 +1,120 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - google.com
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://google.com/
+  response:
+    body:
+      string: "<HTML><HEAD><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<TITLE>301
+        Moved</TITLE></HEAD><BODY>\n<H1>301 Moved</H1>\nThe document has moved\n<A
+        HREF=\"https://www.google.com/\">here</A>.\r\n</BODY></HTML>\r\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - public, max-age=2592000
+      Content-Length:
+      - '220'
+      Content-Security-Policy-Report-Only:
+      - 'object-src ''none'';base-uri ''self'';script-src ''nonce-onKa6nOXxQDWk9C526y2Kw''
+        ''strict-dynamic'' ''report-sample'' ''unsafe-eval'' ''unsafe-inline'' https:
+        http:;report-uri https://csp.withgoogle.com/csp/gws/other-hp'
+      Content-Type:
+      - text/html; charset=UTF-8
+      Date:
+      - Sun, 24 May 2026 06:43:41 GMT
+      Expires:
+      - Tue, 23 Jun 2026 06:43:41 GMT
+      Location:
+      - https://www.google.com/
+      Server:
+      - gws
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 301
+      message: Moved Permanently
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - youtu.be
+      User-Agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://youtu.be/dQw4w9WgXcQ
+  response:
+    body:
+      string: ''
+    headers:
+      Accept-CH:
+      - Sec-CH-Viewport-Width, Sec-CH-DPR, Device-Memory
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Content-Length:
+      - '0'
+      Content-Security-Policy:
+      - 'base-uri ''self'';object-src ''none'';script-src ''report-sample'' ''nonce-u5aIbiVC_mmphadMcaThww''
+        ''unsafe-inline'' ''strict-dynamic'' https: http:;report-uri https://csp.withgoogle.com/csp/youtube_other/strict'
+      - require-trusted-types-for 'script'
+      Content-Type:
+      - application/binary
+      Cross-Origin-Opener-Policy:
+      - same-origin-allow-popups; report-to="youtube_other"
+      Date:
+      - Sun, 24 May 2026 06:43:41 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Location:
+      - https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=youtu.be
+      P3P:
+      - CP="This is not a P3P policy! See http://support.google.com/accounts/answer/151657?hl=en
+        for more info."
+      Permissions-Policy:
+      - ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*,
+        ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*
+      Pragma:
+      - no-cache
+      Report-To:
+      - '{"group":"youtube_other","max_age":2592000,"endpoints":[{"url":"https://csp.withgoogle.com/csp/report-to/youtube_other"}]}'
+      Server:
+      - ESF
+      Set-Cookie:
+      - GPS=1; Domain=.youtube.com; Expires=Sun, 24-May-2026 07:13:41 GMT; Path=/;
+        Secure; HttpOnly
+      - YSC=qs2fCaXkpcc; Domain=.youtube.com; Path=/; Secure; HttpOnly; SameSite=none
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Sec-CH-Viewport-Width, Sec-CH-DPR, Device-Memory
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 303
+      message: See Other
+version: 1

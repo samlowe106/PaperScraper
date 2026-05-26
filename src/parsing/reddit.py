@@ -23,12 +23,12 @@ async def reddit_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
     :returns: A list of all scrapeable urls found in the given webpage
     """
 
-    submission = clients.reddit.submission(url=url)
+    submission = await clients.reddit.submission(url=url)
 
     parsed = urlparse(submission.url)
 
     # single image
-    if parsed.netloc == "i.redd.it":
+    if parsed.netloc in ("i.redd.it", "preview.redd.it"):
         return {submission.url}
 
     # gallery post

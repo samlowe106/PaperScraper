@@ -1,0 +1,712 @@
+interactions:
+- request:
+    body:
+    - !!python/tuple
+      - grant_type
+      - client_credentials
+    headers:
+      AUTHORIZATION:
+      - Basic ZURTOXYtdFJQbzFvUkE6TURCa2J0X1NKeGpFX2xBemtNaUFzSzd2TzdN
+      Connection:
+      - close
+      User-Agent:
+      - PaperScraper Async PRAW/7.8.1 asyncprawcore/2.4.0
+    method: POST
+    uri: https://www.reddit.com/api/v1/access_token
+  response:
+    body:
+      string: '{"access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IlNIQTI1NjpzS3dsMnlsV0VtMjVmcXhwTU40cWY4MXE2OWFFdWFyMnpLMUdhVGxjdWNZIiwidHlwIjoiSldUIn0.eyJzdWIiOiJsb2lkIiwiZXhwIjoxNzc5ODU4ODUwLjk4NjIzMywiaWF0IjoxNzc5NzcyNDUwLjk4NjIzMiwianRpIjoiUWRvUngtU3Uxdm5odFJidTIxUTVfU3hhemdtYlhRIiwiY2lkIjoiZURTOXYtdFJQbzFvUkEiLCJsaWQiOiJ0Ml8yZjVxaTZmZWt0IiwibGNhIjoxNzc5NzcyNDUwOTc1LCJzY3AiOiJlSnlLVnRKU2lnVUVBQURfX3dOekFTYyIsImZsbyI6Nn0.ONB4GYTsmN8KKasfkS0797-crVnLg8L3e5tZBv-Yep9lHH2QjI4OXg80BYTte-6MpVREKljblrA9ROXZcA0rttbJv-Y3rOFZ2w_z7r6CckGBQ1ZmkuEPTxQfmiJdWICF7ktnLnPqWo63mmeehuVLHTDqNIot_J661IngoVFqgzt39aCCjLUfR3xE0Y3UK-0tozVkpz_XHHitRHIdT2QSA7c_tlmX6ohehldi-kn2rC3T8-glE_mY-u7wlXR9qSXzaGv--a5DeL66yqgAsYSBAc_7WUW6eHURT495nhWtqzU8dB2OinsdRAyTw6CBeBqAIjmJCtjN0iobob3Rry0Hsg",
+        "token_type": "bearer", "expires_in": 86400, "scope": "*"}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Cache-Control:
+      - private, s-maxage=0, max-age=0, must-revalidate, no-store
+      Connection:
+      - close
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '639'
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Tue, 26 May 2026 05:14:10 GMT
+      Expires:
+      - '-1'
+      NEL:
+      - '{"report_to": "w3-reporting-nel", "max_age": 14400, "include_subdomains":
+        false, "success_fraction": 1.0, "failure_fraction": 1.0}'
+      Report-To:
+      - '{"group": "w3-reporting-nel", "max_age": 14400, "include_subdomains": true,  "endpoints":
+        [{ "url": "https://w3-reporting-nel.reddit.com/reports" }]}, {"group": "w3-reporting",
+        "max_age": 14400, "include_subdomains": true, "endpoints": [{ "url": "https://w3-reporting.reddit.com/reports"
+        }]}, {"group": "w3-reporting-csp", "max_age": 14400, "include_subdomains":
+        true, "endpoints": [{ "url": "https://w3-reporting-csp.reddit.com/reports"
+        }]}'
+      Server:
+      - snooserv
+      Set-Cookie:
+      - edgebucket=efGb07lM401sYbPYxn; Domain=reddit.com; Max-Age=63071999; Path=/;  secure
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - accept-encoding
+      Via:
+      - 1.1 varnish
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - 1; mode=block
+      server-timing:
+      - reddit-ct;desc="dn=FT,p=BOS,cs=MISS"
+      x-reddit-loid:
+      - 000000002f5qi6fekt.2.1779772450975.Z0FBQUFBQnFGU3dpYk1GV09oUkduUi1ZbkxRY29IT2l5eV9lbC1MOTBDaU5FeUhHZ2JDNWxWLW0yb3BCd3p3Q0kwNVV6enVFem43UGl5bjVjXzR5VGp1ZHVycTdCb0pTN2lPZ1RNUFJPcEVQc2c3R1BUT3NVakdFcThYNVRHMFBxSlVzTjhBT0JNQlc
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Authorization:
+      - bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IlNIQTI1NjpzS3dsMnlsV0VtMjVmcXhwTU40cWY4MXE2OWFFdWFyMnpLMUdhVGxjdWNZIiwidHlwIjoiSldUIn0.eyJzdWIiOiJsb2lkIiwiZXhwIjoxNzc5ODU4ODUwLjk4NjIzMywiaWF0IjoxNzc5NzcyNDUwLjk4NjIzMiwianRpIjoiUWRvUngtU3Uxdm5odFJidTIxUTVfU3hhemdtYlhRIiwiY2lkIjoiZURTOXYtdFJQbzFvUkEiLCJsaWQiOiJ0Ml8yZjVxaTZmZWt0IiwibGNhIjoxNzc5NzcyNDUwOTc1LCJzY3AiOiJlSnlLVnRKU2lnVUVBQURfX3dOekFTYyIsImZsbyI6Nn0.ONB4GYTsmN8KKasfkS0797-crVnLg8L3e5tZBv-Yep9lHH2QjI4OXg80BYTte-6MpVREKljblrA9ROXZcA0rttbJv-Y3rOFZ2w_z7r6CckGBQ1ZmkuEPTxQfmiJdWICF7ktnLnPqWo63mmeehuVLHTDqNIot_J661IngoVFqgzt39aCCjLUfR3xE0Y3UK-0tozVkpz_XHHitRHIdT2QSA7c_tlmX6ohehldi-kn2rC3T8-glE_mY-u7wlXR9qSXzaGv--a5DeL66yqgAsYSBAc_7WUW6eHURT495nhWtqzU8dB2OinsdRAyTw6CBeBqAIjmJCtjN0iobob3Rry0Hsg
+      Cookie:
+      - edgebucket=efGb07lM401sYbPYxn
+      User-Agent:
+      - PaperScraper Async PRAW/7.8.1 asyncprawcore/2.4.0
+    method: GET
+    uri: https://oauth.reddit.com/comments/1gxzjul/?limit=2048&sort=confidence&raw_json=1
+  response:
+    body:
+      string: '[{"kind": "Listing", "data": {"after": null, "dist": 1, "modhash":
+        "", "geo_filter": "", "children": [{"kind": "t3", "data": {"approved_at_utc":
+        null, "subreddit": "DiscoElysium", "selftext": "", "user_reports": [], "saved":
+        false, "mod_reason_title": null, "gilded": 0, "clicked": false, "is_gallery":
+        true, "title": "Disco Elysium text post memes I''ve made", "link_flair_richtext":
+        [{"e": "text", "t": "Meme"}], "subreddit_name_prefixed": "r/DiscoElysium",
+        "hidden": false, "pwls": 6, "link_flair_css_class": "", "downs": 0, "thumbnail_height":
+        80, "top_awarded_type": null, "name": "t3_1gxzjul", "media_metadata": {"4swuuluakn2e1":
+        {"status": "valid", "e": "Image", "m": "image/jpg", "p": [{"y": 150, "x":
+        108, "u": "https://preview.redd.it/4swuuluakn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=6b0ccfa2f43ab18a73c8e6597f0be8749462c07e"},
+        {"y": 300, "x": 216, "u": "https://preview.redd.it/4swuuluakn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=941222e90ac5c4c3bdf424c9f96ab452f0f91d87"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/4swuuluakn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=d653996e013a477f818cdc31dbc40677eefc7a8d"},
+        {"y": 888, "x": 640, "u": "https://preview.redd.it/4swuuluakn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=b6385bdd2a993ce07de674c2acebedf10395c1fc"}],
+        "s": {"y": 1000, "x": 720, "u": "https://preview.redd.it/4swuuluakn2e1.jpg?width=720\u0026format=pjpg\u0026auto=webp\u0026s=d6c35d7a9b369378d5e7717e1a2457cb13e1701d"},
+        "id": "4swuuluakn2e1"}, "i6hwv6h7kn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 152, "x": 108, "u": "https://preview.redd.it/i6hwv6h7kn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=a90b9f80df15022782044f500ab1ec588b62f030"},
+        {"y": 304, "x": 216, "u": "https://preview.redd.it/i6hwv6h7kn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=59d36455100766cc4b00b09978abacbfcabeb42c"},
+        {"y": 451, "x": 320, "u": "https://preview.redd.it/i6hwv6h7kn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=d78c537e92508c5b3787e1f5e4897afd42caacb7"}],
+        "s": {"y": 720, "x": 510, "u": "https://preview.redd.it/i6hwv6h7kn2e1.jpg?width=510\u0026format=pjpg\u0026auto=webp\u0026s=bc3e4b6119ef3a15df6c747af1e37a5def1dfba1"},
+        "id": "i6hwv6h7kn2e1"}, "7p0irzg7kn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 149, "x": 108, "u": "https://preview.redd.it/7p0irzg7kn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=1a9eeb868ce315428243894a424fcdd5fa8b9e6c"},
+        {"y": 299, "x": 216, "u": "https://preview.redd.it/7p0irzg7kn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=bdfbeabc5baaafa478cfc1493fa0cff61a2bfb9b"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/7p0irzg7kn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=579269dd708a19890ca5a5681f3fef2fd73e6f6b"}],
+        "s": {"y": 512, "x": 369, "u": "https://preview.redd.it/7p0irzg7kn2e1.jpg?width=369\u0026format=pjpg\u0026auto=webp\u0026s=dc9d8ca50b0198bec0b9c4dabff1977b76a1fc57"},
+        "id": "7p0irzg7kn2e1"}, "ichoj6h7kn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 150, "x": 108, "u": "https://preview.redd.it/ichoj6h7kn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=ad0a4f295393980f1c9418ba70a5ca1b75a7fab6"},
+        {"y": 300, "x": 216, "u": "https://preview.redd.it/ichoj6h7kn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=f7d22a95142b51c4675c2d1123fa644b1ee3057d"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/ichoj6h7kn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=eefccc301c85eea3bb65b508b4261ac8b6305e14"}],
+        "s": {"y": 450, "x": 324, "u": "https://preview.redd.it/ichoj6h7kn2e1.jpg?width=324\u0026format=pjpg\u0026auto=webp\u0026s=976f6000ddfdbe2bb7038023028c9203bddd13b0"},
+        "id": "ichoj6h7kn2e1"}, "rt7l2yg7kn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 62, "x": 108, "u": "https://preview.redd.it/rt7l2yg7kn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=43bcd7f0bd32e053c3d247e526a1fee1b6c040b6"},
+        {"y": 124, "x": 216, "u": "https://preview.redd.it/rt7l2yg7kn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=47ac5d83e239f58e55dbbd4e2027cf1d60acc0ee"},
+        {"y": 184, "x": 320, "u": "https://preview.redd.it/rt7l2yg7kn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=e7ba0a9044e5dd8ba7eef1112acfd8a11318c4eb"},
+        {"y": 368, "x": 640, "u": "https://preview.redd.it/rt7l2yg7kn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=75fd5ed8dc62c1e7e2356a6999e935598608d9ee"},
+        {"y": 552, "x": 960, "u": "https://preview.redd.it/rt7l2yg7kn2e1.jpg?width=960\u0026crop=smart\u0026auto=webp\u0026s=b169c1f697ce36012d86e3e32ba0517b483ffcf7"},
+        {"y": 621, "x": 1080, "u": "https://preview.redd.it/rt7l2yg7kn2e1.jpg?width=1080\u0026crop=smart\u0026auto=webp\u0026s=852e53a46f6a8805caa24b1513fb601b7df1c708"}],
+        "s": {"y": 805, "x": 1400, "u": "https://preview.redd.it/rt7l2yg7kn2e1.jpg?width=1400\u0026format=pjpg\u0026auto=webp\u0026s=bf0a0c2e9cfd5d31e8174cc5ac16d44298a986c1"},
+        "id": "rt7l2yg7kn2e1"}, "8rvvsyuakn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 150, "x": 108, "u": "https://preview.redd.it/8rvvsyuakn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=5e7cbb5efbe4328cec488d12d12637debf7b4115"},
+        {"y": 300, "x": 216, "u": "https://preview.redd.it/8rvvsyuakn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=b53ff252744b6bbf12e188e392f1bd550b4c0418"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/8rvvsyuakn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=288d39a0a91a2b9041c63d56efdc4dede8e875d8"},
+        {"y": 888, "x": 640, "u": "https://preview.redd.it/8rvvsyuakn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=7ec44322e8d7db27b5b5f4740d440d4f2f77fc57"}],
+        "s": {"y": 1000, "x": 720, "u": "https://preview.redd.it/8rvvsyuakn2e1.jpg?width=720\u0026format=pjpg\u0026auto=webp\u0026s=96d29153993740668a37c9e1fdfdfdc473eb2be5"},
+        "id": "8rvvsyuakn2e1"}, "z2cpnsuakn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 150, "x": 108, "u": "https://preview.redd.it/z2cpnsuakn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=223e83aabf46e98f64c46fc441000e87b715b320"},
+        {"y": 300, "x": 216, "u": "https://preview.redd.it/z2cpnsuakn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=2f4505b62c6a60a1c2b50ff267f5ab755c1f8e90"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/z2cpnsuakn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=94343fcec7f671497b4c776e11ec6ffc516eacd6"},
+        {"y": 888, "x": 640, "u": "https://preview.redd.it/z2cpnsuakn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=94e627e38ad8990747384b50993e7f9a13d296ca"}],
+        "s": {"y": 1000, "x": 720, "u": "https://preview.redd.it/z2cpnsuakn2e1.jpg?width=720\u0026format=pjpg\u0026auto=webp\u0026s=c89544c5bc2e706b9dafac502382bac787bb68df"},
+        "id": "z2cpnsuakn2e1"}, "721piluakn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 150, "x": 108, "u": "https://preview.redd.it/721piluakn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=8e44044442c0e999f702f3eda560044367ea1808"},
+        {"y": 300, "x": 216, "u": "https://preview.redd.it/721piluakn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=7e54a04d3c447cc380c3a0c73850c1afc5bc6f6b"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/721piluakn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=c0a7d91829087bbc869321dbc70a7d4eb286cc23"},
+        {"y": 888, "x": 640, "u": "https://preview.redd.it/721piluakn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=f539bc82d6e6df2d3ec458ac6006be4a027f1798"}],
+        "s": {"y": 1000, "x": 720, "u": "https://preview.redd.it/721piluakn2e1.jpg?width=720\u0026format=pjpg\u0026auto=webp\u0026s=fd9d8453c6be1f67e47b9e7701c4bba040fae0a2"},
+        "id": "721piluakn2e1"}, "ibn4nmi7kn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 83, "x": 108, "u": "https://preview.redd.it/ibn4nmi7kn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=acf8f6d67b1bc0aeb1976f6a68486e898eefb5ae"},
+        {"y": 166, "x": 216, "u": "https://preview.redd.it/ibn4nmi7kn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=4db148956aa0df47393ef3434b8ca36455da41f4"},
+        {"y": 246, "x": 320, "u": "https://preview.redd.it/ibn4nmi7kn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=c55b2f2ca653966d197bca471472765859c3fdff"},
+        {"y": 493, "x": 640, "u": "https://preview.redd.it/ibn4nmi7kn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=88a4f4cbe51c135d4333ae1509a5d5499bb6d697"}],
+        "s": {"y": 675, "x": 876, "u": "https://preview.redd.it/ibn4nmi7kn2e1.jpg?width=876\u0026format=pjpg\u0026auto=webp\u0026s=8bc3fa609f9dd24c91ec35209482477bfcd0686b"},
+        "id": "ibn4nmi7kn2e1"}, "07i9t7h7kn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 149, "x": 108, "u": "https://preview.redd.it/07i9t7h7kn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=186cdfe3c4517f811eb3017c983442754ba6ce53"},
+        {"y": 299, "x": 216, "u": "https://preview.redd.it/07i9t7h7kn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=c96f92dabea14b7b6e4d7506a31e659bdbe5364d"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/07i9t7h7kn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=f76862026fcea81695143aae6b80be2e1fd54a32"}],
+        "s": {"y": 512, "x": 369, "u": "https://preview.redd.it/07i9t7h7kn2e1.jpg?width=369\u0026format=pjpg\u0026auto=webp\u0026s=47ea2c1242746e23523208e994a1a5cfd69ef4ce"},
+        "id": "07i9t7h7kn2e1"}, "jn9qrouakn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 94, "x": 108, "u": "https://preview.redd.it/jn9qrouakn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=29b9de7c4178a0e8e8abfce438c806da116b7bce"},
+        {"y": 188, "x": 216, "u": "https://preview.redd.it/jn9qrouakn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=a23bc9ac30009b421ba58dd1f7c8eed170eeb57a"},
+        {"y": 278, "x": 320, "u": "https://preview.redd.it/jn9qrouakn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=99ab6d7a29ada729ee700f3f70575b3fd2e659ca"},
+        {"y": 557, "x": 640, "u": "https://preview.redd.it/jn9qrouakn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=6c305ce4bd1af082741165ae7fed4e27401b93a3"},
+        {"y": 836, "x": 960, "u": "https://preview.redd.it/jn9qrouakn2e1.jpg?width=960\u0026crop=smart\u0026auto=webp\u0026s=a6d6cdfd876d3e0fe86aa8c04cfb241de30d8b10"}],
+        "s": {"y": 890, "x": 1021, "u": "https://preview.redd.it/jn9qrouakn2e1.jpg?width=1021\u0026format=pjpg\u0026auto=webp\u0026s=5b685bfe0a57c6d7a4f13fd1de4a2bfb8e5e62d5"},
+        "id": "jn9qrouakn2e1"}, "b3zf0puakn2e1": {"status": "valid", "e": "Image",
+        "m": "image/jpg", "p": [{"y": 150, "x": 108, "u": "https://preview.redd.it/b3zf0puakn2e1.jpg?width=108\u0026crop=smart\u0026auto=webp\u0026s=55f89fe9d58d301e9899fb24d0f9007b21600899"},
+        {"y": 300, "x": 216, "u": "https://preview.redd.it/b3zf0puakn2e1.jpg?width=216\u0026crop=smart\u0026auto=webp\u0026s=7a020cb570875585543b33bacebecb7efb5adb49"},
+        {"y": 444, "x": 320, "u": "https://preview.redd.it/b3zf0puakn2e1.jpg?width=320\u0026crop=smart\u0026auto=webp\u0026s=2d2f066409de7bb8f001336cf3d2c13c3bcdd2c6"},
+        {"y": 888, "x": 640, "u": "https://preview.redd.it/b3zf0puakn2e1.jpg?width=640\u0026crop=smart\u0026auto=webp\u0026s=c374daa7f75f15cf023dbbbe88e97b4ebe7adcbc"}],
+        "s": {"y": 1000, "x": 720, "u": "https://preview.redd.it/b3zf0puakn2e1.jpg?width=720\u0026format=pjpg\u0026auto=webp\u0026s=6b73c886b9156fcc7e20c9ed932635f0dbf0dcaf"},
+        "id": "b3zf0puakn2e1"}}, "hide_score": false, "quarantine": false, "link_flair_text_color":
+        "dark", "upvote_ratio": 0.99, "author_flair_background_color": null, "ups":
+        905, "domain": "reddit.com", "media_embed": {}, "thumbnail_width": 140, "author_flair_template_id":
+        null, "is_original_content": false, "author_fullname": "t2_14lyttkg8d", "secure_media":
+        null, "is_reddit_media_domain": false, "is_meta": false, "category": null,
+        "secure_media_embed": {}, "gallery_data": {"items": [{"is_deleted": false,
+        "media_id": "rt7l2yg7kn2e1", "id": 556127170}, {"is_deleted": false, "media_id":
+        "7p0irzg7kn2e1", "id": 556127171}, {"is_deleted": false, "media_id": "ibn4nmi7kn2e1",
+        "id": 556127172}, {"is_deleted": false, "media_id": "ichoj6h7kn2e1", "id":
+        556127173}, {"is_deleted": false, "media_id": "07i9t7h7kn2e1", "id": 556127174},
+        {"is_deleted": false, "media_id": "i6hwv6h7kn2e1", "id": 556127175}, {"is_deleted":
+        false, "media_id": "721piluakn2e1", "id": 556127176}, {"is_deleted": false,
+        "media_id": "4swuuluakn2e1", "id": 556127177}, {"is_deleted": false, "media_id":
+        "jn9qrouakn2e1", "id": 556127178}, {"is_deleted": false, "media_id": "b3zf0puakn2e1",
+        "id": 556127179}, {"is_deleted": false, "media_id": "z2cpnsuakn2e1", "id":
+        556127180}, {"is_deleted": false, "media_id": "8rvvsyuakn2e1", "id": 556127181}]},
+        "link_flair_text": "Meme", "can_mod_post": false, "score": 905, "approved_by":
+        null, "is_created_from_ads_ui": false, "author_premium": false, "thumbnail":
+        "https://b.thumbs.redditmedia.com/CTGKVx7_OnGuox4N85fCN_cHRlKuA0XjOXZkte4c-NQ.jpg",
+        "edited": false, "author_flair_css_class": null, "author_flair_richtext":
+        [], "gildings": {}, "content_categories": null, "is_self": false, "subreddit_type":
+        "public", "created": 1732368292.0, "link_flair_type": "richtext", "wls": 6,
+        "removed_by_category": null, "banned_by": null, "author_flair_type": "text",
+        "total_awards_received": 0, "allow_live_comments": false, "selftext_html":
+        null, "likes": null, "suggested_sort": null, "banned_at_utc": null, "url_overridden_by_dest":
+        "https://www.reddit.com/gallery/1gxzjul", "view_count": null, "archived":
+        false, "no_follow": false, "is_crosspostable": false, "pinned": false, "over_18":
+        false, "all_awardings": [], "awarders": [], "media_only": false, "link_flair_template_id":
+        "6a13e3e6-542c-11ea-884c-0e33899ea4df", "can_gild": false, "spoiler": false,
+        "locked": false, "author_flair_text": null, "treatment_tags": [], "visited":
+        false, "removed_by": null, "mod_note": null, "distinguished": null, "subreddit_id":
+        "t5_h1vbu", "author_is_blocked": false, "mod_reason_by": null, "num_reports":
+        null, "removal_reason": null, "link_flair_background_color": "#46d160", "id":
+        "1gxzjul", "is_robot_indexable": true, "num_duplicates": 0, "report_reasons":
+        null, "author": "MoonlitEsau", "discussion_type": null, "num_comments": 18,
+        "send_replies": true, "media": null, "contest_mode": false, "author_patreon_flair":
+        false, "author_flair_text_color": null, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/",
+        "stickied": false, "url": "https://www.reddit.com/gallery/1gxzjul", "subreddit_subscribers":
+        222928, "created_utc": 1732368292.0, "num_crossposts": 0, "mod_reports": [],
+        "is_video": false}}], "before": null}}, {"kind": "Listing", "data": {"after":
+        null, "dist": null, "modhash": "", "geo_filter": "", "children": [{"kind":
+        "t1", "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "richtext", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": "c742820c-5431-11ea-8992-0eb3075853af",
+        "likes": null, "replies": "", "user_reports": [], "saved": false, "id": "lylrc1f",
+        "banned_at_utc": null, "mod_reason_title": null, "gilded": 0, "archived":
+        false, "collapsed_reason_code": null, "no_follow": false, "author": "mrhelmand",
+        "can_mod_post": false, "created_utc": 1732382029.0, "send_replies": true,
+        "parent_id": "t3_1gxzjul", "score": 61, "author_fullname": "t2_wb56q", "approved_by":
+        null, "mod_note": null, "all_awardings": [], "collapsed": false, "body": "I
+        like this very much.\n\nThe one for Trant probably my favourite.", "edited":
+        false, "top_awarded_type": null, "author_flair_css_class": "encyclopedia",
+        "name": "t1_lylrc1f", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [{"a": ":encyclopedia:", "u": "https://emoji.redditmedia.com/hgj3nz1yq5i41_t5_h1vbu/encyclopedia",
+        "e": "emoji"}], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EI
+        like this very much.\u003C/p\u003E\n\n\u003Cp\u003EThe one for Trant probably
+        my favourite.\u003C/p\u003E\n\u003C/div\u003E", "removal_reason": null, "collapsed_reason":
+        null, "distinguished": null, "associated_award": null, "stickied": false,
+        "author_premium": false, "can_gild": false, "gildings": {}, "unrepliable_reason":
+        null, "author_flair_text_color": "dark", "score_hidden": false, "permalink":
+        "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lylrc1f/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732382029.0, "author_flair_text": ":encyclopedia:", "treatment_tags": [],
+        "link_id": "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 61}}, {"kind": "t1",
+        "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        {"kind": "Listing", "data": {"after": null, "dist": null, "modhash": "", "geo_filter":
+        "", "children": [{"kind": "t1", "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc":
+        null, "author_is_blocked": false, "comment_type": null, "awarders": [], "mod_reason_by":
+        null, "banned_by": null, "author_flair_type": "text", "total_awards_received":
+        0, "subreddit": "DiscoElysium", "author_flair_template_id": null, "likes":
+        null, "replies": "", "user_reports": [], "saved": false, "id": "lyps9t4",
+        "banned_at_utc": null, "mod_reason_title": null, "gilded": 0, "archived":
+        false, "collapsed_reason_code": null, "no_follow": false, "author": "nilslorand",
+        "can_mod_post": false, "created_utc": 1732439628.0, "send_replies": true,
+        "parent_id": "t1_lym57dm", "score": 7, "author_fullname": "t2_kkfip", "removal_reason":
+        null, "approved_by": null, "mod_note": null, "all_awardings": [], "body":
+        "that one made me sad", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        null, "name": "t1_lyps9t4", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003Ethat
+        one made me sad\u003C/p\u003E\n\u003C/div\u003E", "gildings": {}, "collapsed_reason":
+        null, "distinguished": null, "associated_award": null, "stickied": false,
+        "author_premium": false, "can_gild": false, "link_id": "t3_1gxzjul", "unrepliable_reason":
+        null, "author_flair_text_color": null, "score_hidden": false, "permalink":
+        "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lyps9t4/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732439628.0, "author_flair_text": null, "treatment_tags": [], "collapsed":
+        false, "subreddit_name_prefixed": "r/DiscoElysium", "controversiality": 0,
+        "depth": 1, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 7}}, {"kind": "t1", "data":
+        {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        "", "user_reports": [], "saved": false, "id": "lyta7cg", "banned_at_utc":
+        null, "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "aR2wo", "can_mod_post": false, "created_utc":
+        1732487157.0, "send_replies": true, "parent_id": "t1_lym57dm", "score": 7,
+        "author_fullname": "t2_tk4c7zy", "removal_reason": null, "approved_by": null,
+        "mod_note": null, "all_awardings": [], "body": "I literally read it in his
+        voice clear as day", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        null, "name": "t1_lyta7cg", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EI
+        literally read it in his voice clear as day\u003C/p\u003E\n\u003C/div\u003E",
+        "gildings": {}, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "link_id":
+        "t3_1gxzjul", "unrepliable_reason": null, "author_flair_text_color": null,
+        "score_hidden": false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lyta7cg/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732487157.0, "author_flair_text": null, "treatment_tags": [], "collapsed":
+        false, "subreddit_name_prefixed": "r/DiscoElysium", "controversiality": 0,
+        "depth": 1, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 7}}], "before": null}},
+        "user_reports": [], "saved": false, "id": "lym57dm", "banned_at_utc": null,
+        "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "m111k4h", "can_mod_post": false, "created_utc":
+        1732386429.0, "send_replies": true, "parent_id": "t3_1gxzjul", "score": 58,
+        "author_fullname": "t2_u2ic9gza", "approved_by": null, "mod_note": null, "all_awardings":
+        [], "collapsed": false, "body": "These are brilliant, the Tommy one is particularly
+        fitting", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        null, "name": "t1_lym57dm", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EThese
+        are brilliant, the Tommy one is particularly fitting\u003C/p\u003E\n\u003C/div\u003E",
+        "removal_reason": null, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "gildings":
+        {}, "unrepliable_reason": null, "author_flair_text_color": null, "score_hidden":
+        false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lym57dm/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732386429.0, "author_flair_text": null, "treatment_tags": [], "link_id":
+        "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 58}}, {"kind": "t1",
+        "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "richtext", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": "dec09bee-5431-11ea-b296-0e56dc616bc7",
+        "likes": null, "replies": {"kind": "Listing", "data": {"after": null, "dist":
+        null, "modhash": "", "geo_filter": "", "children": [{"kind": "t1", "data":
+        {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        "", "user_reports": [], "saved": false, "id": "lykwwre", "banned_at_utc":
+        null, "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "MoonlitEsau", "can_mod_post": false,
+        "created_utc": 1732371516.0, "send_replies": true, "parent_id": "t1_lyktjhx",
+        "score": 30, "author_fullname": "t2_14lyttkg8d", "removal_reason": null, "approved_by":
+        null, "mod_note": null, "all_awardings": [], "body": "Thanks!  \nI was struggling
+        to find one for Kim so I just did one that kinda works both ways", "edited":
+        false, "top_awarded_type": null, "author_flair_css_class": null, "name": "t1_lykwwre",
+        "is_submitter": true, "downs": 0, "author_flair_richtext": [], "author_patreon_flair":
+        false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EThanks!\u003Cbr/\u003E\nI
+        was struggling to find one for Kim so I just did one that kinda works both
+        ways\u003C/p\u003E\n\u003C/div\u003E", "gildings": {}, "collapsed_reason":
+        null, "distinguished": null, "associated_award": null, "stickied": false,
+        "author_premium": false, "can_gild": false, "link_id": "t3_1gxzjul", "unrepliable_reason":
+        null, "author_flair_text_color": null, "score_hidden": false, "permalink":
+        "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lykwwre/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732371516.0, "author_flair_text": null, "treatment_tags": [], "collapsed":
+        false, "subreddit_name_prefixed": "r/DiscoElysium", "controversiality": 0,
+        "depth": 1, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 30}}], "before": null}},
+        "user_reports": [], "saved": false, "id": "lyktjhx", "banned_at_utc": null,
+        "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "Wild-Mushroom2404", "can_mod_post": false,
+        "created_utc": 1732370174.0, "send_replies": true, "parent_id": "t3_1gxzjul",
+        "score": 61, "author_fullname": "t2_jsj3g84t", "approved_by": null, "mod_note":
+        null, "all_awardings": [], "collapsed": false, "body": "Lmao these are good.
+        Number 3 is diabolical though\ud83d\udc80", "edited": false, "top_awarded_type":
+        null, "author_flair_css_class": "visualcalc", "name": "t1_lyktjhx", "is_submitter":
+        false, "downs": 0, "author_flair_richtext": [{"a": ":visualcalc:", "u": "https://emoji.redditmedia.com/k5msbufuq5i41_t5_h1vbu/visualcalc",
+        "e": "emoji"}], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003ELmao
+        these are good. Number 3 is diabolical though\ud83d\udc80\u003C/p\u003E\n\u003C/div\u003E",
+        "removal_reason": null, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "gildings":
+        {}, "unrepliable_reason": null, "author_flair_text_color": "dark", "score_hidden":
+        false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lyktjhx/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732370174.0, "author_flair_text": ":visualcalc:", "treatment_tags": [], "link_id":
+        "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 61}}, {"kind": "t1",
+        "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "richtext", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": "e24cd408-5431-11ea-922a-0e9506babbfb",
+        "likes": null, "replies": {"kind": "Listing", "data": {"after": null, "dist":
+        null, "modhash": "", "geo_filter": "", "children": [{"kind": "t1", "data":
+        {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        "", "user_reports": [], "saved": false, "id": "lynjjtl", "banned_at_utc":
+        null, "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "MoonlitEsau", "can_mod_post": false,
+        "created_utc": 1732403303.0, "send_replies": true, "parent_id": "t1_lyngoe7",
+        "score": 16, "author_fullname": "t2_14lyttkg8d", "removal_reason": null, "approved_by":
+        null, "mod_note": null, "all_awardings": [], "body": "There''s a few who didn''t
+        make the cut  \nDefinitely gonna have a part 2 if I come up with a few more",
+        "edited": false, "top_awarded_type": null, "author_flair_css_class": null,
+        "name": "t1_lynjjtl", "is_submitter": true, "downs": 0, "author_flair_richtext":
+        [], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EThere\u0026#39;s
+        a few who didn\u0026#39;t make the cut\u003Cbr/\u003E\nDefinitely gonna have
+        a part 2 if I come up with a few more\u003C/p\u003E\n\u003C/div\u003E", "gildings":
+        {}, "collapsed_reason": null, "distinguished": null, "associated_award": null,
+        "stickied": false, "author_premium": false, "can_gild": false, "link_id":
+        "t3_1gxzjul", "unrepliable_reason": null, "author_flair_text_color": null,
+        "score_hidden": false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lynjjtl/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732403303.0, "author_flair_text": null, "treatment_tags": [], "collapsed":
+        false, "subreddit_name_prefixed": "r/DiscoElysium", "controversiality": 0,
+        "depth": 1, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 16}}], "before": null}},
+        "user_reports": [], "saved": false, "id": "lyngoe7", "banned_at_utc": null,
+        "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "iuiu_2", "can_mod_post": false, "created_utc":
+        1732402260.0, "send_replies": true, "parent_id": "t3_1gxzjul", "score": 27,
+        "author_fullname": "t2_6xfuwpt7", "approved_by": null, "mod_note": null, "all_awardings":
+        [], "collapsed": false, "body": "Man, I\u2019m so sad everytime this type
+        of post comes to an end. It\u2019s simply brilliant", "edited": false, "top_awarded_type":
+        null, "author_flair_css_class": "volition", "name": "t1_lyngoe7", "is_submitter":
+        false, "downs": 0, "author_flair_richtext": [{"a": ":volition:", "u": "https://emoji.redditmedia.com/rb1k0istq5i41_t5_h1vbu/volition",
+        "e": "emoji"}], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EMan,
+        I\u2019m so sad everytime this type of post comes to an end. It\u2019s simply
+        brilliant\u003C/p\u003E\n\u003C/div\u003E", "removal_reason": null, "collapsed_reason":
+        null, "distinguished": null, "associated_award": null, "stickied": false,
+        "author_premium": false, "can_gild": false, "gildings": {}, "unrepliable_reason":
+        null, "author_flair_text_color": "dark", "score_hidden": false, "permalink":
+        "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lyngoe7/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732402260.0, "author_flair_text": ":volition:", "treatment_tags": [], "link_id":
+        "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 27}}, {"kind": "t1",
+        "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "richtext", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": "e73c55f6-5431-11ea-afb5-0e4bccc8b691",
+        "likes": null, "replies": "", "user_reports": [], "saved": false, "id": "lymigxg",
+        "banned_at_utc": null, "mod_reason_title": null, "gilded": 0, "archived":
+        false, "collapsed_reason_code": null, "no_follow": false, "author": "IHateCircusMidgets",
+        "can_mod_post": false, "created_utc": 1732390658.0, "send_replies": true,
+        "parent_id": "t3_1gxzjul", "score": 21, "author_fullname": "t2_5i88d", "approved_by":
+        null, "mod_note": null, "all_awardings": [], "collapsed": false, "body": "The
+        Cuno one touches my heart", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        "empathy", "name": "t1_lymigxg", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [{"a": ":empathy:", "u": "https://emoji.redditmedia.com/l41sz7noq5i41_t5_h1vbu/empathy",
+        "e": "emoji"}], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EThe
+        Cuno one touches my heart\u003C/p\u003E\n\u003C/div\u003E", "removal_reason":
+        null, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "gildings":
+        {}, "unrepliable_reason": null, "author_flair_text_color": "dark", "score_hidden":
+        false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lymigxg/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732390658.0, "author_flair_text": ":empathy:", "treatment_tags": [], "link_id":
+        "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 21}}, {"kind": "t1",
+        "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        "", "user_reports": [], "saved": false, "id": "lymlrb7", "banned_at_utc":
+        null, "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "paxthetroubled", "can_mod_post": false,
+        "created_utc": 1732391733.0, "send_replies": true, "parent_id": "t3_1gxzjul",
+        "score": 13, "author_fullname": "t2_j3zgxg1m", "approved_by": null, "mod_note":
+        null, "all_awardings": [], "collapsed": false, "body": "this is the best thing
+        I''ve seen all day", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        null, "name": "t1_lymlrb7", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003Ethis
+        is the best thing I\u0026#39;ve seen all day\u003C/p\u003E\n\u003C/div\u003E",
+        "removal_reason": null, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "gildings":
+        {}, "unrepliable_reason": null, "author_flair_text_color": null, "score_hidden":
+        false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lymlrb7/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732391733.0, "author_flair_text": null, "treatment_tags": [], "link_id":
+        "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 13}}, {"kind": "t1",
+        "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        {"kind": "Listing", "data": {"after": null, "dist": null, "modhash": "", "geo_filter":
+        "", "children": [{"kind": "t1", "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc":
+        null, "author_is_blocked": false, "comment_type": null, "awarders": [], "mod_reason_by":
+        null, "banned_by": null, "author_flair_type": "text", "total_awards_received":
+        0, "subreddit": "DiscoElysium", "author_flair_template_id": null, "likes":
+        null, "replies": "", "user_reports": [], "saved": false, "id": "lynz2zt",
+        "banned_at_utc": null, "mod_reason_title": null, "gilded": 0, "archived":
+        false, "collapsed_reason_code": null, "no_follow": false, "author": "MoonlitEsau",
+        "can_mod_post": false, "created_utc": 1732408986.0, "send_replies": true,
+        "parent_id": "t1_lynyeaw", "score": 6, "author_fullname": "t2_14lyttkg8d",
+        "removal_reason": null, "approved_by": null, "mod_note": null, "all_awardings":
+        [], "body": "Didn''t expect people to like them so much! A part 2 is definitely
+        coming eventually", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        null, "name": "t1_lynz2zt", "is_submitter": true, "downs": 0, "author_flair_richtext":
+        [], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EDidn\u0026#39;t
+        expect people to like them so much! A part 2 is definitely coming eventually\u003C/p\u003E\n\u003C/div\u003E",
+        "gildings": {}, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "link_id":
+        "t3_1gxzjul", "unrepliable_reason": null, "author_flair_text_color": null,
+        "score_hidden": false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lynz2zt/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732408986.0, "author_flair_text": null, "treatment_tags": [], "collapsed":
+        false, "subreddit_name_prefixed": "r/DiscoElysium", "controversiality": 0,
+        "depth": 1, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 6}}], "before": null}},
+        "user_reports": [], "saved": false, "id": "lynyeaw", "banned_at_utc": null,
+        "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "I-Am-The-Uber-Mesch", "can_mod_post":
+        false, "created_utc": 1732408738.0, "send_replies": true, "parent_id": "t3_1gxzjul",
+        "score": 12, "author_fullname": "t2_14ekbo", "approved_by": null, "mod_note":
+        null, "all_awardings": [], "collapsed": false, "body": "These literally improved
+        my day BY A LOT. Please if you can make more, it''s so peak.", "edited": false,
+        "top_awarded_type": null, "author_flair_css_class": null, "name": "t1_lynyeaw",
+        "is_submitter": false, "downs": 0, "author_flair_richtext": [], "author_patreon_flair":
+        false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EThese literally
+        improved my day BY A LOT. Please if you can make more, it\u0026#39;s so peak.\u003C/p\u003E\n\u003C/div\u003E",
+        "removal_reason": null, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "gildings":
+        {}, "unrepliable_reason": null, "author_flair_text_color": null, "score_hidden":
+        false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lynyeaw/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732408738.0, "author_flair_text": null, "treatment_tags": [], "link_id":
+        "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 12}}, {"kind": "t1",
+        "data": {"total_awards_received": 0, "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "ups": 8, "removal_reason": null, "link_id": "t3_1gxzjul", "author_flair_template_id":
+        null, "likes": null, "replies": "", "user_reports": [], "saved": false, "id":
+        "lymncp9", "banned_at_utc": null, "mod_reason_title": null, "gilded": 0, "archived":
+        false, "collapsed_reason_code": null, "no_follow": false, "author": "[deleted]",
+        "can_mod_post": false, "send_replies": true, "parent_id": "t3_1gxzjul", "score":
+        8, "approved_by": null, "report_reasons": null, "all_awardings": [], "subreddit_id":
+        "t5_h1vbu", "body": "Very good", "edited": false, "downs": 0, "author_flair_css_class":
+        null, "collapsed": false, "is_submitter": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EVery
+        good\u003C/p\u003E\n\u003C/div\u003E", "gildings": {}, "collapsed_reason":
+        null, "associated_award": null, "stickied": false, "subreddit_type": "public",
+        "can_gild": false, "top_awarded_type": null, "unrepliable_reason": null, "author_flair_text_color":
+        "dark", "score_hidden": false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lymncp9/",
+        "num_reports": null, "locked": false, "name": "t1_lymncp9", "created": 1732392272.0,
+        "subreddit": "DiscoElysium", "author_flair_text": null, "treatment_tags":
+        [], "created_utc": 1732392272.0, "subreddit_name_prefixed": "r/DiscoElysium",
+        "controversiality": 0, "depth": 0, "author_flair_background_color": "", "collapsed_because_crowd_control":
+        null, "mod_reports": [], "mod_note": null, "distinguished": null}}, {"kind":
+        "t1", "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "richtext", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": "2756af0c-29a1-11f0-b7d0-da7a43ed9fb9",
+        "likes": null, "replies": {"kind": "Listing", "data": {"after": null, "dist":
+        null, "modhash": "", "geo_filter": "", "children": [{"kind": "t1", "data":
+        {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        "", "user_reports": [], "saved": false, "id": "lyphtb6", "banned_at_utc":
+        null, "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "BenchPressingCthulhu", "can_mod_post":
+        false, "created_utc": 1732433128.0, "send_replies": true, "parent_id": "t1_lypftzp",
+        "score": 5, "author_fullname": "t2_k9dairt", "removal_reason": null, "approved_by":
+        null, "mod_note": null, "all_awardings": [], "body": "12 electrochemistry
+        be like", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        null, "name": "t1_lyphtb6", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003E12
+        electrochemistry be like\u003C/p\u003E\n\u003C/div\u003E", "gildings": {},
+        "collapsed_reason": null, "distinguished": null, "associated_award": null,
+        "stickied": false, "author_premium": false, "can_gild": false, "link_id":
+        "t3_1gxzjul", "unrepliable_reason": null, "author_flair_text_color": null,
+        "score_hidden": false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lyphtb6/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732433128.0, "author_flair_text": null, "treatment_tags": [], "collapsed":
+        false, "subreddit_name_prefixed": "r/DiscoElysium", "controversiality": 0,
+        "depth": 1, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 5}}, {"kind": "t1", "data":
+        {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        {"kind": "Listing", "data": {"after": null, "dist": null, "modhash": "", "geo_filter":
+        "", "children": [{"kind": "t1", "data": {"subreddit_id": "t5_h1vbu", "approved_at_utc":
+        null, "author_is_blocked": false, "comment_type": null, "awarders": [], "mod_reason_by":
+        null, "banned_by": null, "author_flair_type": "richtext", "total_awards_received":
+        0, "subreddit": "DiscoElysium", "author_flair_template_id": "2756af0c-29a1-11f0-b7d0-da7a43ed9fb9",
+        "likes": null, "replies": "", "user_reports": [], "saved": false, "id": "lysc2wn",
+        "banned_at_utc": null, "mod_reason_title": null, "gilded": 0, "archived":
+        false, "collapsed_reason_code": null, "no_follow": false, "author": "Kooky_Wrongdoer_8565",
+        "can_mod_post": false, "send_replies": true, "parent_id": "t1_lyrit3h", "score":
+        4, "author_fullname": "t2_aymdjfsz", "removal_reason": null, "approved_by":
+        null, "mod_note": null, "all_awardings": [], "body": "Uh, probably not, from
+        the way it''s phrased.\n\nbut yeah, ew.", "edited": false, "top_awarded_type":
+        null, "downs": 0, "author_flair_css_class": null, "name": "t1_lysc2wn", "is_submitter":
+        false, "collapsed": false, "author_flair_richtext": [{"a": ":electrochem:",
+        "u": "https://emoji.redditmedia.com/ga9hzotiq5i41_t5_h1vbu/electrochem", "e":
+        "emoji"}], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EUh,
+        probably not, from the way it\u0026#39;s phrased.\u003C/p\u003E\n\n\u003Cp\u003Ebut
+        yeah, ew.\u003C/p\u003E\n\u003C/div\u003E", "gildings": {}, "collapsed_reason":
+        null, "distinguished": null, "associated_award": null, "stickied": false,
+        "author_premium": false, "can_gild": false, "link_id": "t3_1gxzjul", "unrepliable_reason":
+        null, "author_flair_text_color": "dark", "score_hidden": false, "permalink":
+        "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lysc2wn/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732476577.0, "author_flair_text": ":electrochem:", "treatment_tags": [],
+        "created_utc": 1732476577.0, "subreddit_name_prefixed": "r/DiscoElysium",
+        "controversiality": 0, "depth": 2, "author_flair_background_color": "transparent",
+        "collapsed_because_crowd_control": null, "mod_reports": [], "num_reports":
+        null, "ups": 4}}], "before": null}}, "user_reports": [], "saved": false, "id":
+        "lyrit3h", "banned_at_utc": null, "mod_reason_title": null, "gilded": 0, "archived":
+        false, "collapsed_reason_code": null, "no_follow": false, "author": "Emergency_Winner4330",
+        "can_mod_post": false, "created_utc": 1732467515.0, "send_replies": true,
+        "parent_id": "t1_lypftzp", "score": 6, "author_fullname": "t2_88l9hcxf", "removal_reason":
+        null, "approved_by": null, "mod_note": null, "all_awardings": [], "body":
+        "I hope it''s that and not bestiality", "edited": false, "top_awarded_type":
+        null, "author_flair_css_class": null, "name": "t1_lyrit3h", "is_submitter":
+        false, "downs": 0, "author_flair_richtext": [], "author_patreon_flair": false,
+        "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EI hope it\u0026#39;s
+        that and not bestiality\u003C/p\u003E\n\u003C/div\u003E", "gildings": {},
+        "collapsed_reason": null, "distinguished": null, "associated_award": null,
+        "stickied": false, "author_premium": false, "can_gild": false, "link_id":
+        "t3_1gxzjul", "unrepliable_reason": null, "author_flair_text_color": null,
+        "score_hidden": false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lyrit3h/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732467515.0, "author_flair_text": null, "treatment_tags": [], "collapsed":
+        false, "subreddit_name_prefixed": "r/DiscoElysium", "controversiality": 0,
+        "depth": 1, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 6}}], "before": null}},
+        "user_reports": [], "saved": false, "id": "lypftzp", "banned_at_utc": null,
+        "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "Kooky_Wrongdoer_8565", "can_mod_post":
+        false, "created_utc": 1732431940.0, "send_replies": true, "parent_id": "t3_1gxzjul",
+        "score": 7, "author_fullname": "t2_aymdjfsz", "approved_by": null, "mod_note":
+        null, "all_awardings": [], "collapsed": false, "body": "Okay but that 9th
+        one, what the actual fuck is going on there? To quote Jackscepticeye: \n\n#
+        \"How did I suddenly stumble into furry porn?!\"\n\nBut yeah, these are pretty
+        much accurate.", "edited": false, "top_awarded_type": null, "author_flair_css_class":
+        null, "name": "t1_lypftzp", "is_submitter": false, "downs": 0, "author_flair_richtext":
+        [{"a": ":electrochem:", "u": "https://emoji.redditmedia.com/ga9hzotiq5i41_t5_h1vbu/electrochem",
+        "e": "emoji"}], "author_patreon_flair": false, "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003EOkay
+        but that 9th one, what the actual fuck is going on there? To quote Jackscepticeye:
+        \u003C/p\u003E\n\n\u003Ch1\u003E\u0026quot;How did I suddenly stumble into
+        furry porn?!\u0026quot;\u003C/h1\u003E\n\n\u003Cp\u003EBut yeah, these are
+        pretty much accurate.\u003C/p\u003E\n\u003C/div\u003E", "removal_reason":
+        null, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "gildings":
+        {}, "unrepliable_reason": null, "author_flair_text_color": "dark", "score_hidden":
+        false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lypftzp/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732431940.0, "author_flair_text": ":electrochem:", "treatment_tags": [],
+        "link_id": "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": "transparent", "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 7}}, {"kind": "t1", "data":
+        {"subreddit_id": "t5_h1vbu", "approved_at_utc": null, "author_is_blocked":
+        false, "comment_type": null, "awarders": [], "mod_reason_by": null, "banned_by":
+        null, "author_flair_type": "text", "total_awards_received": 0, "subreddit":
+        "DiscoElysium", "author_flair_template_id": null, "likes": null, "replies":
+        "", "user_reports": [], "saved": false, "id": "lynq871", "banned_at_utc":
+        null, "mod_reason_title": null, "gilded": 0, "archived": false, "collapsed_reason_code":
+        null, "no_follow": false, "author": "Psychic_Hobo", "can_mod_post": false,
+        "created_utc": 1732405744.0, "send_replies": true, "parent_id": "t3_1gxzjul",
+        "score": 8, "author_fullname": "t2_103m60", "approved_by": null, "mod_note":
+        null, "all_awardings": [], "collapsed": false, "body": "Truly magnificent.
+        Cuno may not care, but I fucking do", "edited": false, "top_awarded_type":
+        null, "author_flair_css_class": null, "name": "t1_lynq871", "is_submitter":
+        false, "downs": 0, "author_flair_richtext": [], "author_patreon_flair": false,
+        "body_html": "\u003Cdiv class=\"md\"\u003E\u003Cp\u003ETruly magnificent.
+        Cuno may not care, but I fucking do\u003C/p\u003E\n\u003C/div\u003E", "removal_reason":
+        null, "collapsed_reason": null, "distinguished": null, "associated_award":
+        null, "stickied": false, "author_premium": false, "can_gild": false, "gildings":
+        {}, "unrepliable_reason": null, "author_flair_text_color": null, "score_hidden":
+        false, "permalink": "/r/DiscoElysium/comments/1gxzjul/disco_elysium_text_post_memes_ive_made/lynq871/",
+        "subreddit_type": "public", "locked": false, "report_reasons": null, "created":
+        1732405744.0, "author_flair_text": null, "treatment_tags": [], "link_id":
+        "t3_1gxzjul", "subreddit_name_prefixed": "r/DiscoElysium", "controversiality":
+        0, "depth": 0, "author_flair_background_color": null, "collapsed_because_crowd_control":
+        null, "mod_reports": [], "num_reports": null, "ups": 8}}], "before": null}}]'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-Moose
+      Cache-Control:
+      - private, s-maxage=0, max-age=0, must-revalidate, no-store
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Length:
+      - '7534'
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Tue, 26 May 2026 05:14:11 GMT
+      Expires:
+      - '-1'
+      NEL:
+      - '{"report_to": "w3-reporting-nel", "max_age": 14400, "include_subdomains":
+        false, "success_fraction": 1.0, "failure_fraction": 1.0}'
+      Report-To:
+      - '{"group": "w3-reporting-nel", "max_age": 14400, "include_subdomains": true,  "endpoints":
+        [{ "url": "https://w3-reporting-nel.reddit.com/reports" }]}, {"group": "w3-reporting",
+        "max_age": 14400, "include_subdomains": true, "endpoints": [{ "url": "https://w3-reporting.reddit.com/reports"
+        }]}, {"group": "w3-reporting-csp", "max_age": 14400, "include_subdomains":
+        true, "endpoints": [{ "url": "https://w3-reporting-csp.reddit.com/reports"
+        }]}'
+      Server:
+      - snooserv
+      Set-Cookie:
+      - loid=000000002f5qi6fekt.2.1779772450975.Z0FBQUFBQnFGU3dqU1NqRnljMGp5YlFRUGNGS2VuMHl0R1NIS19JZDZHM3Zvd196ejFfVzQ0UVh1YUZDV1dITGdkakdXLUF4dUx4eGJ5REg0RW1VVEs5QUVGdEs4REdzaktpTElneUdSQlZ2QVJaZ1h2dWVwbGVEcEN6U1FkWUxDY3RibWFka0FCY0s;
+        Domain=reddit.com; Max-Age=63071999; Path=/; expires=Thu, 25-May-2028 05:14:11
+        GMT; secure; SameSite=None; Secure
+      - session_tracker=nabaqbqndhpedqaijh.0.1779772451100.Z0FBQUFBQnFGU3dqRHZERVJhWFlFdHVZQVRlVVZHeFA2RURJRnYzQ21uTjZsU2RxT0x5ekR5alF5YTQxWXlTbTZodlNIRm9QbHRfQlB1dDZIYm5FN3lsMnNLTnFRSlNPOWdoRzRJQ2N3aUF4WVRaalNheFJNOXBUV2VfblBTVTg3a0pLTHBJdkQ3RW8;
+        Domain=reddit.com; Max-Age=7199; Path=/; expires=Tue, 26-May-2026 07:14:11
+        GMT; secure; SameSite=None; Secure
+      - csv=2; Max-Age=63072000; Domain=.reddit.com; Path=/; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - accept-encoding
+      Via:
+      - 1.1 varnish
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - 1; mode=block
+      server-timing:
+      - reddit-ct;desc="dn=FT,p=BOS,cs=MISS"
+      x-ratelimit-remaining:
+      - '999.0'
+      x-ratelimit-reset:
+      - '348'
+      x-ratelimit-used:
+      - '1'
+      x-ua-compatible:
+      - IE=edge
+    status:
+      code: 200
+      message: OK
+version: 1

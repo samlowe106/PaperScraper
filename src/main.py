@@ -36,9 +36,7 @@ async def main(args) -> None:
     # os.chdir(args.directory)
     file_manager = UniqueDirectoryFileManager(args.directory, organize=args.organize)
 
-    async with asyncio.TaskGroup() as task_group, httpx.AsyncClient as client:
-
-        clients = AsyncClientBundle(http_client=client)
+    async with asyncio.TaskGroup() as task_group, AsyncClientBundle() as clients:
 
         stream = build_stream(args, clients)
         # endregion
@@ -46,7 +44,7 @@ async def main(args) -> None:
         results: list[str] = []
         async for wrapped in stream:
             task_group.create_task(
-                process_submission(wrapped, client, task_group, file_manager)
+                process_submission(wrapped, clients.http, task_group, file_manager)
             )
 
             # rework this to do all downloads at once:

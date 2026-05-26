@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 import asyncpraw
 import httpx
@@ -15,6 +16,9 @@ class AsyncClientBundle:
     - imgur client (client id and secret)
     """
 
+    reddit: Optional[asyncpraw.Reddit] = None
+    http: Optional[httpx.AsyncClient] = None
+
     @dataclass
     class APIClient:
 
@@ -22,21 +26,32 @@ class AsyncClientBundle:
             self.client_id = os.environ.get(f"{client_name}_CLIENT_ID")
             self.client_secret = os.environ.get(f"{client_name}_CLIENT_SECRET")
 
-    def __init__(self, http_client: httpx.AsyncClient = None):
-
-        self.http = http_client
+    def __init__(self):
 
         load_dotenv()
 
-        self.reddit: asyncpraw.Reddit = None
-
         self.imgur = self.APIClient("IMGUR")
+
+    async def __aenter__(self):
+
+        self.http = httpx.AsyncClient()
+
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        # consider contextlib.AsyncExitStack
+
+        if self.reddit is not None:
+            await self.reddit.close()
+
+        if self.http is not None:
+            await self.http.aclose()
 
     def set_reddit(
         self, username: str = None, password: str = None
     ) -> asyncpraw.Reddit:
         """
-        Signs into a new reddit instance (and storing it in this client bundle)
+        Signs into a new reddit instance (and stores it in this client bundle)
 
         :param username: username of reddit account to sign into
         :param password: password of reddit account to sign into

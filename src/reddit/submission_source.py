@@ -20,9 +20,9 @@ class StreamBuilder:
         sortby: SortOption = SortOption.HOT,
         predicate: Predicate[SubmissionWrapper] = lambda x: True,
     ):
-        self.sortby = sortby  # default sort
-        self.predicate = predicate  # default predicate
-        # no per-subreddit predicate
+        self.sortby = sortby
+        self.predicate = predicate
+        # per-subreddit predicates aren't supported right now
         self.subreddits: list[tuple[str, SortOption]] = []
         self.redditor: tuple[str, str] = None
 

@@ -36,29 +36,3 @@ class TestRedditParser(unittest.IsolatedAsyncioTestCase):
 
             actual = await reddit_parser(self.gallery_url, client_bundle)
             self.assertSetEqual(self.gallery_expected, actual)
-
-
-"""
-    submission = clients.reddit.submission(url=url)
-
-    parsed = urlparse(submission.url)
-
-    # single image
-    if parsed.netloc == "i.redd.it":
-        return {submission.url}
-
-    # gallery post
-    if submission.is_gallery:
-        items = []
-        for item in submission.gallery_data["items"]:
-            media_id = item["media_id"]
-
-            metadata = submission.media_metadata[media_id]
-
-            # Get the original image and unescape ampersands
-            img_url = metadata["s"]["u"].replace("&amp;", "&")
-            items.append(img_url)
-        return set(items)
-
-    return set()
-"""

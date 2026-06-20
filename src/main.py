@@ -16,9 +16,6 @@ LOG_PATH = os.path.join("Logs", "log.txt")
 MAX_FINDERS = 10
 MAX_DOWNLOADS = 100
 
-find_urls_sem = asyncio.Semaphore(MAX_FINDERS)
-download_sem = asyncio.Semaphore(MAX_DOWNLOADS)
-
 
 async def main(args) -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
@@ -36,44 +33,42 @@ async def main(args) -> None:
     # os.chdir(args.directory)
     file_manager = UniqueDirectoryFileManager(args.directory, organize=args.organize)
 
+    # semaphores are created here (not at module scope) so they bind to the event
+    # loop running this call rather than whichever loop first touched them
+    find_urls_sem = asyncio.Semaphore(MAX_FINDERS)
+    download_sem = asyncio.Semaphore(MAX_DOWNLOADS)
+
+    tasks: list[asyncio.Task[list[str]]] = []
     async with asyncio.TaskGroup() as task_group, AsyncClientBundle() as clients:
 
-        stream = build_stream(args, clients)
+        stream = await build_stream(args, clients)
         # endregion
 
-        results: list[str] = []
         async for wrapped in stream:
-            task_group.create_task(
-                process_submission(wrapped, clients.http, task_group, file_manager)
+            tasks.append(
+                task_group.create_task(
+                    process_submission(
+                        wrapped, clients, file_manager, find_urls_sem, download_sem
+                    )
+                )
             )
 
-            # rework this to do all downloads at once:
-            # 1) the batching,
-            # 2) the url finding, and
-            # 3) the downloading
-            # to maximize concurrency and minimize the time spent waiting for a blocking response
-
-            # the solution is that the batch should be the batch of SubmissionWrappers
-            # with their urls already found, and then we can just do a big batch of downloads for
-            # all the urls in that batch and save them all at once with the file manager
-
-            # results += file_manager.save_files(
-            #    title=wrapped.title,
-            #    downloads=await wrapped.download(client),
-            #    subreddit=wrapped.subreddit,
-            # )
-
-        # results = await download_all(await get_source(), client)
+    # the TaskGroup has joined, so every task is finished and (since any failure
+    # would have aborted the group) succeeded -- .result() is safe here
+    results: list[str] = [path for task in tasks for path in task.result()]
 
     for i, result in enumerate(results):
         print(f"({i}) {result}")
 
 
-def build_stream(args, clients):
+async def build_stream(args, clients):
     builder = StreamBuilder()
 
     if args.saved:
-        builder.set_redditor(input("Reddit Username: "), getpass("Password: "))
+        # input()/getpass() are blocking -- offload them so the loop stays free
+        username = await asyncio.to_thread(input, "Reddit Username: ")
+        password = await asyncio.to_thread(getpass, "Password: ")
+        builder.set_redditor(username, password)
 
     for subreddit in args.subreddit:
         builder.add_subreddit(subreddit, args.sortby)
@@ -83,25 +78,28 @@ def build_stream(args, clients):
 
 async def process_submission(
     wrapped: SubmissionWrapper,
-    client: httpx.AsyncClient,
-    task_group: asyncio.TaskGroup,
+    clients: AsyncClientBundle,
     file_manager: UniqueDirectoryFileManager,
-):
+    find_urls_sem: asyncio.Semaphore,
+    download_sem: asyncio.Semaphore,
+) -> list[str]:
+    # find_urls needs the full bundle (parsers use http AND reddit)
     async with find_urls_sem:
-        await wrapped.find_urls(client)
+        await wrapped.find_urls(clients)
 
-    task_group.create_task(process_download(wrapped, client, file_manager))
+    # download only needs the http client; awaiting inline keeps the result
+    # reachable for collection while the download semaphore still bounds concurrency
+    return await process_download(wrapped, clients.http, file_manager, download_sem)
 
 
 async def process_download(
     wrapped: SubmissionWrapper,
     client: httpx.AsyncClient,
     file_manager: UniqueDirectoryFileManager,
-):
+    download_sem: asyncio.Semaphore,
+) -> list[str]:
     async with download_sem:
-        # ensure file writing is non-blocking
-        return await asyncio.to_thread(
-            file_manager.save_files,
+        return await file_manager.save_files(
             wrapped.title,
             await wrapped.download(client),
             subreddit=wrapped.subreddit,
@@ -154,7 +152,7 @@ async def handle_wrapped(
         return f"Encountered exception parsing {wrapped.url}:\n{exception}"
     finally:
         if log_path is not None:
-            wrapped.log(log_path, exception=exception)
+            await wrapped.log(log_path, exception=exception)
 
 
 if __name__ == "__main__":
@@ -213,8 +211,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sortby",
-        choices=SortOption,
-        default="hot",
+        type=lambda s: SortOption[s.upper()],
+        choices=list(SortOption),
+        default=SortOption.HOT,
         help="specify how to sort the given subreddits",
     )
     parser.add_argument(

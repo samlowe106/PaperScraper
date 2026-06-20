@@ -45,8 +45,6 @@ class SubmissionWrapper:
         :return: a list of tuples, where the first element is
         the content of the downloaded file and the second element is the file extension
         """
-        # TODO: add this to task_group?
-
         if not self.urls:
             return list()
 
@@ -97,24 +95,6 @@ class SubmissionWrapper:
         :return: None
         """
         return f"{self.title} ({self.subreddit}) by {self.author} ({self.url})"
-        # return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
-
-    # def format(self, template: str) -> str:
-    #    """
-    #    Formats a template string using the submission wrapper's attributes.
-    #    Supported tokens: %t title, %s subreddit, %u url, %p and %f number of found urls.
-    #    """
-    #    return (
-    #        template.replace("%t", self.title)
-    #        .replace("%s", self.subreddit)
-    #        .replace("%u", self.url)
-    #        .replace("%p", str(len(self.urls)))
-    #        .replace("%f", str(len(self.urls)))
-    #    )
-
-    # def summary_string(self) -> str:
-    #    """Generates a string that summarizes this post"""
-    #    return self.format("%t\n   r/%s\n   %u\n   Saved %p / %f image(s) so far.")
 
     def has_urls(self) -> bool:
         """

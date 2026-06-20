@@ -1,17 +1,12 @@
 import argparse
 import asyncio
-import os
 from getpass import getpass
 
 import httpx
 from dotenv import load_dotenv
 
 from .core import AsyncClientBundle, UniqueDirectoryFileManager
-
-# from parsing import parsers
-from .reddit import SortOption, StreamBuilder, SubmissionWrapper  # get_source
-
-LOG_PATH = os.path.join("Logs", "log.txt")
+from .reddit import SortOption, StreamBuilder, SubmissionWrapper
 
 MAX_FINDERS = 10
 MAX_DOWNLOADS = 100
@@ -20,17 +15,6 @@ MAX_DOWNLOADS = 100
 async def main(args) -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
 
-    # TODO: handle age argument and prevent user from entering multiple age args at once
-    # age = None
-    # if args.hours:
-    #    age = args.hours * 3600
-    # elif args.days:
-    #    age = args.days * 3600 * 24
-    # elif args.years:
-    #    age = args.years * 3600 * 24 * 365
-
-    # os.makedirs(args.directory, exist_ok=True)
-    # os.chdir(args.directory)
     file_manager = UniqueDirectoryFileManager(args.directory, organize=args.organize)
 
     # semaphores are created here (not at module scope) so they bind to the event
@@ -40,9 +24,7 @@ async def main(args) -> None:
 
     tasks: list[asyncio.Task[list[str]]] = []
     async with asyncio.TaskGroup() as task_group, AsyncClientBundle() as clients:
-
         stream = await build_stream(args, clients)
-        # endregion
 
         async for wrapped in stream:
             tasks.append(
@@ -106,61 +88,8 @@ async def process_download(
         )
 
 
-# async def download_all(
-#    source: Iterable[SubmissionWrapper], client: httpx.AsyncClient
-# ) -> list[tuple[SubmissionWrapper, list[tuple[bytes, str]]]]:
-#    return await asyncio.gather(
-#        *(
-#            (wrapped, await wrapped.find_urls(parsers).download(client))
-#            for wrapped in source
-#        )
-#    )
-
-# async def urls_responses(
-#    urls: str, client: httpx.AsyncClient
-# ) -> Future[list[tuple[str, httpx.Response]]]:
-#    """
-#    Gets the responses for a list of urls
-#    :param urls: a list of urls to get responses for
-#    :param client: the httpx.AsyncClient to use for getting responses
-#    :return: a list of tuples, where the first element is the url and the second element is the response for that url
-#    """
-#
-#    async def fetch(url: str) -> tuple[str, httpx.Response]:
-#        return url, await client.get(url, timeout=10)
-#
-#    return asyncio.gather(*(fetch(url) for url in urls))
-
-
-async def handle_wrapped(
-    wrapped: SubmissionWrapper,
-    client: httpx.AsyncClient,
-    organize: bool,
-    title: str,
-    log_path: str = None,
-    dry: bool = True,
-) -> str:
-    exception = ""
-    try:
-        # download_dir = "" if not organize else wrapped.subreddit
-        await wrapped.download(client)
-        if not dry:
-            await wrapped.unsave()
-        return str(wrapped)  # .summary_string()
-    except Exception as e:
-        exception = str(e)
-        return f"Encountered exception parsing {wrapped.url}:\n{exception}"
-    finally:
-        if log_path is not None:
-            await wrapped.log(log_path, exception=exception)
-
-
-if __name__ == "__main__":
-
-    load_dotenv()
-
-    # region Argument Parsing
-
+def build_parser() -> argparse.ArgumentParser:
+    """Builds the CLI argument parser for the scraper."""
     parser = argparse.ArgumentParser(description="Scrapes images from Reddit")
     parser.add_argument("--nolog", action="store_false", help="enable logging")
     parser.add_argument(
@@ -185,23 +114,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d",
         "--dir",
+        dest="directory",
         type=str,
         default="Output",
         help="directory that files should be saved to",
     )
     parser.add_argument(
-        "-t" "--title",
+        "-t",
+        "--title",
         type=str,
         default="%T",
-        help="specify how the title should be saved. specifiers are:"
-        "%t: current title\n"
-        "%T: current title in Title Case\n"
-        "%s: subreddit\n"
-        "%a: author\n"
-        "%u: submission's url\n"
-        "%p: number of parsed urls\n"
-        "%f: number of found urls\n"
-        "%%: %",
+        help="specify how the title should be saved",
     )
     parser.add_argument(
         "-k",
@@ -226,25 +149,9 @@ if __name__ == "__main__":
         action="store_true",
         help="organize images from saved into folders by subreddit",
     )
-    """
-    parser.add_argument(
-        "--hours",
-        type=int,
-        help="specify the maximum age in hours a post can be to be downloaded",
-    )
-    parser.add_argument(
-        "--days",
-        type=int,
-        help="specify the maximum age in days a post can be to be downloaded",
-    )
-    parser.add_argument(
-        "--years",
-        type=int,
-        help="specify the maximum age in years a post can be to be downloaded",
-    )
-    """
-    args = parser.parse_args()
+    return parser
 
-    # endregion
 
-    asyncio.run(main(args))
+if __name__ == "__main__":
+    load_dotenv()
+    asyncio.run(main(build_parser().parse_args()))

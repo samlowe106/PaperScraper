@@ -37,10 +37,6 @@ class StreamBuilder:
         self.redditor = (username, password)
         return self
 
-    # def set_default_predicate(self, predicate: Predicate) -> Self:
-    #    self.predicate = predicate
-    #    return self
-
     def set_default_sortby(self, sortby: SortOption) -> Self:
         self.sortby = sortby
         return self
@@ -66,66 +62,3 @@ class StreamBuilder:
             return SubmissionWrapper(submission, clients.http)
 
         return afilter(self.predicate, amap(mapfunc, stream))
-
-
-"""
-class SubredditStream:
-
-    def __init__(
-        self,
-        predicate: Callable[[SubmissionWrapper], bool],
-        subreddit: asyncpraw.models.Subreddit,
-        sortby: SortOption,
-        *args,
-        **kwargs,
-    ):
-        self.predicate = predicate
-        self.stream = subreddit.top(*args, **kwargs)  # example
-
-    def __iter__(self) -> Self:
-        return self
-
-    async def __anext__(self) -> AsyncIterator[SubmissionWrapper]:
-        async for wrapped in self.stream:
-            if self.predicate(wrapped):
-                yield wrapped
-
-
-class SavedStream:
-
-    def __init__(
-        self,
-        predicate: Callable[[SubmissionWrapper], bool],
-        redditor: asyncpraw.models.Redditor,
-        *args,
-        **kwargs,
-    ):
-        self.predicate = predicate
-        self.stream = redditor.saved(*args, **kwargs)
-
-    def __iter__(self) -> Self:
-        return self
-
-    async def __anext__(self) -> AsyncIterator[SubmissionWrapper]:
-        async for wrapped in self.stream:
-            if self.predicate(wrapped):
-                yield wrapped
-
-
-from collections.abc import AsyncIterable
-from dataclasses import dataclass
-
-@dataclass
-class SubmissionStream:
-
-    predicate: Callable[[SubmissionWrapper], bool]
-    stream: AsyncIterable[SubmissionWrapper]
-
-    def __iter__(self) -> Self:
-        return self
-
-    async def __anext__(self) -> AsyncIterator[SubmissionWrapper]:
-        async for wrapped in self.stream:
-            if self.predicate(wrapped):
-                yield wrapped
-"""

@@ -3,17 +3,6 @@ from urllib.parse import urlparse
 
 from ..core import AsyncClientBundle
 
-# _REDDIT_REGEX = re.compile(
-#    r"^https?://(www\.)?reddit\.com/r/(?P<subreddit>[^/]+)/comments/(?P<submission_id>[^/]+)/[^/]+/)?$"
-# )
-
-# "https://redd.it/{submission_id}"
-
-
-# def _split_reddit_url(url: str) -> Optional[Dict[str, str]]:
-#    m = _REDDIT_REGEX.match(url)
-#    return m.groupdict() if m else None
-
 
 async def reddit_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
     """

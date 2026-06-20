@@ -52,11 +52,3 @@ async def merge(*gens: AsyncIterable[T]) -> AsyncIterable[T]:
                 active -= 1
             else:
                 yield item
-
-
-# async def a_filter_map(
-#    iterable: AsyncIterable[T],
-#    func: Callable[[T], S] = lambda x: x,  # type: ignore
-#    predicate: Predicate[S] = lambda x: True,
-# ) -> AsyncIterator[S]:
-#    return afilter(predicate, amap(func, xs))

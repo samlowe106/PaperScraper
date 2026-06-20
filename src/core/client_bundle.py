@@ -64,5 +64,7 @@ class AsyncClientBundle:
             user_agent="PaperScraper",
             username=username if username and password else None,
             password=password if username and password else None,
+            # don't make a runtime PyPI request to check for asyncpraw updates
+            check_for_updates=False,
         )
         return self.reddit

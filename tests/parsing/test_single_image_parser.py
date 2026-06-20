@@ -43,7 +43,9 @@ class TestSingleImageParser(unittest.IsolatedAsyncioTestCase):
         mock_client_bundle = MagicMock()
         mock_client_bundle.http = httpx.AsyncClient()
         result = await single_image_parser(
-            "https://google.com",
+            # trailing slash kept so the request path matches the cassette under
+            # vcrpy >=8.2 (a bare host now yields an empty path, not "/")
+            "https://google.com/",
             mock_client_bundle,
         )
 

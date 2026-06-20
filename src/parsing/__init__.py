@@ -1,9 +1,5 @@
 import asyncio
-from asyncio import Future
-from functools import reduce
-from typing import Any, Callable, Coroutine, Generator, Iterable
-
-import httpx
+from typing import Any, Callable, Coroutine, Iterable
 
 from ..core import AsyncClientBundle
 from .flickr import flickr_parser

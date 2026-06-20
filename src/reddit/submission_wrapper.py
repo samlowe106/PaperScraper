@@ -1,10 +1,12 @@
 import asyncio
 import json
 
+import aiofiles
 import asyncpraw
 import httpx
 
-from ..core import get_response_file_extension
+from ..core import AsyncClientBundle, get_response_file_extension
+from ..parsing import find_urls as parse_find_urls
 
 
 class SubmissionWrapper:
@@ -61,25 +63,32 @@ class SubmissionWrapper:
             if response.status_code == 200
         ]
 
-    async def find_urls(client, *args, **kwargs):
-        pass
-
-    def log(self, file: str, exception: str = "") -> None:
+    async def find_urls(self, clients: AsyncClientBundle) -> set[str]:
         """
-        Writes the given post's title and url to the specified file
+        Runs every parser against this submission's url and stores the resulting
+        direct media links in ``self.urls``.
+        :param clients: the full client bundle (parsers need http AND reddit)
+        :return: the set of discovered urls (also stored on self.urls)
+        """
+        self.urls = await parse_find_urls(self.url, clients)
+        return self.urls
+
+    async def log(self, file: str, exception: str = "") -> None:
+        """
+        Appends a JSON record of this post to the specified file
         :param file: log file path
         """
-        with open(file, "a", encoding="utf-8") as logfile:
-            json.dump(
-                {
-                    "title": self._submission.title,
-                    "id": self._submission.id,
-                    "url": self._submission.url,
-                    "recognized_urls": self.urls,
-                    "exception": exception,
-                },
-                logfile,
-            )
+        record = json.dumps(
+            {
+                "title": self._submission.title,
+                "id": self._submission.id,
+                "url": self._submission.url,
+                "recognized_urls": sorted(self.urls),  # set -> list for JSON
+                "exception": exception,
+            }
+        )
+        async with aiofiles.open(file, "a", encoding="utf-8") as logfile:
+            await logfile.write(record + "\n")
 
     def __str__(self) -> str:
         """

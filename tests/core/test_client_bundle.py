@@ -68,6 +68,7 @@ class TestSetReddit:
                 user_agent="PaperScraper",
                 username=None,
                 password=None,
+                check_for_updates=False,
             )
             assert reddit == self.reddit_sentinel
             assert client_bundle.reddit == self.reddit_sentinel
@@ -89,6 +90,7 @@ class TestSetReddit:
                 user_agent="PaperScraper",
                 username=None,
                 password=None,
+                check_for_updates=False,
             )
             assert reddit == self.reddit_sentinel
             assert client_bundle.reddit == reddit
@@ -110,6 +112,7 @@ class TestSetReddit:
                 user_agent="PaperScraper",
                 username=None,
                 password=None,
+                check_for_updates=False,
             )
             assert reddit == self.reddit_sentinel
             assert client_bundle.reddit == self.reddit_sentinel
@@ -131,6 +134,7 @@ class TestSetReddit:
                 user_agent="PaperScraper",
                 username="username",
                 password="password",
+                check_for_updates=False,
             )
             assert reddit, self.reddit_sentinel
             assert reddit == self.reddit_sentinel

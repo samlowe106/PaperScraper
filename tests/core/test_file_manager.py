@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 from datetime import datetime
 from unittest.mock import patch
@@ -22,102 +24,124 @@ class TestUniqueDirectoryFileManagerConstructor(unittest.TestCase):
         )
 
 
-class TestSaveFiles(unittest.TestCase):
-    pass
+class _TempManagerTestCase(unittest.IsolatedAsyncioTestCase):
+    """Base case giving each test a manager rooted in a fresh temp directory"""
 
+    organize = False
 
-class TestGetUniqueFilepath(unittest.TestCase):
-    pass
-
-
-class TestEnsureValidFilename(unittest.TestCase):
-    pass
-
-
-class TestGetUniqueDirname(unittest.TestCase):
-    pass
-
-
-class TestEnsureValidDirname(unittest.TestCase):
-    pass
-
-
-r"""
-class UniqueDirectoryFileManager:
-    def __init__(self, directory, organize=False):
-        # this will essentially be the woking directory,
-        #  all files will be downloaded to this directory or its subdirectories
-        self.directory = os.path.join(
-            directory, datetime.today().strftime("PaperScraper %Y-%m-%d %H:%M")
+    async def asyncSetUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.manager = UniqueDirectoryFileManager(
+            self._tmp.name, organize=self.organize
         )
-        # we can assume that this directory does not already exist
-        #  if it does, that's basically intentional from the user
-        os.makedirs(self.directory, exist_ok=False)
-        self.organize = organize
 
-    def save_files(
-        self,
-        title: str,
-        downloads: DownloadsExtensions,
-        subreddit: str = None,
-    ) -> list[str]:
-        if not downloads:
-            return []
+    async def asyncTearDown(self):
+        self._tmp.cleanup()
 
-        directory = os.path.join(self.directory, subreddit if self.organize else "")
-        os.makedirs(directory, exist_ok=True)  # subreddit directory need not be unique
 
-        if len(downloads) == 1:
-            # just one file, no need for a directory
-            download, extension = downloads[0]
-            filepath = self.get_unique_filepath(directory, title, extension)
-            with open(filepath, "wb") as f:
-                f.write(download)
-            return [filepath]
+class TestSaveFiles(_TempManagerTestCase):
 
-        # album, need a directory to hold all the files
-        directory = os.path.join(directory, self.get_unique_dirname(title))
-        os.makedirs(directory, exist_ok=False)  # album directory should be unique
+    async def test_single_file(self):
+        paths = await self.manager.save_files("My Title", [(b"data", "jpg")])
+        self.assertEqual(len(paths), 1)
+        self.assertTrue(paths[0].endswith("My Title.jpg"))
+        with open(paths[0], "rb") as f:
+            self.assertEqual(f.read(), b"data")
 
-        filepaths = []
-        for i, (download, extension) in enumerate(downloads):
-            destination = os.path.join(directory, f"{i}.{extension}")
-            with open(destination, "wb") as f:
-                f.write(download)
-            filepaths.append(destination)
+    async def test_empty_downloads_returns_empty(self):
+        self.assertEqual(await self.manager.save_files("t", []), [])
 
-        return filepaths
+    async def test_album_creates_dir_and_numbered_files(self):
+        paths = await self.manager.save_files("Album", [(b"a", "jpg"), (b"b", "png")])
+        self.assertEqual(len(paths), 2)
+        self.assertTrue(paths[0].endswith(os.path.join("Album", "0.jpg")))
+        self.assertTrue(paths[1].endswith(os.path.join("Album", "1.png")))
+        with open(paths[0], "rb") as f:
+            self.assertEqual(f.read(), b"a")
+        with open(paths[1], "rb") as f:
+            self.assertEqual(f.read(), b"b")
 
-    def get_unique_filepath(
-        self, directory: str, title: str, file_extension: str
-    ) -> str:
-        # this naive implementation may have bad big O runtime if there are a lot of duplicate
-        #  filenames, and could be optimized by keeping a persistent counter for each title,
-        #  but this should almost never happen in practice so this is good enough
-        # ensure validity
-        title = self.ensure_valid_filename(title)
-        filename = f"{title}.{file_extension}"
-        # ensure uniqueness
-        offset = 0
-        while filename in os.listdir(directory):
-            offset += 1
-            filename = f"{title} ({offset}).{file_extension}"
-        return os.path.join(directory, filename)
+    async def test_unique_filename_on_collision(self):
+        await self.manager.save_files("Dup", [(b"1", "jpg")])
+        paths = await self.manager.save_files("Dup", [(b"2", "jpg")])
+        self.assertTrue(paths[0].endswith("Dup (1).jpg"))
 
-    def ensure_valid_filename(self, filename: str) -> str:
-        return "".join(c if c not in r'\/:*?"<>|' else "_" for c in filename)
+    async def test_invalid_chars_in_title(self):
+        paths = await self.manager.save_files("a/b:c", [(b"x", "jpg")])
+        self.assertTrue(paths[0].endswith("a_b_c.jpg"))
 
-    def get_unique_dirname(self, dirname):
-        # ensure validity
-        dirname = self.ensure_valid_dirname(dirname)
-        # ensure uniqueness
-        directory = os.path.join(self.directory, dirname)
-        offset = 0
-        while os.path.exists(directory):
-            directory = os.path.join(self.directory, f"{dirname} ({offset})")
-            offset += 1
-        return directory
 
-    def ensure_valid_dirname(self, dirname: str) -> str:
-        return "".join(c if c not in r'\/:*?"<>|' else "_" for c in dirname)
-"""
+class TestSaveFilesOrganized(_TempManagerTestCase):
+    organize = True
+
+    async def test_organize_creates_subreddit_dir(self):
+        paths = await self.manager.save_files("T", [(b"x", "jpg")], subreddit="pics")
+        self.assertIn(os.path.join("pics", "T.jpg"), paths[0])
+
+
+class TestGetUniqueFilepath(_TempManagerTestCase):
+
+    async def test_returns_title_when_no_conflict(self):
+        path = await self.manager.get_unique_filepath(
+            self.manager.directory, "title", "jpg"
+        )
+        self.assertTrue(path.endswith("title.jpg"))
+
+    async def test_appends_counter_on_conflict(self):
+        open(os.path.join(self.manager.directory, "title.jpg"), "w").close()
+        path = await self.manager.get_unique_filepath(
+            self.manager.directory, "title", "jpg"
+        )
+        self.assertTrue(path.endswith("title (1).jpg"))
+
+    async def test_multiple_conflicts(self):
+        open(os.path.join(self.manager.directory, "title.jpg"), "w").close()
+        open(os.path.join(self.manager.directory, "title (1).jpg"), "w").close()
+        path = await self.manager.get_unique_filepath(
+            self.manager.directory, "title", "jpg"
+        )
+        self.assertTrue(path.endswith("title (2).jpg"))
+
+    async def test_invalid_chars_replaced(self):
+        path = await self.manager.get_unique_filepath(
+            self.manager.directory, "a?b*c", "jpg"
+        )
+        self.assertTrue(path.endswith("a_b_c.jpg"))
+
+
+class TestGetUniqueDirname(_TempManagerTestCase):
+
+    async def test_no_conflict(self):
+        dirname = await self.manager.get_unique_dirname("album")
+        self.assertEqual(dirname, os.path.join(self.manager.directory, "album"))
+
+    async def test_conflict_appends_counter(self):
+        # dirname offset starts at 0 (unlike filepath, which starts at 1)
+        os.makedirs(os.path.join(self.manager.directory, "album"))
+        dirname = await self.manager.get_unique_dirname("album")
+        self.assertEqual(dirname, os.path.join(self.manager.directory, "album (0)"))
+
+
+class TestEnsureValidFilename(_TempManagerTestCase):
+
+    async def test_keeps_valid(self):
+        self.assertEqual(
+            self.manager.ensure_valid_filename("hello world.jpg"), "hello world.jpg"
+        )
+
+    async def test_replaces_each_invalid_char(self):
+        for char in r'\/:*?"<>|':
+            self.assertEqual(self.manager.ensure_valid_filename(f"a{char}b"), "a_b")
+
+    async def test_empty_string(self):
+        self.assertEqual(self.manager.ensure_valid_filename(""), "")
+
+
+class TestEnsureValidDirname(_TempManagerTestCase):
+
+    async def test_keeps_valid(self):
+        self.assertEqual(self.manager.ensure_valid_dirname("my album"), "my album")
+
+    async def test_replaces_each_invalid_char(self):
+        for char in r'\/:*?"<>|':
+            self.assertEqual(self.manager.ensure_valid_dirname(f"a{char}b"), "a_b")

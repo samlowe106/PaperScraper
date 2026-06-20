@@ -1,16 +1,9 @@
 import unittest
-
-# from datetime import datetime
-from unittest.mock import AsyncMock, mock_open, patch
+from unittest.mock import AsyncMock, patch
 
 from tests import SubmissionWrapperFactory
 
-
-class TestFindUrls(unittest.IsolatedAsyncioTestCase):
-
-    async def test_find_urls(self):
-        wrapped = SubmissionWrapperFactory()
-        await wrapped.find_urls()
+# Note: log() and find_urls() are covered in tests/reddit/test_reddit.py
 
 
 class TestUnsave(unittest.IsolatedAsyncioTestCase):
@@ -92,63 +85,6 @@ class TestStr(unittest.TestCase):
         self.assertIn(wrapper.subreddit, str(wrapper))
         self.assertIn(wrapper.author, str(wrapper))
         self.assertIn(wrapper.url, str(wrapper))
-
-
-class TestLog(unittest.TestCase):
-
-    @patch("json.dump")
-    def test_log_no_exception(self, mock_json_dump):
-
-        wrapped = SubmissionWrapperFactory()
-
-        log_file_path = "log/path.txt"
-
-        m = mock_open()
-        file_handle = m.return_value.__enter__.return_value
-
-        with patch("builtins.open", m):
-            wrapped.log(log_file_path)
-
-        m.assert_called_once_with(log_file_path, "a", encoding="utf-8")
-
-        mock_json_dump.assert_called_once_with(
-            {
-                "title": wrapped._submission.title,
-                "id": wrapped._submission.id,
-                "url": wrapped._submission.url,
-                "recognized_urls": wrapped.urls,
-                "exception": "",
-            },
-            file_handle,
-        )
-
-    @patch("json.dump")
-    def test_log_with_exception(self, mock_json_dump):
-
-        wrapped = SubmissionWrapperFactory()
-
-        log_file_path = "log/path.txt"
-
-        m = mock_open()
-        file_handle = m.return_value.__enter__.return_value
-
-        mock_exception = Exception("Mock exception message")
-
-        with patch("builtins.open", m):
-            wrapped.log(log_file_path, mock_exception)
-
-        m.assert_called_once_with(log_file_path, "a", encoding="utf-8")
-
-        mock_json_dump.assert_called_once_with(
-            {
-                "title": wrapped._submission.title,
-                "id": wrapped._submission.id,
-                "url": wrapped._submission.url,
-                "recognized_urls": wrapped.urls,
-                "exception": mock_exception,
-            },
-            file_handle,
-        )
 
 
 class TestHasUrls(unittest.TestCase):

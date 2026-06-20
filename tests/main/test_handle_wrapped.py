@@ -1,6 +1,6 @@
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from src.main import handle_wrapped
 
@@ -15,7 +15,7 @@ class TestMain(unittest.IsolatedAsyncioTestCase):
         wrapped.url = "https://example.com"
         wrapped.download.side_effect = Exception("Test exception")
         wrapped.can_unsave = False
-        wrapped.log = MagicMock()
+        wrapped.log = AsyncMock()
         wrapped.__str__.return_value = "Summary string"
 
         result = asyncio.run(
@@ -24,7 +24,9 @@ class TestMain(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("Encountered exception parsing https://example.com", result)
         self.assertIn("Test exception", result)
-        wrapped.log.assert_called_once_with("test_log_path", exception="Test exception")
+        wrapped.log.assert_awaited_once_with(
+            "test_log_path", exception="Test exception"
+        )
         wrapped.download.assert_called_once_with(mock_client)
 
     async def test_returns_summary_string(self):

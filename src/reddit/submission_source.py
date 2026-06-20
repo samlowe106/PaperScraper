@@ -60,7 +60,7 @@ class StreamBuilder:
         for name, sortby in self.subreddits:
             streams.append(sortby(reddit.subreddit(name)))
 
-        stream: AsyncIterable[asyncpraw.models.Submission] = merge(streams)
+        stream: AsyncIterable[asyncpraw.models.Submission] = merge(*streams)
 
         def mapfunc(submission: asyncpraw.models.Submission) -> SubmissionWrapper:
             return SubmissionWrapper(submission, clients.http)

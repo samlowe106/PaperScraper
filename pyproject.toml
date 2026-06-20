@@ -3,7 +3,7 @@ name = "paperscraper"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Samuel Lowe", email = "samlowe106@gmail.com" }]
-requires-python = ">=3.12,<4"
+requires-python = ">=3.13,<4"
 readme = "README.md"
 license = "MIT"
 dependencies = [

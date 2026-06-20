@@ -8,7 +8,7 @@ It recognizes direct image links, Reddit image/gallery posts (`i.redd.it`, `prev
 
 ## Requirements
 
-- Python 3.12+
+- Python 3.13+
 - [uv](https://docs.astral.sh/uv/)
 - A Reddit account with a registered **script** app
 - An Imgur account with a registered app (used to resolve Imgur links)
@@ -96,7 +96,7 @@ uv run pytest                                   # run the suite
 uv run pytest --cov=src --block-network         # with coverage, no live network
 ```
 
-As of the latest run, **122 tests pass with ~93% line coverage**. CI runs the suite on Python 3.12 and 3.13 and fails the build if coverage drops below 80%.
+As of the latest run, **124 tests pass with ~93% line coverage**. CI runs the suite on the pinned Python version and fails the build if coverage drops below 80%.
 
 This repo also ships a [pre-commit](https://pre-commit.com/) config (`ruff`, `black`, `mypy`, and assorted file checks):
 

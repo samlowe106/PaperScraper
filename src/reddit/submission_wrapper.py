@@ -1,7 +1,5 @@
 import asyncio
-import json
 
-import aiofiles
 import asyncpraw
 import httpx
 
@@ -71,22 +69,18 @@ class SubmissionWrapper:
         self.urls = await parse_find_urls(self.url, clients)
         return self.urls
 
-    async def log(self, file: str, exception: str = "") -> None:
+    def log_record(self, exception: str = "") -> dict:
         """
-        Appends a JSON record of this post to the specified file
-        :param file: log file path
+        Builds a JSON-serializable record describing this post, suitable for
+        handing to a logger (e.g. ``UniqueDirectoryFileManager.log``).
         """
-        record = json.dumps(
-            {
-                "title": self._submission.title,
-                "id": self._submission.id,
-                "url": self._submission.url,
-                "recognized_urls": sorted(self.urls),  # set -> list for JSON
-                "exception": exception,
-            }
-        )
-        async with aiofiles.open(file, "a", encoding="utf-8") as logfile:
-            await logfile.write(record + "\n")
+        return {
+            "title": self._submission.title,
+            "id": self._submission.id,
+            "url": self._submission.url,
+            "recognized_urls": sorted(self.urls),  # set -> list for JSON
+            "exception": exception,
+        }
 
     def __str__(self) -> str:
         """

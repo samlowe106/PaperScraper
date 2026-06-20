@@ -19,9 +19,11 @@ class StreamBuilder:
         self,
         sortby: SortOption = SortOption.HOT,
         predicate: Predicate[SubmissionWrapper] = lambda x: True,
+        limit: int | None = None,
     ):
         self.sortby = sortby
         self.predicate = predicate
+        self.limit = limit  # max submissions to pull from each source
         # per-subreddit predicates aren't supported right now
         self.subreddits: list[tuple[str, SortOption]] = []
         self.redditor: tuple[str, str] = None
@@ -41,24 +43,34 @@ class StreamBuilder:
         self.sortby = sortby
         return self
 
-    def build(self, clients: AsyncClientBundle) -> AsyncIterable[SubmissionWrapper]:
+    async def build(
+        self, clients: AsyncClientBundle
+    ) -> AsyncIterable[SubmissionWrapper]:
 
         reddit = clients.set_reddit(
             username=self.redditor[0] if self.redditor else None,
             password=self.redditor[1] if self.redditor else None,
         )
 
-        streams: asyncpraw.models.ListingGenerator = []
+        streams: list[AsyncIterable[asyncpraw.models.Submission]] = []
 
         if self.redditor:
-            streams.append(reddit.redditor(self.redditor[0]))
+            # saved posts belong to the authenticated user; reddit.user.me() and
+            # reddit.redditor() are coroutines, so build() has to be async
+            me = await reddit.user.me()
+            streams.append(me.saved(limit=self.limit))
 
         for name, sortby in self.subreddits:
-            streams.append(sortby(reddit.subreddit(name)))
+            streams.append(sortby(reddit.subreddit(name), limit=self.limit))
 
         stream: AsyncIterable[asyncpraw.models.Submission] = merge(*streams)
 
         def mapfunc(submission: asyncpraw.models.Submission) -> SubmissionWrapper:
             return SubmissionWrapper(submission, clients.http)
 
-        return afilter(self.predicate, amap(mapfunc, stream))
+        # saved() can also yield Comments; we only handle Submissions
+        submissions = afilter(
+            lambda item: not isinstance(item, asyncpraw.models.Comment), stream
+        )
+
+        return afilter(self.predicate, amap(mapfunc, submissions))

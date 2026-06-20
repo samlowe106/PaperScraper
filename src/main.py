@@ -1,15 +1,19 @@
 import argparse
 import asyncio
+import time
 from getpass import getpass
 
 import httpx
 from dotenv import load_dotenv
 
-from .core import AsyncClientBundle, UniqueDirectoryFileManager
+from .core import AsyncClientBundle, Predicate, UniqueDirectoryFileManager
 from .reddit import SortOption, StreamBuilder, SubmissionWrapper
 
 MAX_FINDERS = 10
 MAX_DOWNLOADS = 100
+
+# maps each age CLI flag to its length in seconds
+_AGE_UNITS = {"hours": 3600, "days": 86400, "years": 365 * 86400}
 
 
 async def main(args) -> None:
@@ -30,7 +34,13 @@ async def main(args) -> None:
             tasks.append(
                 task_group.create_task(
                     process_submission(
-                        wrapped, clients, file_manager, find_urls_sem, download_sem
+                        wrapped,
+                        clients,
+                        file_manager,
+                        find_urls_sem,
+                        download_sem,
+                        log=args.log,
+                        unsave=args.unsave,
                     )
                 )
             )
@@ -43,8 +53,32 @@ async def main(args) -> None:
         print(f"({i}) {result}")
 
 
+def max_age_seconds(args) -> float | None:
+    """The maximum post age in seconds implied by --hours/--days/--years, if any."""
+    for unit, factor in _AGE_UNITS.items():
+        value = getattr(args, unit, None)
+        if value is not None:
+            return value * factor
+    return None
+
+
+def build_predicate(args) -> Predicate[SubmissionWrapper]:
+    """Builds a SubmissionWrapper filter from the score (--karma) and age options."""
+    min_score = args.karma
+    cutoff = max_age_seconds(args)
+
+    def predicate(wrapped: SubmissionWrapper) -> bool:
+        if min_score is not None and wrapped.score < min_score:
+            return False
+        if cutoff is not None and (time.time() - wrapped.created_utc) > cutoff:
+            return False
+        return True
+
+    return predicate
+
+
 async def build_stream(args, clients):
-    builder = StreamBuilder()
+    builder = StreamBuilder(predicate=build_predicate(args), limit=args.limit)
 
     if args.saved:
         # input()/getpass() are blocking -- offload them so the loop stays free
@@ -55,7 +89,7 @@ async def build_stream(args, clients):
     for subreddit in args.subreddit:
         builder.add_subreddit(subreddit, args.sortby)
 
-    return builder.build(clients)
+    return await builder.build(clients)
 
 
 async def process_submission(
@@ -64,6 +98,9 @@ async def process_submission(
     file_manager: UniqueDirectoryFileManager,
     find_urls_sem: asyncio.Semaphore,
     download_sem: asyncio.Semaphore,
+    *,
+    log: bool = False,
+    unsave: bool = False,
 ) -> list[str]:
     # find_urls needs the full bundle (parsers use http AND reddit)
     async with find_urls_sem:
@@ -71,7 +108,16 @@ async def process_submission(
 
     # download only needs the http client; awaiting inline keeps the result
     # reachable for collection while the download semaphore still bounds concurrency
-    return await process_download(wrapped, clients.http, file_manager, download_sem)
+    saved = await process_download(wrapped, clients.http, file_manager, download_sem)
+
+    # only un-save posts we actually downloaded something from
+    if unsave and saved:
+        await wrapped.unsave()
+
+    if log:
+        await file_manager.log(wrapped.log_record())
+
+    return saved
 
 
 async def process_download(
@@ -91,7 +137,12 @@ async def process_download(
 def build_parser() -> argparse.ArgumentParser:
     """Builds the CLI argument parser for the scraper."""
     parser = argparse.ArgumentParser(description="Scrapes images from Reddit")
-    parser.add_argument("--nolog", action="store_false", help="enable logging")
+    parser.add_argument(
+        "--nolog",
+        dest="log",
+        action="store_false",
+        help="disable writing a JSON log of processed posts",
+    )
     parser.add_argument(
         "-u",
         "--saved",
@@ -109,7 +160,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--limit",
         type=int,
         default=10,
-        help="max number of images to download from each source",
+        help="max number of submissions to pull from each source "
+        "(an album submission may yield several images)",
     )
     parser.add_argument(
         "-d",
@@ -119,13 +171,14 @@ def build_parser() -> argparse.ArgumentParser:
         default="Output",
         help="directory that files should be saved to",
     )
-    parser.add_argument(
-        "-t",
-        "--title",
-        type=str,
-        default="%T",
-        help="specify how the title should be saved",
-    )
+    # TODO: --title formatting (%t/%T/%s/%a/%u/...) not wired up yet
+    # parser.add_argument(
+    #     "-t",
+    #     "--title",
+    #     type=str,
+    #     default="%T",
+    #     help="specify how the title should be saved",
+    # )
     parser.add_argument(
         "-k",
         "--karma",
@@ -140,14 +193,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="specify how to sort the given subreddits",
     )
     parser.add_argument(
-        "--dry",
-        action="store_false",
-        help="do not unsave any posts, even those that were completely parsed",
+        "--unsave",
+        action="store_true",
+        help="un-save saved posts after successfully downloading them (requires login)",
     )
     parser.add_argument(
         "--organize",
         action="store_true",
         help="organize images from saved into folders by subreddit",
+    )
+
+    # only one age limit may be given at a time
+    age = parser.add_mutually_exclusive_group()
+    age.add_argument(
+        "--hours", type=int, help="only include posts at most this many hours old"
+    )
+    age.add_argument(
+        "--days", type=int, help="only include posts at most this many days old"
+    )
+    age.add_argument(
+        "--years", type=int, help="only include posts at most this many years old"
     )
     return parser
 

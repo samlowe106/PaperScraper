@@ -1,3 +1,5 @@
+import asyncio
+import json
 import os
 import tempfile
 import unittest
@@ -37,6 +39,26 @@ class _TempManagerTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         self._tmp.cleanup()
+
+
+class TestLog(_TempManagerTestCase):
+
+    async def test_appends_json_lines(self):
+        path1 = await self.manager.log({"a": 1})
+        path2 = await self.manager.log({"b": 2})
+        self.assertEqual(path1, path2)  # same default log file
+        with open(path1, encoding="utf-8") as f:
+            records = [json.loads(line) for line in f.read().splitlines()]
+        self.assertEqual(records, [{"a": 1}, {"b": 2}])
+
+    async def test_concurrent_logs_are_serialized(self):
+        # the lock must keep concurrent appends from interleaving; every line
+        # should be independently valid JSON
+        await asyncio.gather(*(self.manager.log({"i": i}) for i in range(20)))
+        path = os.path.join(self.manager.directory, "log.txt")
+        with open(path, encoding="utf-8") as f:
+            records = [json.loads(line) for line in f.read().splitlines()]
+        self.assertEqual(sorted(r["i"] for r in records), list(range(20)))
 
 
 class TestSaveFiles(_TempManagerTestCase):

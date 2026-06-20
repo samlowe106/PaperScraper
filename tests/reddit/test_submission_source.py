@@ -1,6 +1,6 @@
 import unittest
 from collections import Counter
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.core import AsyncClientBundle
 from src.reddit import SortOption, StreamBuilder, SubmissionWrapper
@@ -14,7 +14,7 @@ class TestConstructor(unittest.IsolatedAsyncioTestCase):
         # terminate, which exercises merge()'s zero-generator path)
         async with AsyncClientBundle() as clients:
             with patch.object(clients, "set_reddit", return_value=MagicMock()):
-                stream = StreamBuilder().build(clients)
+                stream = await StreamBuilder().build(clients)
                 self.assertEqual(await acollect(stream), [])
 
 
@@ -27,9 +27,9 @@ class TestAddSubreddit(unittest.IsolatedAsyncioTestCase):
         async with AsyncClientBundle() as clients:
             with patch.object(clients, "set_reddit", return_value=mock_reddit):
                 # inject a fake sort option so we don't touch asyncpraw internals
-                builder = StreamBuilder(sortby=lambda sub: async_iter([]))
+                builder = StreamBuilder(sortby=lambda sub, **kw: async_iter([]))
                 builder.add_subreddit(name)
-                result = await acollect(builder.build(clients))
+                result = await acollect(await builder.build(clients))
         return mock_reddit, result
 
     async def test_with_rslash_prefix(self):
@@ -52,11 +52,11 @@ class TestAddSubreddit(unittest.IsolatedAsyncioTestCase):
         async with AsyncClientBundle() as clients:
             with patch.object(clients, "set_reddit", return_value=mock_reddit):
                 builder = StreamBuilder(
-                    sortby=lambda sub: async_iter([sub_a, sub_b]),
+                    sortby=lambda sub, **kw: async_iter([sub_a, sub_b]),
                     predicate=lambda w: not w.nsfw,  # drop NSFW posts
                 )
                 builder.add_subreddit("wallpapers")
-                result = await acollect(builder.build(clients))
+                result = await acollect(await builder.build(clients))
 
         # sub_b (NSFW) is filtered out; sub_a is wrapped into a SubmissionWrapper
         self.assertEqual(len(result), 1)
@@ -74,17 +74,19 @@ class TestSetRedditor(unittest.IsolatedAsyncioTestCase):
 
     async def test_redditor_stream(self):
         saved = SubmissionMockFactory()
+        # saved posts come from the authenticated user's saved listing
+        mock_me = MagicMock()
+        mock_me.saved.return_value = async_iter([saved])
         mock_reddit = MagicMock()
-        # build() appends reddit.redditor(name) directly as a stream
-        mock_reddit.redditor.return_value = async_iter([saved])
+        mock_reddit.user.me = AsyncMock(return_value=mock_me)
 
         async with AsyncClientBundle() as clients:
             with patch.object(clients, "set_reddit", return_value=mock_reddit):
                 builder = StreamBuilder()
                 builder.set_redditor("user", "pw")
-                result = await acollect(builder.build(clients))
+                result = await acollect(await builder.build(clients))
 
-        mock_reddit.redditor.assert_called_once_with("user")
+        mock_reddit.user.me.assert_awaited_once()
         self.assertEqual(len(result), 1)
         self.assertIsInstance(result[0], SubmissionWrapper)
         self.assertEqual(result[0].title, saved.title)
@@ -97,16 +99,20 @@ class TestMultiSource(unittest.IsolatedAsyncioTestCase):
         sub_a = SubmissionMockFactory()
         sub_b = SubmissionMockFactory()
 
+        mock_me = MagicMock()
+        mock_me.saved.return_value = async_iter([saved])
         mock_reddit = MagicMock()
-        mock_reddit.redditor.return_value = async_iter([saved])
+        mock_reddit.user.me = AsyncMock(return_value=mock_me)
         mock_reddit.subreddit.return_value = MagicMock()
 
         async with AsyncClientBundle() as clients:
             with patch.object(clients, "set_reddit", return_value=mock_reddit):
-                builder = StreamBuilder(sortby=lambda sub: async_iter([sub_a, sub_b]))
+                builder = StreamBuilder(
+                    sortby=lambda sub, **kw: async_iter([sub_a, sub_b])
+                )
                 builder.set_redditor("user", "pw")
                 builder.add_subreddit("wallpapers")
-                result = await acollect(builder.build(clients))
+                result = await acollect(await builder.build(clients))
 
         # order is non-deterministic (merge) -> compare titles as a multiset
         self.assertEqual(
@@ -121,3 +127,24 @@ class TestDefaultSortby(unittest.IsolatedAsyncioTestCase):
         builder = StreamBuilder()
         builder.set_default_sortby(SortOption.TOP_ALL)
         self.assertEqual(builder.sortby, SortOption.TOP_ALL)
+
+
+class TestLimit(unittest.IsolatedAsyncioTestCase):
+
+    async def test_limit_forwarded_to_listing_generator(self):
+        seen = {}
+
+        def fake_sort(sub, **kw):
+            seen.update(kw)
+            return async_iter([])
+
+        mock_reddit = MagicMock()
+        mock_reddit.subreddit.return_value = MagicMock()
+
+        async with AsyncClientBundle() as clients:
+            with patch.object(clients, "set_reddit", return_value=mock_reddit):
+                builder = StreamBuilder(sortby=fake_sort, limit=5)
+                builder.add_subreddit("wallpapers")
+                await acollect(await builder.build(clients))
+
+        self.assertEqual(seen.get("limit"), 5)

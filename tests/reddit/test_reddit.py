@@ -1,46 +1,33 @@
-import json
-import os
-import tempfile
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests import SubmissionWrapperFactory
 
 
-class TestLog(unittest.IsolatedAsyncioTestCase):
+class TestLogRecord(unittest.TestCase):
 
-    async def test_log_writes_json(self):
+    def test_builds_record(self):
         wrapper = SubmissionWrapperFactory()
         wrapper._submission.id = "abc123"
-        wrapper.urls = {"https://imgur.com/1", "https://imgur.com/2"}
+        wrapper.urls = {"https://imgur.com/2", "https://imgur.com/1"}
 
-        with tempfile.TemporaryDirectory() as d:
-            path = os.path.join(d, "log.txt")
-            await wrapper.log(path)
-            with open(path, encoding="utf-8") as f:
-                data = json.loads(f.read())
+        record = wrapper.log_record()
 
-        self.assertEqual(data["id"], "abc123")
-        self.assertEqual(data["url"], wrapper._submission.url)
-        self.assertEqual(data["exception"], "")
+        self.assertEqual(record["id"], "abc123")
+        self.assertEqual(record["url"], wrapper._submission.url)
+        self.assertEqual(record["exception"], "")
         # set is serialized as a sorted list
         self.assertEqual(
-            data["recognized_urls"],
+            record["recognized_urls"],
             ["https://imgur.com/1", "https://imgur.com/2"],
         )
 
-    async def test_log_with_exception(self):
+    def test_record_with_exception(self):
         wrapper = SubmissionWrapperFactory()
         wrapper._submission.id = "xyz"
-
-        with tempfile.TemporaryDirectory() as d:
-            path = os.path.join(d, "log.txt")
-            await wrapper.log(path, exception="boom")
-            with open(path, encoding="utf-8") as f:
-                data = json.loads(f.read())
-
-        self.assertEqual(data["exception"], "boom")
-        self.assertEqual(data["recognized_urls"], [])
+        record = wrapper.log_record(exception="boom")
+        self.assertEqual(record["exception"], "boom")
+        self.assertEqual(record["recognized_urls"], [])
 
 
 class TestFindUrls(unittest.IsolatedAsyncioTestCase):

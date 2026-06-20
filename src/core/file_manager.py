@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import re
 from datetime import datetime
@@ -44,6 +45,23 @@ class UniqueDirectoryFileManager:
         #  if it does, that's basically intentional from the user
         os.makedirs(self.directory, exist_ok=False)
         self.organize = organize
+        # serializes concurrent appends so log lines don't interleave
+        self._log_lock = asyncio.Lock()
+
+    async def log(self, record: dict, filename: str = "log.txt") -> str:
+        """
+        Appends a JSON record (one object per line) to a log file in this
+        manager's directory.
+        :param record: a JSON-serializable mapping describing the event
+        :param filename: name of the log file within the managed directory
+        :return: the path that was written to
+        """
+        path = os.path.join(self.directory, filename)
+        line = json.dumps(record) + "\n"
+        async with self._log_lock:
+            async with aiofiles.open(path, "a", encoding="utf-8") as logfile:
+                await logfile.write(line)
+        return path
 
     async def save_files(
         self,

@@ -26,5 +26,5 @@ app/helpers/parsers/__pycache__
 # mypy
 .mypy_cache
 
-# TODO file
-todo
+# ruff
+.ruff_cache

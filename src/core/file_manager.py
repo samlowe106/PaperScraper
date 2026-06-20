@@ -1,6 +1,10 @@
-import datetime
+import asyncio
 import os
 import re
+from datetime import datetime
+
+import aiofiles
+import aiofiles.os
 
 type DownloadsExtensions = list[tuple[bytes, str]]
 
@@ -41,7 +45,7 @@ class UniqueDirectoryFileManager:
         os.makedirs(self.directory, exist_ok=False)
         self.organize = organize
 
-    def save_files(
+    async def save_files(
         self,
         title: str,
         downloads: DownloadsExtensions,
@@ -59,30 +63,42 @@ class UniqueDirectoryFileManager:
             return []
 
         directory = os.path.join(self.directory, subreddit if self.organize else "")
-        os.makedirs(directory, exist_ok=True)  # subreddit directory need not be unique
+        # subreddit directory need not be unique
+        await aiofiles.os.makedirs(directory, exist_ok=True)
 
         if len(downloads) == 1:
             # just one file, no need for a directory
             download, extension = downloads[0]
-            filepath = self.get_unique_filepath(directory, title, extension)
-            with open(filepath, "wb") as f:
-                f.write(download)
+            filepath = await self.get_unique_filepath(directory, title, extension)
+            await self._write(filepath, download)
             return [filepath]
 
         # album, need a directory to hold all the files
-        directory = os.path.join(directory, self.get_unique_dirname(title))
-        os.makedirs(directory, exist_ok=False)  # album directory should be unique
+        directory = os.path.join(directory, await self.get_unique_dirname(title))
+        # album directory should be unique
+        await aiofiles.os.makedirs(directory, exist_ok=False)
 
-        filepaths = []
-        for i, (download, extension) in enumerate(downloads):
-            destination = os.path.join(directory, f"{i}.{extension}")
-            with open(destination, "wb") as f:
-                f.write(download)
-            filepaths.append(destination)
+        filepaths = [
+            os.path.join(directory, f"{i}.{extension}")
+            for i, (_, extension) in enumerate(downloads)
+        ]
+        # write every file in the album concurrently
+        await asyncio.gather(
+            *(
+                self._write(destination, download)
+                for destination, (download, _) in zip(filepaths, downloads)
+            )
+        )
 
         return filepaths
 
-    def get_unique_filepath(
+    @staticmethod
+    async def _write(destination: str, content: bytes) -> None:
+        """Writes bytes to a path without blocking the event loop"""
+        async with aiofiles.open(destination, "wb") as f:
+            await f.write(content)
+
+    async def get_unique_filepath(
         self, directory: str, title: str, file_extension: str
     ) -> str:
         """
@@ -100,7 +116,8 @@ class UniqueDirectoryFileManager:
         filename = f"{title}.{file_extension}"
         # ensure uniqueness
         offset = 0
-        while filename in os.listdir(directory):
+        existing = await aiofiles.os.listdir(directory)
+        while filename in existing:
             offset += 1
             filename = f"{title} ({offset}).{file_extension}"
         return os.path.join(directory, filename)
@@ -113,7 +130,7 @@ class UniqueDirectoryFileManager:
         """
         return "".join(c if c not in r'\/:*?"<>|' else "_" for c in filename)
 
-    def get_unique_dirname(self, dirname):
+    async def get_unique_dirname(self, dirname):
         """
         Gets a unique directory name in the current directory with the specified name as a prefix
         :param dirname: the prefix for the directory name
@@ -124,7 +141,7 @@ class UniqueDirectoryFileManager:
         # ensure uniqueness
         directory = os.path.join(self.directory, dirname)
         offset = 0
-        while os.path.exists(directory):
+        while await aiofiles.os.path.exists(directory):
             directory = os.path.join(self.directory, f"{dirname} ({offset})")
             offset += 1
         return directory

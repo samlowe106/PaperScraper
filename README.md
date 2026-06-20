@@ -1,60 +1,117 @@
 # 🖼️ Paper Scraper for Reddit
 
-Paper Scraper is a Python script that downloads images from the user's saved category on Reddit.
+[![Tests](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml/badge.svg)](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml) [![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml)
 
-Posts linking directly to an image or imgur page will be downloaded and unsaved; all other posts will be ignored.
+Paper Scraper is an asynchronous Python tool that downloads images from Reddit, either from your **saved posts** or from any **subreddits** you specify.
+
+It recognizes direct image links, Reddit image/gallery posts (`i.redd.it`, `preview.redd.it`), Imgur images/albums/galleries, and Flickr photos. Posts that don't resolve to a downloadable image are skipped.
 
 ## Requirements
 
-- Python 3.13
-- A reddit account
-- An imgur account
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/)
+- A Reddit account with a registered **script** app
+- An Imgur account with a registered app (used to resolve Imgur links)
 
 ## Summary
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Testing](#testing)
 - [Technical Overview](#technical-overview)
 - [License](#license)
 
 ## Installation
 
-1. Clone this repository: `git clone https://github.com/samlowe106/PaperScraper.git`
+1. Clone this repository:
 
-2. Ensure [uv](https://docs.astral.sh/uv/) is installed, then run setup.sh
+   ```sh
+   git clone https://github.com/samlowe106/PaperScraper.git
+   cd PaperScraper
+   ```
 
-3. Go to your [app preferences](https://www.reddit.com/prefs/apps/) on Reddit
+2. Ensure [uv](https://docs.astral.sh/uv/) is installed, then create the
+   environment:
 
-4. Create a new app and choose **script** as the app type
+   ```sh
+   uv sync
+   ```
 
-5. Go to your [Applications setting](https://imgur.com/account/settings/apps) on imgur
+3. Create a Reddit app at your [app preferences](https://www.reddit.com/prefs/apps/) and choose **script** as the app type.
 
-6. Create a new app
+4. Create an Imgur app at your [application settings](https://imgur.com/account/settings/apps).
 
-7. Configure your Python environment variables, adding the reddit client ID as "REDDIT_CLIENT_ID", reddit client secret as "REDDIT_CLIENT_SECRET", and imgur client ID as "IMGUR_CLIENT_ID"
+5. Create a file named `.env` in the project root with your credentials:
 
-8. Create a file named ".env" in the directory root, then save those environment variables there
+   ```dotenv
+   REDDIT_CLIENT_ID="..."
+   REDDIT_CLIENT_SECRET="..."
+   IMGUR_CLIENT_ID="..."
+   IMGUR_CLIENT_SECRET="..."
+   ```
 
 ## Usage
 
-Paper Scraper uses getpass to securely read in passwords, so it's incompatible with Python consoles like those in PyCharm. For that reason, it's recommended to run it from the Terminal or Command Line using `python main.py`
+Run Paper Scraper as a module so its package imports resolve:
 
-Paper Scraper also comes with a handful of flags, which can be found by running Paper Scraper with the `--help` flag.
+```sh
+uv run python -m src.main [options]
+```
+
+Some common options (run with `--help` for the full list):
+
+| Flag | Description |
+| --- | --- |
+| `-u`, `--saved` | Include your saved posts (prompts for Reddit login) |
+| `-r`, `--subreddit` | Include posts from a subreddit (repeatable) |
+| `--sortby` | How to sort subreddit posts: `hot`, `new`, `controversial`, `gilded`, or `top_all` / `top_day` / `top_week` / `top_month` / `top_year` / `top_hour` |
+| `-d`, `--dir` | Output directory (default: `Output`) |
+| `--organize` | Sort downloaded images into per-subreddit subfolders |
+
+### Examples:
+
+```sh
+# Download images from r/wallpapers, sorted by top of all time, into ./pics
+uv run python -m src.main -r wallpapers --sortby top_all -d pics
+
+# Download your saved posts, organized by subreddit
+uv run python -m src.main --saved --organize
+```
+
+Files are written to a timestamped directory (e.g. `Output/PaperScraper 2026-06-20 08:30/`).
+
+> **Note:** the `--saved` flow uses `getpass` to read your password securely, so it won't work in IDE consoles that don't provide a real TTY (e.g. PyCharm's run window). Use a regular terminal for that flow.
+
+## Testing
+
+The test suite uses `pytest` (with `pytest-asyncio` for the async code and `vcrpy` cassettes for recorded HTTP interactions).
+
+```sh
+uv run pytest                                   # run the suite
+uv run pytest --cov=src --block-network         # with coverage, no live network
+```
+
+As of the latest run, **103 tests pass with ~92% line coverage**. CI runs the suite on Python 3.12 and 3.13 and fails the build if coverage drops below 80%.
+
+This repo also ships a [pre-commit](https://pre-commit.com/) config (`ruff`, `black`, `mypy`, and assorted file checks):
+
+```sh
+uv run pre-commit install      # hooks will now run on every commit
+uv run pre-commit run --all-files
+```
 
 ## Technical Overview
 
-Paper Scraper is fairly simple. After basic argument parsing is done, the program has two major steps:
+After argument parsing, `main()` runs a fully asynchronous pipeline:
 
-### Batch parsing
+1. **Stream building.** `StreamBuilder` (see [`src/reddit/submission_source.py`](src/reddit/submission_source.py)) signs into Reddit via [asyncpraw](https://asyncpraw.readthedocs.io/) and turns the requested sources (saved posts and/or subreddits) into async listing generators. These are interleaved with `merge()` and adapted with `amap()` / `afilter()` (see [`src/core/functional.py`](src/core/functional.py)), yielding each submission as a `SubmissionWrapper`.
 
-First, reddit submissions are fetched from reddit via [PRAW](https://praw.readthedocs.io/en/stable/index.html). PRAW provides submissions through "listing generators", which Paper Scraper wraps with `from_saved` and `from_subreddit` functions. These provide submissions as `SubmissionWrapper` objects to provide a simpler API for interacting with submissions and managing Paper Scraper-related data.
+2. **URL finding.** Each `SubmissionWrapper.find_urls()` runs every parser (`single_image`, `reddit`, `imgur`, `flickr` in [`src/parsing/`](src/parsing/)) concurrently in a strategy pattern and collects the direct media links it can resolve.
 
-The url that each `SubmissionWrapper` links to is asynchronously scraped by parser objects (`flickr_parser`, `imgur_parser`, and `single_image_parser`) in a strategy pattern. If any of the and appended to the `SubmissionWrapper.urls` field. If the urls couldn't be accessed, the parsers couldn't find any urls, or if the post fails some other criteria specified in the command line arguments, the `SubmissionWrapper` is filtered out of the batch. This process repeats until a batch of valid `SubmissionWrapper`s of the desired size is created, or the underlying generator runs out of new posts.
+3. **Downloading & saving.** Resolved URLs are fetched with [`httpx`](https://www.python-httpx.org/) and written to disk with [`aiofiles`](https://github.com/Tinche/aiofiles) via `UniqueDirectoryFileManager`, which guarantees unique filenames and (with `--organize`) per-subreddit folders.
 
-### Batch downloading
-
-After a batch of valid `SubmissionWrapper`s is created, each of the images linked to in the `SubmissionWrapper.urls` field are downloaded asynchronously and the resulting files are saved. If the `organize` flag is specified, images are also sorted into subdirectories by subreddit. Post data is written to a log file, and the program ends.
+Concurrency is bounded by two `asyncio.Semaphore`s — one for URL finding and a larger one for downloads — and the whole pipeline runs inside an `asyncio.TaskGroup` so submissions are processed as they stream in rather than in fixed batches.
 
 ## License
 
-Paper Scraper is licensed under the [MIT license.](https://github.com/samlowe106/PaperScraper/blob/master/LICENSE)
+Paper Scraper is licensed under the [MIT license](https://github.com/samlowe106/PaperScraper/blob/master/LICENSE).

@@ -6,56 +6,37 @@ on:
   pull_request:
     branches: [main]
 
-# cancel superseded runs on the same ref to save CI minutes
+# cancel superseded in-progress runs for the same branch / PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   lint:
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version-file: .python-version
       # runs every hook in .pre-commit-config.yaml (ruff, black, mypy, ...)
       - uses: pre-commit/action@v3.0.1
 
   test:
-    permissions:
-      contents: read
-      pull-requests: write
-    env:
-      REDDIT_CLIENT_ID: "mock reddit client id"
-      REDDIT_CLIENT_SECRET: "mock reddit client secret"
-      IMGUR_CLIENT_ID: "mock imgur client id"
-      IMGUR_CLIENT_SECRET: "mock imgur client secret"
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12", "3.13"]
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-
-      - uses: actions/cache@v4
+      # installs uv, provisions Python from .python-version, and caches ~/.cache/uv
+      - uses: astral-sh/setup-uv@v5
         with:
-          path: ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
-
-      # use the matrix interpreter (uv downloads it if needed) rather than .python-version
-      - name: Pin Python ${{ matrix.python-version }}
-        run: uv python pin ${{ matrix.python-version }}
+          enable-cache: true
 
       - name: Sync environment
-        run: uv sync
+        run: uv sync --frozen
 
       - name: Run tests
-        run: uv run pytest tests/ --verbose --block-network --cov=src/ --cov-fail-under=80
+        run: uv run pytest tests/ --verbose --block-network --cov=src --cov-fail-under=80

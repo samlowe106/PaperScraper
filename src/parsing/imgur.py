@@ -29,7 +29,6 @@ def _split_imgur_url(url: str) -> Optional[Dict[str, str]]:
 
 def _get_headers() -> dict[str, str]:
     imgur_client_id = os.environ.get("IMGUR_CLIENT_ID")
-    print(f"Using Imgur client ID: {imgur_client_id}")
     return {"Authorization": f"Client-ID {imgur_client_id}"} if imgur_client_id else {}
 
 

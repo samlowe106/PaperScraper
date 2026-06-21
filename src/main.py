@@ -12,11 +12,8 @@ from .reddit import SortOption, StreamBuilder, SubmissionWrapper
 MAX_FINDERS = 10
 MAX_DOWNLOADS = 100
 
-# maps each age CLI flag to its length in seconds
-_AGE_UNITS = {"hours": 3600, "days": 86400, "years": 365 * 86400}
 
-
-async def main(args) -> None:
+async def main(args: argparse.Namespace) -> None:
     """Scrapes and downloads any images from posts in the user's saved posts category on Reddit"""
 
     file_manager = UniqueDirectoryFileManager(args.directory, organize=args.organize)
@@ -26,9 +23,20 @@ async def main(args) -> None:
     find_urls_sem = asyncio.Semaphore(MAX_FINDERS)
     download_sem = asyncio.Semaphore(MAX_DOWNLOADS)
 
+    predicate = build_predicate(
+        args.karma, max_age_seconds(args.hours, args.days, args.years)
+    )
+
     tasks: list[asyncio.Task[list[str]]] = []
     async with asyncio.TaskGroup() as task_group, AsyncClientBundle() as clients:
-        stream = await build_stream(args, clients)
+        stream = await build_stream(
+            clients,
+            saved=args.saved,
+            subreddits=args.subreddit,
+            sortby=args.sortby,
+            limit=args.limit,
+            predicate=predicate,
+        )
 
         async for wrapped in stream:
             tasks.append(
@@ -45,49 +53,60 @@ async def main(args) -> None:
                 )
             )
 
-    # the TaskGroup has joined, so every task is finished and (since any failure
-    # would have aborted the group) succeeded -- .result() is safe here
+    # process_submission never raises, so the group always joins cleanly and
+    # every .result() is a (possibly empty) list of saved paths
     results: list[str] = [path for task in tasks for path in task.result()]
 
-    for i, result in enumerate(results):
-        print(f"({i}) {result}")
+    print(f"Done -- saved {len(results)} file(s) from {len(tasks)} submission(s).")
 
 
-def max_age_seconds(args) -> float | None:
+def max_age_seconds(
+    hours: int | None, days: int | None, years: int | None
+) -> float | None:
     """The maximum post age in seconds implied by --hours/--days/--years, if any."""
-    for unit, factor in _AGE_UNITS.items():
-        value = getattr(args, unit, None)
-        if value is not None:
-            return value * factor
+    if hours is not None:
+        return hours * 3600
+    if days is not None:
+        return days * 86400
+    if years is not None:
+        return years * 365 * 86400
     return None
 
 
-def build_predicate(args) -> Predicate[SubmissionWrapper]:
-    """Builds a SubmissionWrapper filter from the score (--karma) and age options."""
-    min_score = args.karma
-    cutoff = max_age_seconds(args)
+def build_predicate(
+    min_score: int | None, max_age: float | None
+) -> Predicate[SubmissionWrapper]:
+    """Builds a SubmissionWrapper filter from a score floor and a max age (seconds)."""
 
     def predicate(wrapped: SubmissionWrapper) -> bool:
         if min_score is not None and wrapped.score < min_score:
             return False
-        if cutoff is not None and (time.time() - wrapped.created_utc) > cutoff:
+        if max_age is not None and (time.time() - wrapped.created_utc) > max_age:
             return False
         return True
 
     return predicate
 
 
-async def build_stream(args, clients):
-    builder = StreamBuilder(predicate=build_predicate(args), limit=args.limit)
+async def build_stream(
+    clients: AsyncClientBundle,
+    *,
+    saved: bool,
+    subreddits: list[str],
+    sortby: SortOption,
+    limit: int,
+    predicate: Predicate[SubmissionWrapper],
+):
+    builder = StreamBuilder(predicate=predicate, limit=limit)
 
-    if args.saved:
+    if saved:
         # input()/getpass() are blocking -- offload them so the loop stays free
         username = await asyncio.to_thread(input, "Reddit Username: ")
         password = await asyncio.to_thread(getpass, "Password: ")
         builder.set_redditor(username, password)
 
-    for subreddit in args.subreddit:
-        builder.add_subreddit(subreddit, args.sortby)
+    for subreddit in subreddits:
+        builder.add_subreddit(subreddit, sortby)
 
     return await builder.build(clients)
 
@@ -102,22 +121,36 @@ async def process_submission(
     log: bool = False,
     unsave: bool = False,
 ) -> list[str]:
-    # find_urls needs the full bundle (parsers use http AND reddit)
-    async with find_urls_sem:
-        await wrapped.find_urls(clients)
+    # Catch everything: this runs in a TaskGroup, so a propagating exception would
+    # cancel every other submission and abort the whole run. One bad post should
+    # just be skipped (and logged), not fatal.
+    try:
+        # find_urls needs the full bundle (parsers use http AND reddit)
+        async with find_urls_sem:
+            await wrapped.find_urls(clients)
 
-    # download only needs the http client; awaiting inline keeps the result
-    # reachable for collection while the download semaphore still bounds concurrency
-    saved = await process_download(wrapped, clients.http, file_manager, download_sem)
+        # download only needs the http client; awaiting inline keeps the result
+        # reachable for collection while the download semaphore bounds concurrency
+        saved = await process_download(
+            wrapped, clients.http, file_manager, download_sem
+        )
 
-    # only un-save posts we actually downloaded something from
-    if unsave and saved:
-        await wrapped.unsave()
+        # only un-save posts we actually downloaded something from
+        if unsave and saved:
+            await wrapped.unsave()
 
-    if log:
-        await file_manager.log(wrapped.log_record())
+        if log:
+            await file_manager.log(wrapped.log_record())
 
-    return saved
+        if saved:
+            print(f"saved {len(saved)} file(s): {wrapped.title}")
+
+        return saved
+    except Exception as e:
+        print(f"error processing {wrapped.url}: {e}")
+        if log:
+            await file_manager.log(wrapped.log_record(exception=str(e)))
+        return []
 
 
 async def process_download(
@@ -171,14 +204,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="Output",
         help="directory that files should be saved to",
     )
-    # TODO: --title formatting (%t/%T/%s/%a/%u/...) not wired up yet
-    # parser.add_argument(
-    #     "-t",
-    #     "--title",
-    #     type=str,
-    #     default="%T",
-    #     help="specify how the title should be saved",
-    # )
     parser.add_argument(
         "-k",
         "--karma",
@@ -190,6 +215,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=lambda s: SortOption[s.upper()],
         choices=list(SortOption),
         default=SortOption.HOT,
+        # show lowercase names (e.g. {new,hot,top_all}) instead of "SortOption.NEW"
+        metavar=f"{{{','.join(o.name.lower() for o in SortOption)}}}",
         help="specify how to sort the given subreddits",
     )
     parser.add_argument(
@@ -217,6 +244,11 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-if __name__ == "__main__":
+def cli() -> None:
+    """Console entry point: load env, parse args, and run the scraper."""
     load_dotenv()
     asyncio.run(main(build_parser().parse_args()))
+
+
+if __name__ == "__main__":
+    cli()

@@ -44,8 +44,12 @@ async def flickr_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
     if (photo_id := await _get_flickr_photo_id(url, clients.http)) is None:
         return set()
 
+    api_key = os.environ.get("FLICKR_CLIENT_ID")
+    if not api_key:  # can't query the API without a key -> skip flickr gracefully
+        return set()
+
     parameters = {
-        "api_key": os.environ["flickr_client_id"],
+        "api_key": api_key,
         "format": "json",
         "method": "flickr.photos.getInfo",
         "photo_id": photo_id,

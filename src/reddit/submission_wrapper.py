@@ -6,6 +6,37 @@ import httpx
 from ..core import AsyncClientBundle, get_response_file_extension
 from ..parsing import find_urls as parse_find_urls
 
+# transient statuses worth retrying (rate limit + gateway/server errors)
+_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+
+async def _get_with_retry(
+    client: httpx.AsyncClient,
+    url: str,
+    *,
+    attempts: int = 3,
+    backoff: float = 0.5,
+    timeout: float = 10,
+) -> httpx.Response | None:
+    """
+    GETs ``url``, retrying transient transport errors and 429/5xx responses with
+    exponential backoff. Returns the response once it's non-retryable (success or
+    a hard error like 404), or ``None`` if every attempt failed at the transport
+    level — so one persistently-broken url drops a single file rather than failing
+    the whole submission.
+    """
+    response: httpx.Response | None = None
+    for attempt in range(attempts):
+        try:
+            response = await client.get(url, timeout=timeout)
+            if response.status_code not in _RETRYABLE_STATUS:
+                return response
+        except (httpx.TransportError, httpx.TimeoutException):
+            response = None
+        if attempt < attempts - 1:
+            await asyncio.sleep(backoff * (2**attempt))
+    return response
+
 
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
@@ -47,7 +78,7 @@ class SubmissionWrapper:
             return list()
 
         responses = await asyncio.gather(
-            *(client.get(url, timeout=10) for url in self.urls)
+            *(_get_with_retry(client, url) for url in self.urls)
         )
 
         return [
@@ -56,7 +87,7 @@ class SubmissionWrapper:
                 get_response_file_extension(response),
             )
             for response in responses
-            if response.status_code == 200
+            if response is not None and response.status_code == 200
         ]
 
     async def find_urls(self, clients: AsyncClientBundle) -> set[str]:

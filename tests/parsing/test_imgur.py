@@ -251,5 +251,46 @@ class TestImgurParser(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, set())
 
 
+class TestImgurParserErrors(unittest.IsolatedAsyncioTestCase):
+    """Error/edge branches, mocked so no cassette or network is needed."""
+
+    @staticmethod
+    def _bundle(get_return):
+        client = AsyncMock()
+        client.get = AsyncMock(return_value=get_return)
+        bundle = MagicMock()
+        bundle.http = client
+        return bundle
+
+    async def test_direct_link_returns_url_without_request(self):
+        url = "https://i.imgur.com/abc123.jpg"
+        bundle = self._bundle(MagicMock())
+        self.assertEqual(await imgur_parser(url, bundle), {url})
+        bundle.http.get.assert_not_awaited()  # direct link needs no API call
+
+    async def test_single_image_non_200(self):
+        resp = MagicMock(status_code=404)
+        result = await imgur_parser("https://imgur.com/abc123", self._bundle(resp))
+        self.assertEqual(result, set())
+
+    async def test_single_image_data_not_dict(self):
+        resp = MagicMock(status_code=200)
+        resp.json.return_value = {"data": "not-a-dict"}
+        result = await imgur_parser("https://imgur.com/abc123", self._bundle(resp))
+        self.assertEqual(result, set())
+
+    async def test_album_non_200(self):
+        resp = MagicMock(status_code=500)
+        result = await imgur_parser("https://imgur.com/a/abc123", self._bundle(resp))
+        self.assertEqual(result, set())
+
+    async def test_gallery_non_200(self):
+        resp = MagicMock(status_code=503)
+        result = await imgur_parser(
+            "https://imgur.com/gallery/abc123", self._bundle(resp)
+        )
+        self.assertEqual(result, set())
+
+
 if __name__ == "__main__":
     unittest.main()

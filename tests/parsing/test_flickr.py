@@ -36,10 +36,34 @@ class TestGetFlickrPhotoID(unittest.TestCase):
 
 class TestFlickrParser(unittest.IsolatedAsyncioTestCase):
 
-    async def test_returns_empty_set_if_no_id(self):
-        pass
+    @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
+    async def test_returns_empty_set_if_no_id(self, mock_get_flickr_photo_id):
+        mock_get_flickr_photo_id.return_value = None
+        result = await flickr_parser("mock url", MagicMock())
+        self.assertEqual(result, set())
 
-    @patch.dict("os.environ", {"flickr_client_id": "mock_api_key"})
+    @patch.dict("os.environ", {}, clear=True)  # no FLICKR_CLIENT_ID
+    @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
+    async def test_returns_empty_without_api_key(self, mock_get_flickr_photo_id):
+        mock_get_flickr_photo_id.return_value = "12345"
+        result = await flickr_parser("mock url", MagicMock())
+        self.assertEqual(result, set())
+
+    @patch.dict("os.environ", {"FLICKR_CLIENT_ID": "mock_api_key"})
+    @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
+    async def test_returns_empty_on_non_200(self, mock_get_flickr_photo_id):
+        mock_get_flickr_photo_id.return_value = "12345"
+        response = AsyncMock()
+        response.status_code = 500
+        mock_client = AsyncMock()
+        mock_client.get.return_value = response
+        bundle = MagicMock()
+        bundle.http = mock_client
+
+        result = await flickr_parser("mock url", bundle)
+        self.assertEqual(result, set())
+
+    @patch.dict("os.environ", {"FLICKR_CLIENT_ID": "mock_api_key"})
     @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
     async def test_makes_api_call(self, mock_get_flickr_photo_id):
         mock_get_flickr_photo_id.return_value = "12345"

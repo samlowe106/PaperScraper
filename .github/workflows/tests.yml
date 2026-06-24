@@ -18,17 +18,18 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version-file: .python-version
-      # runs every hook in .pre-commit-config.yaml (ruff, black, mypy, ...)
-      - uses: pre-commit/action@v3.0.1
+          enable-cache: true
+      # run pre-commit via uv (avoids pre-commit/action, which still pins the
+      # Node 20 actions/cache@v4 internally)
+      - run: uvx pre-commit run --all-files
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # installs uv, provisions Python from .python-version, and caches ~/.cache/uv
       - uses: astral-sh/setup-uv@v5
@@ -39,4 +40,4 @@ jobs:
         run: uv sync --frozen
 
       - name: Run tests
-        run: uv run pytest tests/ --verbose --block-network --cov=src --cov-fail-under=80
+        run: uv run pytest --verbose --block-network --cov=src --cov-fail-under=80 tests/

@@ -1,7 +1,6 @@
 import json
 import os
 import re
-from typing import Optional, Set
 
 import httpx
 
@@ -19,7 +18,7 @@ SHORT__FLICKR_REGEX = re.compile(r"(?:https?://)?(?:www\.)?flic\.kr/p/([^/]+)")
 API_ROOT = "https://www.flickr.com/services/rest/"
 
 
-async def _get_flickr_photo_id(url: str, client: httpx.AsyncClient) -> Optional[str]:
+async def _get_flickr_photo_id(url: str, client: httpx.AsyncClient) -> str | None:
     """
     :param url: url possibly linking to a flickr image
     :return: the regular id of the image, or None if no id could be found
@@ -28,7 +27,7 @@ async def _get_flickr_photo_id(url: str, client: httpx.AsyncClient) -> Optional[
         response = await client.get(url)
         if response.status_code != 200:
             return None
-        url = response.url
+        url = str(response.url)
 
     if m := _FLICKR_REGEX.match(url):
         return m.group(2)
@@ -36,11 +35,12 @@ async def _get_flickr_photo_id(url: str, client: httpx.AsyncClient) -> Optional[
     return None
 
 
-async def flickr_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
+async def flickr_parser(url: str, clients: AsyncClientBundle) -> set[str]:
     """
     :param url: url possibly linking to a flickr image
     :return: a set of urls of downloadable images
     """
+    assert clients.http is not None, "bundle must be entered (async with) first"
     if (photo_id := await _get_flickr_photo_id(url, clients.http)) is None:
         return set()
 
@@ -62,7 +62,7 @@ async def flickr_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
 
     data = json.loads(response.text.removeprefix("jsonFlickrApi(").removesuffix(")"))
 
-    if not data["sizes"]["candownload"] == 1:
+    if data["sizes"]["candownload"] != 1:
         return set()
 
     biggest_size = max(data["sizes"]["size"], key=lambda x: x["width"] * x["height"])

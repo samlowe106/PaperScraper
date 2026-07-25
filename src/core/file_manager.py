@@ -16,8 +16,11 @@ class UniqueDirectoryFileManager:
     def __init__(self, directory, organize=False):
         # this will essentially be the woking directory,
         #  all files will be downloaded to this directory or its subdirectories
+        # local (naive) time is intentional: the folder name should match the
+        # user's clock
         self.directory = os.path.join(
-            directory, datetime.today().strftime("PaperScraper %Y-%m-%d %H:%M")
+            directory,
+            datetime.today().strftime("PaperScraper %Y-%m-%d %H:%M"),  # noqa: DTZ002
         )
         # we can assume that this directory does not already exist
         #  if it does, that's basically intentional from the user
@@ -36,16 +39,18 @@ class UniqueDirectoryFileManager:
         """
         path = os.path.join(self.directory, filename)
         line = json.dumps(record) + "\n"
-        async with self._log_lock:
-            async with aiofiles.open(path, "a", encoding="utf-8") as logfile:
-                await logfile.write(line)
+        async with (
+            self._log_lock,
+            aiofiles.open(path, "a", encoding="utf-8") as logfile,
+        ):
+            await logfile.write(line)
         return path
 
     async def save_files(
         self,
         title: str,
         downloads: DownloadsExtensions,
-        subreddit: str = None,
+        subreddit: str | None = None,
     ) -> list[str]:
         """
         Saves all files and bundles them with their results
@@ -58,7 +63,9 @@ class UniqueDirectoryFileManager:
         if not downloads:
             return []
 
-        directory = os.path.join(self.directory, subreddit if self.organize else "")
+        directory = os.path.join(
+            self.directory, subreddit if self.organize and subreddit else ""
+        )
         # subreddit directory need not be unique
         await aiofiles.os.makedirs(directory, exist_ok=True)
 
@@ -82,7 +89,9 @@ class UniqueDirectoryFileManager:
         await asyncio.gather(
             *(
                 self._write(destination, download)
-                for destination, (download, _) in zip(filepaths, downloads)
+                for destination, (download, _) in zip(
+                    filepaths, downloads, strict=False
+                )
             )
         )
 

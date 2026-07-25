@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Callable, Coroutine, Iterable
+from collections.abc import Callable, Coroutine, Iterable
+from typing import Any
 
 from ..core import AsyncClientBundle
 from .flickr import flickr_parser
@@ -35,12 +36,12 @@ async def find_urls(
 
 
 __all__ = [
+    "Parser",
     "find_urls",
-    "single_image_parser",
-    "imgur_parser",
-    "reddit_parser",
     "flickr_parser",
     "get_response_file_extension",
-    "Parser",
+    "imgur_parser",
     "parsers",
+    "reddit_parser",
+    "single_image_parser",
 ]

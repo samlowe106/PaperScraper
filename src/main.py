@@ -38,20 +38,20 @@ async def main(args: argparse.Namespace) -> None:
             predicate=predicate,
         )
 
-        async for wrapped in stream:
-            tasks.append(
-                task_group.create_task(
-                    process_submission(
-                        wrapped,
-                        clients,
-                        file_manager,
-                        find_urls_sem,
-                        download_sem,
-                        log=args.log,
-                        unsave=args.unsave,
-                    )
+        tasks = [
+            task_group.create_task(
+                process_submission(
+                    wrapped,
+                    clients,
+                    file_manager,
+                    find_urls_sem,
+                    download_sem,
+                    log=args.log,
+                    unsave=args.unsave,
                 )
             )
+            async for wrapped in stream
+        ]
 
     # process_submission never raises, so the group always joins cleanly and
     # every .result() is a (possibly empty) list of saved paths
@@ -81,9 +81,7 @@ def build_predicate(
     def predicate(wrapped: SubmissionWrapper) -> bool:
         if min_score is not None and wrapped.score < min_score:
             return False
-        if max_age is not None and (time.time() - wrapped.created_utc) > max_age:
-            return False
-        return True
+        return not (max_age is not None and time.time() - wrapped.created_utc > max_age)
 
     return predicate
 
@@ -125,6 +123,8 @@ async def process_submission(
     # cancel every other submission and abort the whole run. One bad post should
     # just be skipped (and logged), not fatal.
     try:
+        assert clients.http is not None, "bundle must be entered (async with) first"
+
         # find_urls needs the full bundle (parsers use http AND reddit)
         async with find_urls_sem:
             await wrapped.find_urls(clients)
@@ -146,7 +146,8 @@ async def process_submission(
             print(f"saved {len(saved)} file(s): {wrapped.title}")
 
         return saved
-    except Exception as e:
+    # deliberately broad: one bad submission must never crash the whole run
+    except Exception as e:  # noqa: BLE001
         print(f"error processing {wrapped.url}: {e}")
         if log:
             await file_manager.log(wrapped.log_record(exception=str(e)))

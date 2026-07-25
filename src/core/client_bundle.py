@@ -1,6 +1,5 @@
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 import asyncpraw
 import httpx
@@ -16,8 +15,8 @@ class AsyncClientBundle:
     - imgur client (client id and secret)
     """
 
-    reddit: Optional[asyncpraw.Reddit] = None
-    http: Optional[httpx.AsyncClient] = None
+    reddit: asyncpraw.Reddit | None = None
+    http: httpx.AsyncClient | None = None
 
     @dataclass
     class APIClient:
@@ -48,7 +47,7 @@ class AsyncClientBundle:
             await self.http.aclose()
 
     def set_reddit(
-        self, username: str = None, password: str = None
+        self, username: str | None = None, password: str | None = None
     ) -> asyncpraw.Reddit:
         """
         Signs into a new reddit instance (and stores it in this client bundle)

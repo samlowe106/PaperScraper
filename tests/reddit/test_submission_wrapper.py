@@ -71,7 +71,7 @@ class TestDownload(unittest.IsolatedAsyncioTestCase):
         wrapper = SubmissionWrapperFactory()
         self.assertEqual(wrapper.urls, set())
         mock_client = AsyncMock()
-        self.assertEqual(await wrapper.download(mock_client), list())
+        self.assertEqual(await wrapper.download(mock_client), [])
 
     async def test_download_skips_failed_urls(self):
         # a url that exhausts retries (None) is dropped; others still download
@@ -119,7 +119,6 @@ class TestDownload(unittest.IsolatedAsyncioTestCase):
         wrapper.subreddit = "mock subreddit"
         wrapper.title = "mock title"
         wrapper.urls = list(urls_extensions.keys())
-        print(f"{wrapper.urls=}")
 
         contents_extensions = await wrapper.download(mock_client)
 
@@ -130,9 +129,7 @@ class TestDownload(unittest.IsolatedAsyncioTestCase):
             ("url4 mock content", ".webm"),
         ]
 
-        print(mock_client.get.call_args_list)
-
-        for url in urls_extensions.keys():
+        for url in urls_extensions:
             mock_client.get.assert_any_call(url, timeout=10)
 
         self.assertListEqual(contents_extensions, expected)

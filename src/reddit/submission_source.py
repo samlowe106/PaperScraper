@@ -2,6 +2,7 @@ from collections.abc import AsyncIterable
 from typing import Self
 
 import asyncpraw
+import asyncpraw.models
 
 from ..core import AsyncClientBundle, Predicate, afilter, amap, merge
 from .sortoption import SortOption
@@ -26,9 +27,9 @@ class StreamBuilder:
         self.limit = limit  # max submissions to pull from each source
         # per-subreddit predicates aren't supported right now
         self.subreddits: list[tuple[str, SortOption]] = []
-        self.redditor: tuple[str, str] = None
+        self.redditor: tuple[str, str] | None = None
 
-    def add_subreddit(self, name: str, sortby: SortOption = None) -> Self:
+    def add_subreddit(self, name: str, sortby: SortOption | None = None) -> Self:
         name = name.lower().removeprefix("r/")
         if sortby is None:
             sortby = self.sortby
@@ -46,6 +47,9 @@ class StreamBuilder:
     async def build(
         self, clients: AsyncClientBundle
     ) -> AsyncIterable[SubmissionWrapper]:
+
+        assert clients.http is not None, "bundle must be entered (async with) first"
+        http = clients.http
 
         reddit = clients.set_reddit(
             username=self.redditor[0] if self.redditor else None,
@@ -66,7 +70,7 @@ class StreamBuilder:
         stream: AsyncIterable[asyncpraw.models.Submission] = merge(*streams)
 
         def mapfunc(submission: asyncpraw.models.Submission) -> SubmissionWrapper:
-            return SubmissionWrapper(submission, clients.http)
+            return SubmissionWrapper(submission, http)
 
         # saved() can also yield Comments; we only handle Submissions
         submissions = afilter(

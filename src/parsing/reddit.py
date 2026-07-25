@@ -1,10 +1,9 @@
-from typing import Set
 from urllib.parse import urlparse
 
 from ..core import AsyncClientBundle
 
 
-async def reddit_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
+async def reddit_parser(url: str, clients: AsyncClientBundle) -> set[str]:
     """
     :param url: the url to parse
     :param client: the http client to use for any requests
@@ -12,6 +11,7 @@ async def reddit_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
     :returns: A list of all scrapeable urls found in the given webpage
     """
 
+    assert clients.reddit is not None, "set_reddit() must be called first"
     submission = await clients.reddit.submission(url=url)
 
     parsed = urlparse(submission.url)

@@ -1,6 +1,5 @@
 import os
 import re
-from typing import Dict, Optional, Set
 
 import httpx
 from dotenv import load_dotenv
@@ -22,7 +21,7 @@ _IMGUR_REGEX = re.compile(
 load_dotenv()
 
 
-def _split_imgur_url(url: str) -> Optional[Dict[str, str]]:
+def _split_imgur_url(url: str) -> dict[str, str] | None:
     m = _IMGUR_REGEX.match(url)
     return m.groupdict() if m else None
 
@@ -33,8 +32,8 @@ def _get_headers() -> dict[str, str]:
 
 
 async def _handle_single_image(
-    url: str, match: Dict[str, str], client: httpx.AsyncClient
-) -> Set[str]:
+    url: str, match: dict[str, str], client: httpx.AsyncClient
+) -> set[str]:
     if match["direct_link"]:
         return {url}
 
@@ -62,7 +61,7 @@ async def _handle_single_image(
     return set()
 
 
-async def _handle_album(match: Dict[str, str], client: httpx.AsyncClient) -> Set[str]:
+async def _handle_album(match: dict[str, str], client: httpx.AsyncClient) -> set[str]:
     link_id = match["link_id"].split("-")[-1]
     response = await client.get(
         f"https://api.imgur.com/3/album/{link_id}/images", headers=_get_headers()
@@ -81,7 +80,7 @@ async def _handle_album(match: Dict[str, str], client: httpx.AsyncClient) -> Set
     }
 
 
-async def _handle_gallery(match: Dict[str, str], client: httpx.AsyncClient) -> Set[str]:
+async def _handle_gallery(match: dict[str, str], client: httpx.AsyncClient) -> set[str]:
     gallery_id = match["link_id"].split("-")[-1]
     response = await client.get(
         f"https://api.imgur.com/3/gallery/album/{gallery_id}", headers=_get_headers()
@@ -105,12 +104,13 @@ async def _handle_gallery(match: Dict[str, str], client: httpx.AsyncClient) -> S
     }
 
 
-async def imgur_parser(url: str, clients: AsyncClientBundle) -> Set[str]:
+async def imgur_parser(url: str, clients: AsyncClientBundle) -> set[str]:
     """
     Parse an Imgur link using the Imgur API.
 
     Supports direct image links, albums, and galleries.
     """
+    assert clients.http is not None, "bundle must be entered (async with) first"
     match = _split_imgur_url(url)
     if match is None:
         return set()

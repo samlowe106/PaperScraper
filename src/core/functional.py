@@ -1,6 +1,6 @@
 import asyncio
-from collections.abc import AsyncIterable, AsyncIterator
-from typing import Callable, TypeVar
+from collections.abc import AsyncIterable, AsyncIterator, Callable
+from typing import TypeVar
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -13,12 +13,14 @@ type Predicate[T] = Callable[[T], bool]
 _DONE = object()
 
 
-async def amap(func: Callable[[T], S], iterable: AsyncIterable[T]) -> AsyncIterator[S]:
+async def amap[T, S](
+    func: Callable[[T], S], iterable: AsyncIterable[T]
+) -> AsyncIterator[S]:
     async for item in iterable:
         yield func(item)
 
 
-async def afilter(
+async def afilter[T](
     predicate: Predicate[T], iterable: AsyncIterable[T]
 ) -> AsyncIterator[T]:
     async for item in iterable:
@@ -26,7 +28,7 @@ async def afilter(
             yield item
 
 
-async def merge(*gens: AsyncIterable[T]) -> AsyncIterable[T]:
+async def merge[T](*gens: AsyncIterable[T]) -> AsyncIterable[T]:
     # Interleaves several async iterables into one, yielding items as they arrive.
     # A unique _DONE sentinel (not None) marks each generator's completion, so any
     # value -- including None -- may flow through as a real item.

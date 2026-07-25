@@ -19,20 +19,20 @@ from tests import async_iter
 
 def _args(**overrides):
     """A Namespace with all fields main()/build_stream() read, overridable."""
-    defaults = dict(
-        directory="Output",
-        organize=False,
-        saved=False,
-        subreddit=[],
-        sortby=SortOption.HOT,
-        limit=10,
-        karma=None,
-        hours=None,
-        days=None,
-        years=None,
-        log=False,
-        unsave=False,
-    )
+    defaults = {
+        "directory": "Output",
+        "organize": False,
+        "saved": False,
+        "subreddit": [],
+        "sortby": SortOption.HOT,
+        "limit": 10,
+        "karma": None,
+        "hours": None,
+        "days": None,
+        "years": None,
+        "log": False,
+        "unsave": False,
+    }
     defaults.update(overrides)
     return Namespace(**defaults)
 

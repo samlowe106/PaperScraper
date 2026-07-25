@@ -69,8 +69,7 @@ class TestSetRedditor(unittest.IsolatedAsyncioTestCase):
     async def test_changes_redditor(self):
         builder = StreamBuilder()
         builder.set_redditor("mock username", "mock password")
-        self.assertEqual(builder.redditor[0], "mock username")
-        self.assertEqual(builder.redditor[1], "mock password")
+        self.assertEqual(builder.redditor, ("mock username", "mock password"))
 
     async def test_redditor_stream(self):
         saved = SubmissionMockFactory()

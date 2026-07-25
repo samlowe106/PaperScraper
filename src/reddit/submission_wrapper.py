@@ -1,6 +1,7 @@
 import asyncio
 
 import asyncpraw
+import asyncpraw.models
 import httpx
 
 from ..core import AsyncClientBundle, get_response_file_extension
@@ -75,7 +76,7 @@ class SubmissionWrapper:
         the content of the downloaded file and the second element is the file extension
         """
         if not self.urls:
-            return list()
+            return []
 
         responses = await asyncio.gather(
             *(_get_with_retry(client, url) for url in self.urls)

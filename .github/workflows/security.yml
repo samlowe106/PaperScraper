@@ -1,0 +1,53 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly re-scan catches CVEs disclosed after the last commit, even when
+    # nothing in the repo changed. Mondays at 07:00 UTC.
+    - cron: "0 7 * * 1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege by default; the CodeQL job opts into more below.
+permissions:
+  contents: read
+
+jobs:
+  # Scan the locked dependency set for known vulnerabilities (PyPI advisories).
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # setup-uv no longer publishes a moving major tag, so pin a full version.
+      - uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
+      # Resolve the lockfile to a requirements file, then audit exactly what
+      # would be installed (fails the job if any dependency has a known CVE).
+      - name: Export locked dependencies
+        run: uv export --frozen --format requirements-txt --no-emit-project -o requirements.txt
+      - name: Audit dependencies
+        run: uvx pip-audit -r requirements.txt
+
+  # Static analysis of the source for security issues (results in the Security
+  # tab). Free on public repos; private repos need GitHub Advanced Security.
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: python
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4

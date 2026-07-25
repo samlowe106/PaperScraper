@@ -8,8 +8,15 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "httpx>=0.28.1,<0.29",
-    "pre-commit>=4.0.1,<5",
     "python-dotenv>=1.2.2",
+    "asyncpraw>=7.8.1",
+    "aiofiles>=24.1.0",
+]
+
+# Development tooling installed by `uv sync` (uv syncs the dev group by default).
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0.1,<5",
     "pytest>=9.0.3",
     "pytest-dotenv>=0.5.2,<0.6",
     "vcrpy>=8.2.1",
@@ -17,16 +24,11 @@ dependencies = [
     "pytest-asyncio>=1.3.0",
     "coverage>=7.14.0",
     "pytest-cov>=7.1.0",
-    "asyncpraw>=7.8.1",
-    "aiofiles>=24.1.0",
     "pytest-timeout>=2.3.0",
 ]
 
 [project.scripts]
 paperscraper = "src.main:cli"
-
-[tool.mypy]
-explicit_package_bases = true
 
 [tool.uv]
 package = true
@@ -44,3 +46,56 @@ env_files = [".test.env"]
 env_override_existing_values = 1
 # fail any test that hangs (e.g. an async deadlock) instead of stalling the run
 timeout = 30
+# Default options so a bare `pytest` (or `uv run pytest`) matches CI exactly.
+# --block-network makes vcrpy cassettes mandatory
+# --durations=0 reports how long every test took
+addopts = "--verbose --block-network --cov=src --cov-report=term-missing --durations=0"
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+
+# Ruff (linter). Rule selection lives here, not in the pre-commit args, so your
+# editor's Ruff integration enforces exactly the same rules. The pre-commit hook
+# only adds --fix, so commits auto-apply fixable violations.
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+# Added on top of Ruff's defaults (E, F). Full list: https://docs.astral.sh/ruff/rules/
+extend-select = [
+    "I",    # isort: import ordering (replaces the standalone isort tool)
+    "UP",   # pyupgrade: modern syntax for the target Python version
+    "B",    # flake8-bugbear: likely bugs and footguns
+    "B014", # (explicit) redundant exception types in `except`
+    "F841", # (explicit) local variable assigned but never used
+    "SIM",  # flake8-simplify: simpler equivalent code
+    "RET",  # flake8-return: return-statement hygiene
+    "LOG",  # flake8-logging: correct logging usage
+    "G",    # flake8-logging-format: no f-strings / % in log calls
+    "PERF", # perflint: performance anti-patterns
+    "T20",  # flake8-print: flags stray print() (use `# noqa: T201` to allow one)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# CLI entry point: print() is the user interface.
+"src/main.py" = ["T20"]
+# Test-only idioms: blocking file I/O in async tests, naive datetimes, and
+# Mock() defaults in factory helpers are all fine here.
+"tests/**" = ["ASYNC230", "DTZ", "B008", "T20"]
+
+# mypy (type checker). Config lives here so the editor, CLI, and pre-commit agree.
+# --install-types / --non-interactive stay as pre-commit args: they are CLI-only
+# and let the isolated hook environment fetch missing type stubs.
+[tool.mypy]
+python_version = "3.13"
+explicit_package_bases = true
+strict_optional = false
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+pretty = true

@@ -25,12 +25,16 @@ repos:
         args: [--autofix, --no-sort-keys]
       - id: sort-simple-yaml
       - id: trailing-whitespace
+        # preserve Markdown hard line breaks (a line ending in two spaces)
+        args: [--markdown-linebreak-ext, "md,markdown"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.18
+    rev: v0.16.0
     hooks:
       - id: ruff
         name: ruff (lint + autofix)
+        # Rules are configured in [tool.ruff.lint] in pyproject.toml (shared with
+        # your editor). --fix makes commits auto-apply fixable violations.
         args: [--fix]
 
   - repo: https://github.com/psf/black
@@ -40,13 +44,9 @@ repos:
         args: [--safe]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v2.1.0"
+    rev: "v2.3.0"
     hooks:
       - id: mypy
-        args:
-          [
-            --no-strict-optional,
-            --ignore-missing-imports,
-            --install-types,
-            --non-interactive,
-          ]
+        # Settings live in [tool.mypy] in pyproject.toml (shared with your editor).
+        # These two are CLI-only: they let the isolated hook env install stubs.
+        args: [--install-types, --non-interactive]

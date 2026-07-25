@@ -1,0 +1,43 @@
+name: Pre-commit autoupdate
+
+on:
+  schedule:
+    # 06:00 UTC on the 1st of every month.
+    - cron: "0 6 1 * *"
+  # Allow manual runs from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      # Bumps each hook's `rev` to the latest tag in .pre-commit-config.yaml.
+      - name: Run pre-commit autoupdate
+        run: pre-commit autoupdate
+
+      # Opens (or updates) a PR only when autoupdate changed the config.
+      # NOTE: PRs opened with the default GITHUB_TOKEN do not trigger other
+      # workflows, so Run Tests won't run on this PR automatically, re-run it
+      # manually, or swap in a PAT here to have it run on push.
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore: pre-commit autoupdate"
+          title: "chore: pre-commit autoupdate"
+          body: |
+            Automated monthly bump of pre-commit hook versions via
+            `pre-commit autoupdate`.
+          branch: chore/pre-commit-autoupdate
+          delete-branch: true

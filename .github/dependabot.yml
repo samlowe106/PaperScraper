@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # Python dependencies via uv (reads pyproject.toml + uv.lock).
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      # One PR per week for all non-major bumps to keep the noise down.
+      python-minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # GitHub Actions used in .github/workflows/*.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]

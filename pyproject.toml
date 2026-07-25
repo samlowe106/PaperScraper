@@ -25,6 +25,7 @@ dev = [
     "coverage>=7.14.0",
     "pytest-cov>=7.1.0",
     "pytest-timeout>=2.3.0",
+    "ty>=0.0.63",
 ]
 
 [project.scripts]
@@ -80,6 +81,10 @@ extend-select = [
     "PERF", # perflint: performance anti-patterns
     "T20",  # flake8-print: flags stray print() (use `# noqa: T201` to allow one)
 ]
+ignore = [
+    "UP045", # keep Optional[X] spelling; don't rewrite to X | None
+    "UP007", # likewise keep Union[X, Y] available
+]
 
 [tool.ruff.lint.per-file-ignores]
 # CLI entry point: print() is the user interface.
@@ -88,14 +93,20 @@ extend-select = [
 # Mock() defaults in factory helpers are all fine here.
 "tests/**" = ["ASYNC230", "DTZ", "B008", "T20"]
 
-# mypy (type checker). Config lives here so the editor, CLI, and pre-commit agree.
-# --install-types / --non-interactive stay as pre-commit args: they are CLI-only
-# and let the isolated hook environment fetch missing type stubs.
-[tool.mypy]
-python_version = "3.13"
-explicit_package_bases = true
-strict_optional = false
-ignore_missing_imports = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-pretty = true
+# ty (type checker). Config lives here so the editor, CLI, and pre-commit agree.
+[tool.ty.environment]
+python-version = "3.13"
+# the repo root is the only source root: `src` is itself the package
+# (imports are `src.core`, `from .core`), so ty must not also treat ./src
+# as a root or relative imports resolve ambiguously
+root = ["."]
+
+[[tool.ty.overrides]]
+# tests deliberately pass Mock objects into typed parameters and poke
+# internals (e.g. assigning an ordered list to a set-typed attribute so
+# assertions are deterministic)
+include = ["tests/**"]
+
+[tool.ty.overrides.rules]
+invalid-argument-type = "ignore"
+invalid-assignment = "ignore"

@@ -43,10 +43,8 @@ repos:
       - id: black
         args: [--safe]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v2.3.0"
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.63
     hooks:
-      - id: mypy
-        # Settings live in [tool.mypy] in pyproject.toml (shared with your editor).
-        # These two are CLI-only: they let the isolated hook env install stubs.
-        args: [--install-types, --non-interactive]
+      # ty reads its config from [tool.ty] in pyproject.toml, not CLI flags.
+      - id: ty

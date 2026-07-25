@@ -100,7 +100,7 @@ uv run pytest --cov=src --block-network         # with coverage, no live network
 
 As of the latest run, **139 tests pass with ~97% line coverage**. CI runs the suite on the pinned Python version and fails the build if coverage drops below 80%.
 
-This repo also ships a [pre-commit](https://pre-commit.com/) config (`ruff`, `black`, `mypy`, and assorted file checks):
+This repo also ships a [pre-commit](https://pre-commit.com/) config (`ruff`, `black`, `ty`, and assorted file checks):
 
 ```sh
 uv run pre-commit install      # hooks will now run on every commit

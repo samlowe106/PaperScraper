@@ -9,7 +9,7 @@ license = "MIT"
 dependencies = [
     "httpx>=0.28.1,<0.29",
     "python-dotenv>=1.2.2",
-    "asyncpraw>=7.8.1",
+    "asyncpraw>=8.0.2",
     "aiofiles>=24.1.0",
 ]
 

@@ -22,10 +22,10 @@ dev = [
     "vcrpy>=8.3.0",
     "pytest-recording>=0.13.2,<0.14",
     "pytest-asyncio>=1.4.0",
-    "coverage>=7.15.2",
+    "coverage>=7.15.4",
     "pytest-cov>=7.1.0",
     "pytest-timeout>=2.3.0",
-    "ty>=0.0.65",
+    "ty>=0.0.69",
 ]
 
 [project.scripts]

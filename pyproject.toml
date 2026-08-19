@@ -8,7 +8,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "httpx>=0.28.1,<0.29",
-    "python-dotenv>=1.2.2",
+    "python-dotenv>=1.2.3",
     "asyncpraw>=7.8.1",
     "aiofiles>=24.1.0",
 ]
@@ -16,16 +16,16 @@ dependencies = [
 # Development tooling installed by `uv sync` (uv syncs the dev group by default).
 [dependency-groups]
 dev = [
-    "pre-commit>=4.6.1,<5",
+    "pre-commit>=4.6.2,<5",
     "pytest>=9.1.1",
     "pytest-dotenv>=0.5.2,<0.6",
     "vcrpy>=8.3.0",
     "pytest-recording>=0.13.2,<0.14",
     "pytest-asyncio>=1.4.0",
-    "coverage>=7.15.2",
+    "coverage>=7.15.4",
     "pytest-cov>=7.1.0",
     "pytest-timeout>=2.3.0",
-    "ty>=0.0.65",
+    "ty>=0.0.72",
 ]
 
 [project.scripts]

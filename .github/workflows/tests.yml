@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # setup-uv no longer publishes a moving major tag, so pin a full version.
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
       # run pre-commit via uv (avoids pre-commit/action, which still pins the
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # installs uv, provisions Python from .python-version, and caches ~/.cache/uv
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
 

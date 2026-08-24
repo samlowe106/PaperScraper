@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterable
-from typing import Self
+from typing import Self, cast
 
 import asyncpraw
 import asyncpraw.models
@@ -56,25 +56,33 @@ class StreamBuilder:
             password=self.redditor[1] if self.redditor else None,
         )
 
-        streams: list[AsyncIterable[asyncpraw.models.Submission]] = []
+        streams: list[
+            AsyncIterable[asyncpraw.models.Comment | asyncpraw.models.Submission]
+        ] = []
 
         if self.redditor:
             # saved posts belong to the authenticated user; reddit.user.me() and
             # reddit.redditor() are coroutines, so build() has to be async
             me = await reddit.user.me()
+            assert me is not None, "reddit.user.me() returned None; not authenticated"
             streams.append(me.saved(limit=self.limit))
 
         for name, sortby in self.subreddits:
             streams.append(sortby(reddit.subreddit(name), limit=self.limit))
 
-        stream: AsyncIterable[asyncpraw.models.Submission] = merge(*streams)
+        stream: AsyncIterable[asyncpraw.models.Comment | asyncpraw.models.Submission]
+        stream = merge(*streams)
 
         def mapfunc(submission: asyncpraw.models.Submission) -> SubmissionWrapper:
             return SubmissionWrapper(submission, http)
 
-        # saved() can also yield Comments; we only handle Submissions
-        submissions = afilter(
-            lambda item: not isinstance(item, asyncpraw.models.Comment), stream
+        # saved() can also yield Comments; this filter guarantees only Submissions
+        # remain, but the isinstance lambda doesn't narrow the type statically
+        submissions = cast(
+            "AsyncIterable[asyncpraw.models.Submission]",
+            afilter(
+                lambda item: not isinstance(item, asyncpraw.models.Comment), stream
+            ),
         )
 
         return afilter(self.predicate, amap(mapfunc, submissions))

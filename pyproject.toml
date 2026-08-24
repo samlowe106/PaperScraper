@@ -63,9 +63,8 @@ fail_under = 80
 # Ruff (linter). Rule selection lives here, not in the pre-commit args, so your
 # editor's Ruff integration enforces exactly the same rules. The pre-commit hook
 # only adds --fix, so commits auto-apply fixable violations.
-[tool.ruff]
-target-version = "py314"
-
+# target-version is intentionally unset: Ruff infers it from requires-python
+# above, so bumping the supported floor there is the only place to touch.
 [tool.ruff.lint]
 # Added on top of Ruff's defaults (E, F). Full list: https://docs.astral.sh/ruff/rules/
 extend-select = [
@@ -94,8 +93,9 @@ ignore = [
 "tests/**" = ["ASYNC230", "DTZ", "B008", "T20"]
 
 # ty (type checker). Config lives here so the editor, CLI, and pre-commit agree.
+# python-version is intentionally unset: ty infers it from requires-python
+# above, so bumping the supported floor there is the only place to touch.
 [tool.ty.environment]
-python-version = "3.14"
 # the repo root is the only source root: `src` is itself the package
 # (imports are `src.core`, `from .core`), so ty must not also treat ./src
 # as a root or relative imports resolve ambiguously

@@ -33,8 +33,12 @@ jobs:
       # would be installed (fails the job if any dependency has a known CVE).
       - name: Export locked dependencies
         run: uv export --frozen --format requirements-txt --no-emit-project -o requirements.txt
+      # uvx runs pip-audit as an isolated tool, so it won't pick up .python-version
+      # on its own; pin it explicitly so its dry-run install evaluates the same
+      # environment markers uv did when resolving the lockfile (otherwise a
+      # marker-gated transitive dep can appear unpinned under --require-hashes).
       - name: Audit dependencies
-        run: uvx pip-audit -r requirements.txt
+        run: uvx --python "$(cat .python-version)" pip-audit -r requirements.txt
 
   # Static analysis of the source for security issues (results in the Security
   # tab). Free on public repos; private repos need GitHub Advanced Security.

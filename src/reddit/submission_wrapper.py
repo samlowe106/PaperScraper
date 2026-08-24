@@ -32,7 +32,7 @@ async def _get_with_retry(
             response = await client.get(url, timeout=timeout)
             if response.status_code not in _RETRYABLE_STATUS:
                 return response
-        except (httpx.TransportError, httpx.TimeoutException):
+        except httpx.TransportError, httpx.TimeoutException:
             response = None
         if attempt < attempts - 1:
             await asyncio.sleep(backoff * (2**attempt))

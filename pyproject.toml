@@ -2,10 +2,10 @@
 name = "paperscraper"
 version = "0.1.0"
 description = ""
-authors = [{ name = "Samuel Lowe", email = "samlowe106@gmail.com" }]
+authors = [{ name = "Samuel Lowe", email = "sam@samlowe.dev" }]
 requires-python = ">=3.14,<4"
 readme = "README.md"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 dependencies = [
     "httpx>=0.28.1,<0.29",
     "python-dotenv>=1.2.3",

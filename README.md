@@ -121,4 +121,4 @@ Concurrency is bounded by two `asyncio.Semaphore`s — one for URL finding and a
 
 ## License
 
-Paper Scraper is licensed under the [MIT license](https://github.com/samlowe106/PaperScraper/blob/master/LICENSE).
+Since August 24th, 2026, Paper Scraper is licensed under [AGPLv3](LICENSE). Previous versions of Paper Scraper were licensed under the [MIT license](https://github.com/samlowe106/PaperScraper/blob/207b804b9e2b74060df930ff44c9647796acc65a/LICENSE).

@@ -23,9 +23,13 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-      # run pre-commit via uv (avoids pre-commit/action, which still pins the
-      # Node 20 actions/cache@v4 internally)
-      - run: uvx pre-commit run --all-files
+      # `uv run` (not `uvx`) so this syncs the project first: pre-commit runs
+      # under the project's own .python-version interpreter with deps installed,
+      # instead of uvx's isolated tool env (bare system Python, no project deps,
+      # which breaks the ty hook and makes debug-statements choke on syntax the
+      # runner's system Python predates). Also avoids pre-commit/action, which
+      # still pins the Node 20 actions/cache@v4 internally.
+      - run: uv run pre-commit run --all-files
 
   test:
     runs-on: ubuntu-latest

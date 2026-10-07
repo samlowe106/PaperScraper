@@ -8,7 +8,7 @@ readme = "README.md"
 license = "AGPL-3.0-or-later"
 dependencies = [
     "httpx>=0.28.1,<0.29",
-    "python-dotenv>=1.2.3",
+    "python-dotenv>=1.2.4",
     "asyncpraw>=8.0.3",
     "aiofiles>=24.1.0",
 ]
@@ -20,12 +20,12 @@ dev = [
     "pytest>=9.1.1",
     "pytest-dotenv>=0.5.2,<0.6",
     "vcrpy>=8.3.0",
-    "pytest-recording>=0.13.2,<0.14",
+    "pytest-recording>=0.14.0,<0.15",
     "pytest-asyncio>=1.4.0",
-    "coverage>=7.16.0",
+    "coverage>=7.16.2",
     "pytest-cov>=7.1.0",
     "pytest-timeout>=2.3.0",
-    "ty>=0.0.75",
+    "ty>=0.0.84",
 ]
 
 [project.scripts]

@@ -4,8 +4,9 @@ import posixpath
 import httpx
 
 from .client_bundle import AsyncClientBundle, make_http_client
-from .file_manager import DownloadsExtensions, UniqueDirectoryFileManager
+from .file_manager import UniqueDirectoryFileManager
 from .functional import Predicate, afilter, amap, merge
+from .host_limiter import HostLimitedTransport, retry_after_seconds
 
 
 def get_response_file_extension(response: httpx.Response) -> str:
@@ -26,7 +27,7 @@ def get_response_file_extension(response: httpx.Response) -> str:
 
 __all__ = [
     "AsyncClientBundle",
-    "DownloadsExtensions",
+    "HostLimitedTransport",
     "Predicate",
     "UniqueDirectoryFileManager",
     "afilter",
@@ -34,4 +35,5 @@ __all__ = [
     "get_response_file_extension",
     "make_http_client",
     "merge",
+    "retry_after_seconds",
 ]

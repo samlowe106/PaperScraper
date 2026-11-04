@@ -15,7 +15,6 @@ from src.main import (
     build_stream,
     main,
     max_age_seconds,
-    process_download,
     process_submission,
 )
 from src.reddit import SortOption, SubmissionWrapper
@@ -42,13 +41,16 @@ def _args(**overrides):
     return Namespace(**defaults)
 
 
-def _fake_wrapped(title, subreddit="pics", downloads=None):
-    """A stand-in for SubmissionWrapper with async find_urls/download/unsave."""
+def _fake_wrapped(title, subreddit="pics", saved=None):
+    """
+    A stand-in for SubmissionWrapper with async find_urls/download/unsave;
+    download "saves" the given paths
+    """
     wrapped = MagicMock()
     wrapped.title = title
     wrapped.subreddit = subreddit
     wrapped.find_urls = AsyncMock()
-    wrapped.download = AsyncMock(return_value=downloads or [])
+    wrapped.download = AsyncMock(return_value=saved or [])
     wrapped.unsave = AsyncMock()
     wrapped.log_record = MagicMock(
         return_value={"title": title, "recognized_urls": [], "exception": ""}
@@ -100,55 +102,31 @@ class TestBuildStream(unittest.IsolatedAsyncioTestCase):
         builder.add_subreddit.assert_not_called()
 
 
-class TestProcessDownload(unittest.IsolatedAsyncioTestCase):
-
-    async def test_saves_downloaded_files(self):
-        wrapped = _fake_wrapped("T", "pics", downloads=[(b"x", ".jpg")])
-        file_manager = MagicMock()
-        file_manager.save_files = AsyncMock(return_value=["/out/T.jpg"])
-        client = MagicMock()
-
-        semaphore = asyncio.Semaphore(1)
-
-        result = await process_download(wrapped, client, file_manager, semaphore)
-
-        wrapped.download.assert_awaited_once_with(client, semaphore)
-        file_manager.save_files.assert_awaited_once_with(
-            "T", [(b"x", ".jpg")], subreddit="pics"
-        )
-        self.assertEqual(result, ["/out/T.jpg"])
-
-
 class TestProcessSubmission(unittest.IsolatedAsyncioTestCase):
 
     async def test_finds_urls_with_bundle_then_downloads_with_http(self):
-        wrapped = _fake_wrapped("T", "pics", downloads=[(b"x", ".jpg")])
+        wrapped = _fake_wrapped("T", "pics", saved=["/out/T.jpg"])
         clients = MagicMock()
         file_manager = MagicMock()
-        file_manager.save_files = AsyncMock(return_value=["/out/T.jpg"])
-
-        download_sem = asyncio.Semaphore(1)
 
         result = await process_submission(
-            wrapped, clients, file_manager, asyncio.Semaphore(1), download_sem
+            wrapped, clients, file_manager, asyncio.Semaphore(1)
         )
 
         # find_urls gets the whole bundle; download gets just the http client
         wrapped.find_urls.assert_awaited_once_with(clients)
-        wrapped.download.assert_awaited_once_with(clients.http, download_sem)
+        wrapped.download.assert_awaited_once_with(clients.http, file_manager)
         self.assertEqual(result, ["/out/T.jpg"])
 
     async def _run(self, *, saved_paths, log=False, unsave=False):
-        wrapped = _fake_wrapped("T", "pics", downloads=[(b"x", ".jpg")])
+        wrapped = _fake_wrapped("T", "pics", saved=saved_paths)
         clients = MagicMock()
         file_manager = MagicMock()
-        file_manager.save_files = AsyncMock(return_value=saved_paths)
         file_manager.log = AsyncMock()
         await process_submission(
             wrapped,
             clients,
             file_manager,
-            asyncio.Semaphore(1),
             asyncio.Semaphore(1),
             log=log,
             unsave=unsave,
@@ -181,14 +159,12 @@ class TestProcessSubmission(unittest.IsolatedAsyncioTestCase):
         wrapped = _fake_wrapped("T", "pics")
         wrapped.find_urls = AsyncMock(side_effect=RuntimeError("boom"))
         file_manager = MagicMock()
-        file_manager.save_files = AsyncMock(return_value=[])
         file_manager.log = AsyncMock()
 
         result = await process_submission(
             wrapped,
             MagicMock(),
             file_manager,
-            asyncio.Semaphore(1),
             asyncio.Semaphore(1),
             log=True,
         )
@@ -201,16 +177,14 @@ class TestProcessSubmission(unittest.IsolatedAsyncioTestCase):
     async def test_failing_log_does_not_escape(self):
         # process_submission runs in a TaskGroup; anything it raises cancels
         # every other submission
-        wrapped = _fake_wrapped("T", "pics", downloads=[(b"x", ".jpg")])
+        wrapped = _fake_wrapped("T", "pics", saved=["/out/T.jpg"])
         file_manager = MagicMock()
-        file_manager.save_files = AsyncMock(return_value=["/out/T.jpg"])
         file_manager.log = AsyncMock(side_effect=OSError("disk full"))
 
         result = await process_submission(
             wrapped,
             MagicMock(),
             file_manager,
-            asyncio.Semaphore(1),
             asyncio.Semaphore(1),
             log=True,
         )
@@ -228,7 +202,6 @@ class TestProcessSubmission(unittest.IsolatedAsyncioTestCase):
             wrapped,
             MagicMock(),
             file_manager,
-            asyncio.Semaphore(1),
             asyncio.Semaphore(1),
             log=False,
         )
@@ -254,7 +227,7 @@ class TestMainPipeline(unittest.IsolatedAsyncioTestCase):
         # every request yields to the loop first, like a real network call
         await asyncio.sleep(0)
         host, path = request.url.host, request.url.path
-        if host == "i.redd.it":
+        if host in ("i.redd.it", "preview.redd.it"):
             return httpx.Response(
                 200, headers={"Content-Type": "image/jpeg"}, content=path.encode()
             )
@@ -275,14 +248,14 @@ class TestMainPipeline(unittest.IsolatedAsyncioTestCase):
             )
         return httpx.Response(404, headers={"Content-Type": "text/html"})
 
-    async def _run(self, submissions, **args):
+    async def _run(self, submissions, handler=None, **args):
         stream_args = {}
 
         async def fake_build_stream(clients, **kwargs):
             stream_args["clients"] = clients
             return async_iter(SubmissionWrapper(s) for s in submissions)
 
-        transport = httpx.MockTransport(self._handler)
+        transport = httpx.MockTransport(handler or self._handler)
         with (
             patch("src.main.build_stream", side_effect=fake_build_stream),
             patch(
@@ -344,6 +317,39 @@ class TestMainPipeline(unittest.IsolatedAsyncioTestCase):
         # no parser blew up on a url meant for another parser
         self.assertFalse([line for line in self.printed if "failed" in line])
 
+    async def test_gallery_needs_no_reddit_fetch(self):
+        # build_stream is faked, so clients.reddit is never set up: fetching the
+        # post would fail the reddit parser
+        gallery = SubmissionMockFactory(
+            title="Gallery",
+            url="https://www.reddit.com/gallery/abc",
+            is_gallery=True,
+            gallery_data={"items": [{"media_id": "y"}, {"media_id": "x"}]},
+            media_metadata={
+                media_id: {
+                    "status": "valid",
+                    "s": {"u": f"https://preview.redd.it/{media_id}.jpg?a=1&amp;b=2"},
+                }
+                for media_id in "xy"
+            },
+        )
+        await self._run([gallery])
+        self.assertEqual(
+            self._files(),
+            {
+                os.path.join("Gallery", "0.jpg"): b"/y.jpg",
+                os.path.join("Gallery", "1.jpg"): b"/x.jpg",
+            },
+        )
+        self.assertEqual(
+            self.requests,
+            [
+                "https://preview.redd.it/y.jpg?a=1&b=2",
+                "https://preview.redd.it/x.jpg?a=1&b=2",
+            ],
+        )
+        self.assertFalse([line for line in self.printed if "failed" in line])
+
     async def test_clients_stay_open_until_every_submission_finishes(self):
         # the bundle used to close as soon as the stream ran out, while every
         # submission task was still pending
@@ -357,6 +363,33 @@ class TestMainPipeline(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(len(self._files()), 5)
         self.assertTrue(clients.http.is_closed)
+
+    async def test_active_posts_are_limited(self):
+        # each post's requests share its image path, so distinct paths in flight
+        # at once are the posts being worked on
+        in_flight: set[str] = set()
+        peak = 0
+
+        async def tracking(request):
+            nonlocal peak
+            in_flight.add(request.url.path)
+            peak = max(peak, len(in_flight))
+            await asyncio.sleep(0.02)
+            in_flight.discard(request.url.path)
+            return await self._handler(request)
+
+        with patch("src.main.MAX_ACTIVE_POSTS", 2):
+            await self._run(
+                [
+                    SubmissionMockFactory(
+                        title=f"Post {i}", url=f"https://i.redd.it/{i}.jpg"
+                    )
+                    for i in range(6)
+                ],
+                handler=tracking,
+            )
+        self.assertEqual(peak, 2)
+        self.assertEqual(len(self._files()), 6)
 
     async def test_same_titles_dont_overwrite(self):
         await self._run(

@@ -1,15 +1,13 @@
 import asyncio
+import contextlib
 import itertools
 import json
 import os
-from collections.abc import Iterator
+from collections.abc import AsyncIterable, Iterator
 from datetime import datetime
 
 import aiofiles
 import aiofiles.os
-
-# (content, extension) pairs; extensions keep their leading dot, e.g. ".jpg"
-type DownloadsExtensions = list[tuple[bytes, str]]
 
 # most filesystems cap a single path component at 255 bytes (not characters)
 MAX_NAME_BYTES = 255
@@ -50,63 +48,40 @@ class UniqueDirectoryFileManager:
             await logfile.write(line)
         return path
 
-    async def save_files(
-        self,
-        title: str,
-        downloads: DownloadsExtensions,
-        subreddit: str | None = None,
-    ) -> list[str]:
+    async def post_directory(self, subreddit: str | None = None) -> str:
         """
-        Saves all files and bundles them with their results
-        :param directory: directory in which to save each file
-        :param title: title that the final file should have
-        :param organize: whether or not to organize the save directory by subreddit
-        :return: a list of filepaths to which the files were saved
+        The directory a post's files go in, created if needed: the subreddit's
+        folder when organizing, otherwise this run's directory
         """
+        if self.organize and subreddit:
+            directory = os.path.join(self.directory, subreddit)
+            # shared by every post from the subreddit, so it need not be unique
+            await aiofiles.os.makedirs(directory, exist_ok=True)
+            return directory
+        return self.directory
 
-        if not downloads:
-            return []
-
-        directory = os.path.join(
-            self.directory, subreddit if self.organize and subreddit else ""
-        )
-        # subreddit directory need not be unique
-        await aiofiles.os.makedirs(directory, exist_ok=True)
-
-        if len(downloads) == 1:
-            # just one file, no need for a directory
-            download, extension = downloads[0]
-            return [await self._write_unique(directory, title, extension, download)]
-
-        # album, need a directory to hold all the files
-        directory = await self._mkdir_unique(directory, title)
-
-        filepaths = [
-            os.path.join(directory, f"{i}{extension}")
-            for i, (_, extension) in enumerate(downloads)
-        ]
-        # write every file in the album concurrently
-        await asyncio.gather(
-            *(
-                self._write(destination, download)
-                for destination, (download, _) in zip(filepaths, downloads, strict=True)
-            )
-        )
-
-        return filepaths
+    async def make_album(self, directory: str, title: str) -> str:
+        """Creates a new album folder in directory named after title"""
+        return await self._mkdir_unique(directory, title)
 
     @staticmethod
-    async def _write(destination: str, content: bytes, mode: str = "wb") -> None:
-        """Writes bytes to a path without blocking the event loop"""
-        async with aiofiles.open(destination, mode) as f:
-            await f.write(content)
+    async def discard_if_empty(directory: str) -> None:
+        """Removes directory if nothing was saved into it"""
+        with contextlib.suppress(OSError):
+            await aiofiles.os.rmdir(directory)
 
-    async def _write_unique(
-        self, directory: str, title: str, extension: str, content: bytes
+    async def write_unique(
+        self,
+        directory: str,
+        title: str,
+        extension: str,
+        chunks: AsyncIterable[bytes],
     ) -> str:
         """
-        Writes content to a new file in directory named after title, appending
-        " (1)", " (2)", ... until the name is free
+        Writes chunks, as they arrive, to a new file in directory named after
+        title, appending " (1)", " (2)", ... until the name is free. If writing
+        fails partway, the partial file is removed (freeing its name) and the
+        error re-raised.
         :return: the path that was written to
         """
         # exclusive creation ("xb") makes checking and claiming a name one step,
@@ -114,9 +89,19 @@ class UniqueDirectoryFileManager:
         for name in self.unique_names(title, extension):
             path = os.path.join(directory, name)
             try:
-                await self._write(path, content, mode="xb")
+                file = await aiofiles.open(path, "xb")
             except FileExistsError:
                 continue
+            try:
+                try:
+                    async for chunk in chunks:
+                        await file.write(chunk)
+                finally:
+                    await file.close()
+            except BaseException:
+                with contextlib.suppress(FileNotFoundError):
+                    await aiofiles.os.remove(path)
+                raise
             return path
         raise AssertionError("unreachable: unique_names is infinite")
 

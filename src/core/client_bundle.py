@@ -6,6 +6,8 @@ import asyncpraw
 import httpx
 from dotenv import load_dotenv
 
+from .host_limiter import HostLimitedTransport
+
 # reddit asks for "<platform>:<app id>:<version> (by <contact>)" and throttles
 # generic user agents harder
 USER_AGENT = (
@@ -14,14 +16,39 @@ USER_AGENT = (
 )
 
 
-def make_http_client(**kwargs) -> httpx.AsyncClient:
+# connections in the pool, and so requests in flight at once. The limiter's total
+# must equal the pool size so requests wait in the limiter (no timeout) rather
+# than in the pool (where waiting counts against the request's timeout)
+MAX_CONNECTIONS = 32
+# requests in flight to any one host; nearly every download goes to one of a few
+# hosts (i.redd.it, i.imgur.com), and imgur answers bursts with 429s
+MAX_PER_HOST = 8
+
+
+def make_http_client(
+    transport: httpx.AsyncBaseTransport | None = None, **kwargs
+) -> httpx.AsyncClient:
     """
     The http client every request goes through. Tests build theirs here too
     (passing a mock transport) so they exercise the same configuration.
     """
-    # image hosts and short links commonly redirect, and httpx doesn't follow
-    # redirects unless asked
-    return httpx.AsyncClient(follow_redirects=True, **kwargs)
+    if transport is None:
+        transport = httpx.AsyncHTTPTransport(
+            limits=httpx.Limits(
+                max_connections=MAX_CONNECTIONS,
+                # the default (20) would drop connections to the busy hosts
+                max_keepalive_connections=MAX_CONNECTIONS,
+            )
+        )
+    return httpx.AsyncClient(
+        transport=HostLimitedTransport(
+            transport, per_host=MAX_PER_HOST, total=MAX_CONNECTIONS
+        ),
+        # image hosts and short links commonly redirect, and httpx doesn't
+        # follow redirects unless asked
+        follow_redirects=True,
+        **kwargs,
+    )
 
 
 @dataclass

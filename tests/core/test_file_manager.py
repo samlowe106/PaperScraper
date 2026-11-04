@@ -82,135 +82,160 @@ def _relpaths(manager, paths):
     return [os.path.relpath(path, manager.directory) for path in paths]
 
 
-class TestSaveFiles(_TempManagerTestCase):
+async def _chunks(*parts: bytes):
+    for part in parts:
+        await asyncio.sleep(0)  # arrive over time, like a response body
+        yield part
 
-    async def test_single_file(self):
-        paths = await self.manager.save_files("My Title", [(b"data", ".jpg")])
-        self.assertEqual(_relpaths(self.manager, paths), ["My Title.jpg"])
-        with open(paths[0], "rb") as f:
-            self.assertEqual(f.read(), b"data")
 
-    async def test_empty_downloads_returns_empty(self):
-        self.assertEqual(await self.manager.save_files("t", []), [])
+def _read(path):
+    with open(path, "rb") as f:
+        return f.read()
 
-    async def test_album_creates_dir_and_numbered_files(self):
-        paths = await self.manager.save_files("Album", [(b"a", ".jpg"), (b"b", ".png")])
-        # exactly these paths: albums used to land in a second copy of the
-        # output path, with "0..jpg" names
-        self.assertEqual(
-            _relpaths(self.manager, paths),
-            [os.path.join("Album", "0.jpg"), os.path.join("Album", "1.png")],
+
+class TestWriteUnique(_TempManagerTestCase):
+
+    async def _write(self, title, extension=".jpg", *parts, directory=None):
+        return await self.manager.write_unique(
+            directory or self.manager.directory,
+            title,
+            extension,
+            _chunks(*(parts or (b"data",))),
         )
-        with open(paths[0], "rb") as f:
-            self.assertEqual(f.read(), b"a")
-        with open(paths[1], "rb") as f:
-            self.assertEqual(f.read(), b"b")
+
+    async def test_writes_chunks_in_order(self):
+        path = await self._write("My Title", ".jpg", b"a", b"b", b"c")
+        self.assertEqual(_relpaths(self.manager, [path]), ["My Title.jpg"])
+        self.assertEqual(_read(path), b"abc")
+
+    async def test_unique_filename_on_collision(self):
+        await self._write("Dup")
+        path = await self._write("Dup")
+        self.assertEqual(_relpaths(self.manager, [path]), ["Dup (1).jpg"])
+
+    async def test_concurrent_same_title_files_dont_overwrite(self):
+        # names used to be checked and written in separate steps, so concurrent
+        # saves all picked "Same.jpg" and overwrote each other
+        paths = await asyncio.gather(
+            *(self._write("Same", ".jpg", b"%d" % i) for i in range(5))
+        )
+        self.assertEqual(len(set(paths)), 5)
+        self.assertEqual({_read(path) for path in paths}, {b"%d" % i for i in range(5)})
+
+    async def test_failure_partway_leaves_no_file(self):
+        async def broken():
+            yield b"partial"
+            raise OSError("connection dropped")
+
+        with self.assertRaises(OSError):
+            await self.manager.write_unique(
+                self.manager.directory, "T", ".jpg", broken()
+            )
+        self.assertEqual(os.listdir(self.manager.directory), [])
+        # and the name is free again
+        path = await self._write("T")
+        self.assertEqual(_relpaths(self.manager, [path]), ["T.jpg"])
+
+    async def test_invalid_chars_in_title(self):
+        path = await self._write("a/b:c")
+        self.assertEqual(_relpaths(self.manager, [path]), ["a_b_c.jpg"])
+
+    async def test_long_multibyte_title(self):
+        # 200 CJK characters is 600 bytes; cutting to 250 characters still
+        # exceeded the 255-byte name limit
+        path = await self._write("猫" * 200)
+        self.assertLessEqual(len(os.path.basename(path).encode()), 255)
+        self.assertEqual(_read(path), b"data")
+
+    async def test_no_extension(self):
+        path = await self._write("T", "")
+        self.assertEqual(_relpaths(self.manager, [path]), ["T"])
+
+
+class TestMakeAlbum(_TempManagerTestCase):
+
+    async def test_creates_album_in_directory(self):
+        album = await self.manager.make_album(self.manager.directory, "Album")
+        self.assertEqual(_relpaths(self.manager, [album]), ["Album"])
+        self.assertTrue(os.path.isdir(album))
+
+    async def test_unique_album_on_collision(self):
+        await self.manager.make_album(self.manager.directory, "Dup")
+        album = await self.manager.make_album(self.manager.directory, "Dup")
+        self.assertEqual(_relpaths(self.manager, [album]), ["Dup (1)"])
+
+    async def test_concurrent_same_title_albums(self):
+        # the second album used to fail with FileExistsError
+        albums = await asyncio.gather(
+            *(self.manager.make_album(self.manager.directory, "Same") for _ in range(3))
+        )
+        self.assertEqual(len(set(albums)), 3)
+
+    async def test_long_multibyte_title(self):
+        album = await self.manager.make_album(self.manager.directory, "猫" * 200)
+        self.assertLessEqual(len(os.path.basename(album).encode()), 255)
+        self.assertTrue(os.path.isdir(album))
 
     async def test_relative_output_directory(self):
         # the default --dir is the relative "Output"; joining two relative paths
-        # is what nested albums under a second copy of it
+        # is what used to nest albums under a second copy of it
         with tempfile.TemporaryDirectory() as cwd:
             previous = os.getcwd()
             os.chdir(cwd)
             try:
                 manager = UniqueDirectoryFileManager("Output", organize=True)
-                paths = await manager.save_files(
-                    "A", [(b"a", ".jpg"), (b"b", ".jpg")], subreddit="pics"
-                )
+                directory = await manager.post_directory("pics")
+                album = await manager.make_album(directory, "A")
+                self.assertTrue(os.path.isdir(album))
             finally:
                 os.chdir(previous)
+        self.assertEqual(_relpaths(manager, [album]), [os.path.join("pics", "A")])
+
+
+class TestPostDirectory(_TempManagerTestCase):
+
+    async def test_not_organized(self):
         self.assertEqual(
-            _relpaths(manager, paths),
-            [os.path.join("pics", "A", "0.jpg"), os.path.join("pics", "A", "1.jpg")],
+            await self.manager.post_directory("pics"), self.manager.directory
         )
 
-    async def test_unique_filename_on_collision(self):
-        await self.manager.save_files("Dup", [(b"1", ".jpg")])
-        paths = await self.manager.save_files("Dup", [(b"2", ".jpg")])
-        self.assertEqual(_relpaths(self.manager, paths), ["Dup (1).jpg"])
 
-    async def test_unique_album_on_collision(self):
-        await self.manager.save_files("Dup", [(b"1", ".jpg"), (b"2", ".jpg")])
-        paths = await self.manager.save_files("Dup", [(b"3", ".jpg"), (b"4", ".jpg")])
-        self.assertEqual(
-            _relpaths(self.manager, paths),
-            [os.path.join("Dup (1)", "0.jpg"), os.path.join("Dup (1)", "1.jpg")],
-        )
-
-    async def test_concurrent_same_title_files_dont_overwrite(self):
-        # names used to be checked and written in separate steps, so concurrent
-        # saves all picked "Same.jpg" and overwrote each other
-        results = await asyncio.gather(
-            *(self.manager.save_files("Same", [(b"%d" % i, ".jpg")]) for i in range(5))
-        )
-        paths = [path for result in results for path in result]
-        self.assertEqual(len(set(paths)), 5)
-        contents = set()
-        for path in paths:
-            with open(path, "rb") as f:
-                contents.add(f.read())
-        self.assertEqual(contents, {b"%d" % i for i in range(5)})
-
-    async def test_concurrent_same_title_albums(self):
-        # the second album used to fail with FileExistsError
-        results = await asyncio.gather(
-            *(
-                self.manager.save_files("Same", [(b"a", ".jpg"), (b"b", ".jpg")])
-                for _ in range(3)
-            )
-        )
-        dirs = {os.path.dirname(result[0]) for result in results}
-        self.assertEqual(len(dirs), 3)
-
-    async def test_invalid_chars_in_title(self):
-        paths = await self.manager.save_files("a/b:c", [(b"x", ".jpg")])
-        self.assertEqual(_relpaths(self.manager, paths), ["a_b_c.jpg"])
-
-    async def test_long_multibyte_title(self):
-        # 200 CJK characters is 600 bytes; cutting to 250 characters still
-        # exceeded the 255-byte name limit
-        title = "猫" * 200
-        single = await self.manager.save_files(title, [(b"x", ".jpg")])
-        album = await self.manager.save_files(title, [(b"x", ".jpg"), (b"y", ".jpg")])
-        for path in [single[0], os.path.dirname(album[0])]:
-            self.assertLessEqual(len(os.path.basename(path).encode()), 255)
-            self.assertTrue(os.path.exists(path))
-
-    async def test_extension_without_name_is_kept(self):
-        paths = await self.manager.save_files("T", [(b"x", "")])
-        self.assertEqual(_relpaths(self.manager, paths), ["T"])
-
-
-class TestSaveFilesOrganized(_TempManagerTestCase):
+class TestPostDirectoryOrganized(_TempManagerTestCase):
     organize = True
 
-    async def test_organize_creates_subreddit_dir(self):
-        paths = await self.manager.save_files("T", [(b"x", ".jpg")], subreddit="pics")
-        self.assertEqual(
-            _relpaths(self.manager, paths), [os.path.join("pics", "T.jpg")]
-        )
+    async def test_subreddit_folder(self):
+        directory = await self.manager.post_directory("pics")
+        self.assertEqual(_relpaths(self.manager, [directory]), ["pics"])
+        self.assertTrue(os.path.isdir(directory))
+        # shared by every post from the subreddit
+        self.assertEqual(await self.manager.post_directory("pics"), directory)
 
-    async def test_album_goes_inside_subreddit_dir(self):
-        paths = await self.manager.save_files(
-            "A", [(b"a", ".jpg"), (b"b", ".jpg")], subreddit="pics"
-        )
-        self.assertEqual(
-            _relpaths(self.manager, paths),
-            [os.path.join("pics", "A", "0.jpg"), os.path.join("pics", "A", "1.jpg")],
-        )
-
-    async def test_album_uniqueness_is_checked_in_subreddit_dir(self):
+    async def test_album_uniqueness_is_checked_in_subreddit_folder(self):
         # a same-named album in a different subreddit isn't a conflict
-        await self.manager.save_files(
-            "A", [(b"a", ".jpg"), (b"b", ".jpg")], subreddit="pics"
+        await self.manager.make_album(await self.manager.post_directory("pics"), "A")
+        album = await self.manager.make_album(
+            await self.manager.post_directory("art"), "A"
         )
-        paths = await self.manager.save_files(
-            "A", [(b"a", ".jpg"), (b"b", ".jpg")], subreddit="art"
-        )
+        self.assertEqual(_relpaths(self.manager, [album]), [os.path.join("art", "A")])
+
+    async def test_no_subreddit(self):
         self.assertEqual(
-            os.path.relpath(os.path.dirname(paths[0]), self.manager.directory),
-            os.path.join("art", "A"),
+            await self.manager.post_directory(None), self.manager.directory
         )
+
+
+class TestDiscardIfEmpty(_TempManagerTestCase):
+
+    async def test_removes_empty(self):
+        album = await self.manager.make_album(self.manager.directory, "A")
+        await self.manager.discard_if_empty(album)
+        self.assertFalse(os.path.exists(album))
+
+    async def test_keeps_nonempty(self):
+        album = await self.manager.make_album(self.manager.directory, "A")
+        await self.manager.write_unique(album, "0", ".jpg", _chunks(b"x"))
+        await self.manager.discard_if_empty(album)
+        self.assertTrue(os.path.exists(os.path.join(album, "0.jpg")))
 
 
 class TestUniqueNames(unittest.TestCase):

@@ -44,21 +44,34 @@ async def reddit_parser(url: str, clients: AsyncClientBundle) -> list[str]:
         # a subreddit, user page, etc.
         return []
 
-    if urlparse(submission.url).netloc.lower() in _IMAGE_HOSTS:
-        return [submission.url]
+    return media_urls(submission)
 
-    # only gallery posts have is_gallery; on others, asyncpraw raises AttributeError
-    if getattr(submission, "is_gallery", False):
-        return _gallery_urls(submission)
+
+def media_urls(submission: asyncpraw.models.Submission) -> list[str]:
+    """
+    Direct links to the images reddit hosts for submission, in order, using
+    only data it already has (no request). [] if it isn't a reddit image or
+    gallery post, or if the data needed is missing.
+    """
+    url = getattr(submission, "url", "")
+    if urlparse(url).netloc.lower() in _IMAGE_HOSTS:
+        return [url]
+
+    # getattr throughout: asyncpraw raises AttributeError for fields a post
+    # doesn't have (is_gallery on non-galleries) or a listing didn't include
+    gallery_data = getattr(submission, "gallery_data", None)
+    media_metadata = getattr(submission, "media_metadata", None)
+    if getattr(submission, "is_gallery", False) and gallery_data and media_metadata:
+        return _gallery_urls(gallery_data, media_metadata)
 
     return []
 
 
-def _gallery_urls(submission: asyncpraw.models.Submission) -> list[str]:
+def _gallery_urls(gallery_data: dict, media_metadata: dict) -> list[str]:
     """The best available url for each gallery item, in gallery order"""
     urls = []
-    for item in submission.gallery_data["items"]:
-        metadata = submission.media_metadata.get(item["media_id"], {})
+    for item in gallery_data["items"]:
+        metadata = media_metadata.get(item["media_id"], {})
         # deleted or still-processing items have no source
         if metadata.get("status") != "valid":
             continue

@@ -1,6 +1,6 @@
 # Paper Scraper for Reddit
 
-[![Tests](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml/badge.svg)](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml) [![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml)
+[![Tests](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml/badge.svg)](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml) [![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)](https://github.com/samlowe106/PaperScraper/actions/workflows/tests.yml)
 
 Paper Scraper is an asynchronous Python tool that downloads images from Reddit, either from your **saved posts** or from any **subreddits** you specify.
 
@@ -83,7 +83,7 @@ uv run paperscraper -r wallpapers --sortby top_all -d pics
 uv run paperscraper -r wallpapers -r art --sortby top_week --days 7 -k 100 --limit 5
 ```
 
-Files are written to a timestamped directory (e.g. `Output/PaperScraper 2026-06-20 08-30/`, with ` (1)`, ` (2)`, ... added if that already exists).
+Files are written to a timestamped directory (e.g. `Output/PaperScraper 2026-06-20 08-30/`, with ` (1)`, ` (2)`, ... added if that already exists). A post with one image is saved as `<title>.<ext>`; a gallery or album becomes a `<title>/` folder of files numbered by position (`0.jpg`, `1.png`, ...). If one image in an album can't be downloaded, the others keep their numbers, so the gap shows what's missing.
 
 > **Note:** the saved-posts flow (`--saved` / `--unsave`) is implemented but has only been exercised against mocked Reddit responses, so it needs a real login to verify end-to-end. `--saved` also uses `getpass`, so it needs a real terminal (not an IDE console).
 
@@ -97,7 +97,7 @@ uv run pytest
 
 `pyproject.toml` configures pytest to measure coverage and block live network access, so recorded cassettes are the only source of HTTP responses.
 
-As of the latest run, **171 tests pass with ~97% coverage**. CI runs the suite on the pinned Python version and fails the build if coverage drops below 80%.
+As of the latest run, **199 tests pass with ~96% coverage**. CI runs the suite on the pinned Python version and fails the build if coverage drops below 80%.
 
 This repo also ships a [pre-commit](https://pre-commit.com/) config (`ruff`, `black`, `ty`, and assorted file checks):
 
@@ -112,11 +112,11 @@ After argument parsing, `main()` runs a fully asynchronous pipeline:
 
 1. **Stream building**: `StreamBuilder` (see [`src/reddit/submission_source.py`](src/reddit/submission_source.py)) signs into Reddit via [asyncpraw](https://asyncpraw.readthedocs.io/) and turns the requested subreddits into async listing generators (capped per source by `--limit`). These are interleaved with `merge()` and adapted with `amap()` / `afilter()` (see [`src/core/functional.py`](src/core/functional.py)), yielding each submission as a `SubmissionWrapper`. A predicate built from `--karma` and the age flags (`--hours`/`--days`/`--years`) filters out submissions that don't qualify.
 
-2. **URL finding**: Each `SubmissionWrapper.find_urls()` runs every parser (`single_image`, `reddit`, `imgur`, `flickr` in [`src/parsing/`](src/parsing/)) concurrently in a strategy pattern and collects the direct media links they resolve, in order (so gallery and album order is kept). A parser that fails is reported and skipped, so it can't cost a post the links the other parsers found.
+2. **URL finding**: Reddit-hosted images and galleries are read straight from the listing data, with no extra request. For any other link, `SubmissionWrapper.find_urls()` runs every parser (`single_image`, `reddit`, `imgur`, `flickr` in [`src/parsing/`](src/parsing/)) concurrently in a strategy pattern and collects the direct media links they resolve, in order (so gallery and album order is kept). A parser that fails is reported and skipped, so it can't cost a post the links the other parsers found.
 
-3. **Downloading & saving**: Resolved URLs are fetched with [`httpx`](https://www.python-httpx.org/) and written to disk with [`aiofiles`](https://github.com/Tinche/aiofiles) via `UniqueDirectoryFileManager`, which guarantees unique filenames and (with `--organize`) per-subreddit folders.
+3. **Downloading & saving**: Resolved URLs are streamed with [`httpx`](https://www.python-httpx.org/) straight to disk with [`aiofiles`](https://github.com/Tinche/aiofiles), so memory use doesn't grow with file or album size. `UniqueDirectoryFileManager` claims each name atomically, so concurrent posts with the same title can't overwrite each other, and (with `--organize`) sorts posts into per-subreddit folders. Transient errors, including a connection dropping partway through a file, are retried with exponential backoff, waiting longer if the server's `Retry-After` asks.
 
-Concurrency is bounded by two `asyncio.Semaphore`s: one limits how many submissions are finding URLs at once, and the other limits individual download requests across all submissions. The whole pipeline runs inside an `asyncio.TaskGroup` so submissions are processed as they stream in rather than in fixed batches. Each submission is handled independently: a failure is logged and skipped rather than aborting the run, and individual downloads retry transient errors with backoff. Unless `--nolog` is passed, a JSON record of each processed post is appended to a log in the output directory.
+Concurrency is limited in two places. Every HTTP request, from parsers and downloads alike, goes through `HostLimitedTransport` (see [`src/core/host_limiter.py`](src/core/host_limiter.py)), which allows 8 requests at once to any one host and 32 in total, matching the connection pool so requests never time out waiting for a connection. A 429 or 503 with `Retry-After` pauses that host for every request, not just the one that got it. Separately, `main()` lets 32 posts be in progress at once, so posts finish roughly in the order they arrive. Reddit API calls go through asyncpraw, which follows Reddit's own rate limits. The whole pipeline runs inside an `asyncio.TaskGroup` so submissions are processed as they stream in rather than in fixed batches. Each submission is handled independently: a failure is logged and skipped rather than aborting the run, and individual downloads retry transient errors with backoff. Unless `--nolog` is passed, a JSON record of each processed post is appended to a log in the output directory.
 
 ## License
 

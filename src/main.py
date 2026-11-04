@@ -3,16 +3,16 @@ import asyncio
 import time
 from getpass import getpass
 
-import httpx
 from dotenv import load_dotenv
 
 from .core import AsyncClientBundle, Predicate, UniqueDirectoryFileManager
 from .reddit import SortOption, StreamBuilder, SubmissionWrapper
 
-MAX_FINDERS = 10
-# bounds individual download requests, not posts; kept below httpx's default
-# 100-connection pool so the parsers sharing the client still get connections
-MAX_DOWNLOADS = 90
+# posts between "start finding urls" and "files saved". Network concurrency is
+# limited per host by the http client (see make_http_client), and downloads
+# stream to disk; this keeps posts finishing roughly in the order they arrive
+# instead of every post's files trickling in at once
+MAX_ACTIVE_POSTS = 32
 
 
 async def main(args: argparse.Namespace) -> None:
@@ -20,10 +20,9 @@ async def main(args: argparse.Namespace) -> None:
 
     file_manager = UniqueDirectoryFileManager(args.directory, organize=args.organize)
 
-    # semaphores are created here (not at module scope) so they bind to the event
-    # loop running this call rather than whichever loop first touched them
-    find_urls_sem = asyncio.Semaphore(MAX_FINDERS)
-    download_sem = asyncio.Semaphore(MAX_DOWNLOADS)
+    # created here (not at module scope) so it binds to the event loop running
+    # this call rather than whichever loop first touched it
+    post_sem = asyncio.Semaphore(MAX_ACTIVE_POSTS)
 
     predicate = build_predicate(
         args.karma, max_age_seconds(args.hours, args.days, args.years)
@@ -48,8 +47,7 @@ async def main(args: argparse.Namespace) -> None:
                     wrapped,
                     clients,
                     file_manager,
-                    find_urls_sem,
-                    download_sem,
+                    post_sem,
                     log=args.log,
                     unsave=args.unsave,
                 )
@@ -117,8 +115,7 @@ async def process_submission(
     wrapped: SubmissionWrapper,
     clients: AsyncClientBundle,
     file_manager: UniqueDirectoryFileManager,
-    find_urls_sem: asyncio.Semaphore,
-    download_sem: asyncio.Semaphore,
+    post_sem: asyncio.Semaphore,
     *,
     log: bool = False,
     unsave: bool = False,
@@ -129,15 +126,11 @@ async def process_submission(
     try:
         assert clients.http is not None, "bundle must be entered (async with) first"
 
-        # find_urls needs the full bundle (parsers use http AND reddit)
-        async with find_urls_sem:
+        async with post_sem:
+            # find_urls needs the full bundle (parsers use http AND reddit)
             await wrapped.find_urls(clients)
-
-        # download only needs the http client; the download semaphore bounds
-        # individual requests inside it, not whole posts
-        saved = await process_download(
-            wrapped, clients.http, file_manager, download_sem
-        )
+            # download only needs the http client
+            saved = await wrapped.download(clients.http, file_manager)
 
         # only un-save posts we actually downloaded something from
         if unsave and saved:
@@ -161,19 +154,6 @@ async def process_submission(
             except Exception as log_error:  # noqa: BLE001
                 print(f"could not log error for {wrapped.url}: {log_error}")
         return []
-
-
-async def process_download(
-    wrapped: SubmissionWrapper,
-    client: httpx.AsyncClient,
-    file_manager: UniqueDirectoryFileManager,
-    download_sem: asyncio.Semaphore,
-) -> list[str]:
-    return await file_manager.save_files(
-        wrapped.title,
-        await wrapped.download(client, download_sem),
-        subreddit=wrapped.subreddit,
-    )
 
 
 def build_parser() -> argparse.ArgumentParser:

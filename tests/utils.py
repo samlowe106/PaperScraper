@@ -21,6 +21,20 @@ async def acollect(stream: AsyncIterable) -> list:
     return [item async for item in stream]
 
 
+# the fields every listing Submission has that the code reads
+_SUBMISSION_FIELDS = [
+    "id",
+    "title",
+    "subreddit",
+    "url",
+    "author",
+    "over_18",
+    "score",
+    "created_utc",
+    "unsave",
+]
+
+
 def SubmissionMockFactory(
     title=None,
     subreddit=None,
@@ -34,7 +48,10 @@ def SubmissionMockFactory(
 ):
     # generate unique values per call (defaults must not be shared across calls,
     # since several tests rely on distinct titles/urls)
-    submission_mock = Mock()
+    # spec: like a real Submission, reading a field it doesn't have raises
+    # AttributeError. A bare Mock would invent is_gallery, gallery_data, etc.,
+    # and every fake post would look like a gallery
+    submission_mock = Mock(spec=_SUBMISSION_FIELDS)
 
     submission_mock.id = uuid.uuid4().hex[:7]
     submission_mock.title = title if title is not None else str(uuid.uuid4())

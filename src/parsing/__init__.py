@@ -5,7 +5,7 @@ from typing import Any
 from ..core import AsyncClientBundle
 from .flickr import flickr_parser
 from .imgur import imgur_parser
-from .reddit import reddit_parser
+from .reddit import media_urls, reddit_parser
 from .single_image import single_image_parser
 
 type Parser = Callable[[str, AsyncClientBundle], Coroutine[Any, Any, list[str]]]
@@ -51,6 +51,7 @@ __all__ = [
     "find_urls",
     "flickr_parser",
     "imgur_parser",
+    "media_urls",
     "parsers",
     "reddit_parser",
     "single_image_parser",

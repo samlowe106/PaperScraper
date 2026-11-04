@@ -575,7 +575,7 @@ dev = [
     { name = "pytest-recording", specifier = ">=0.14.0,<0.15" },
     { name = "pytest-timeout", specifier = ">=2.3.0" },
     { name = "ty", specifier = ">=0.0.91" },
-    { name = "vcrpy", specifier = ">=8.4.0" },
+    { name = "vcrpy", specifier = ">=9.4.0" },
 ]
 
 [[package]]
@@ -832,15 +832,15 @@ async = [
 
 [[package]]
 name = "vcrpy"
-version = "8.4.0"
+version = "9.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/0e/f4c7c08a75e4bd941490e3f4073d83886af357978cd388f38834ad9b6e55/vcrpy-8.4.0.tar.gz", hash = "sha256:e212fcea9c190a3dfa7c2d4fa3e4980aa208a9fd9d97cb739a1f00c7f6e9655c", size = 99177, upload-time = "2026-10-25T15:38:46.948Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/b9/9abf7df54f4d30d2b6ce47f12ab94ed4820395a953da30dd451af86dab9d/vcrpy-9.4.0.tar.gz", hash = "sha256:af6cb65abb1a0a5c1d25954b9a52f033b85c6f80679f3f91c9e7301da4107e74", size = 122146, upload-time = "2026-11-01T00:31:39.251Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c6/15/702c0380b570cd0ccfeb13a8b3f0fe58f47efb6ad42678eb83ac39b40161/vcrpy-8.4.0-py3-none-any.whl", hash = "sha256:3f9ce2568519901289645387b26287d0f989995258c6cca716798c1cd439a733", size = 47511, upload-time = "2026-10-25T15:38:45.403Z" },
+    { url = "https://files.pythonhosted.org/packages/21/91/7bb14a9806dfa22cf9b3fb28587c3e5d697434ca06ecb4d8b63c7f7db01d/vcrpy-9.4.0-py3-none-any.whl", hash = "sha256:7f2e9c90bf996ed36a423c675119ddae7dd658571c55cfa8b1c954746a99702b", size = 57627, upload-time = "2026-11-01T00:31:37.771Z" },
 ]
 
 [[package]]

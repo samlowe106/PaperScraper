@@ -29,7 +29,7 @@ repos:
         args: [--markdown-linebreak-ext, "md,markdown"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.5
+    rev: v0.17.3
     hooks:
       - id: ruff
         name: ruff (lint + autofix)
@@ -38,13 +38,13 @@ repos:
         args: [--fix]
 
   - repo: https://github.com/psf/black
-    rev: 26.5.1
+    rev: 26.10.1
     hooks:
       - id: black
         args: [--safe]
 
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.77
+    rev: v0.0.95
     hooks:
       # ty reads its config from [tool.ty] in pyproject.toml, not CLI flags.
       - id: ty

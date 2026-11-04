@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -9,18 +10,19 @@ class TestLogRecord(unittest.TestCase):
     def test_builds_record(self):
         wrapper = SubmissionWrapperFactory()
         wrapper._submission.id = "abc123"
-        wrapper.urls = {"https://imgur.com/2", "https://imgur.com/1"}
+        wrapper.urls = ["https://imgur.com/2", "https://imgur.com/1"]
 
         record = wrapper.log_record()
 
         self.assertEqual(record["id"], "abc123")
         self.assertEqual(record["url"], wrapper._submission.url)
         self.assertEqual(record["exception"], "")
-        # set is serialized as a sorted list
+        # in discovery order, and JSON-serializable
         self.assertEqual(
             record["recognized_urls"],
-            ["https://imgur.com/1", "https://imgur.com/2"],
+            ["https://imgur.com/2", "https://imgur.com/1"],
         )
+        json.dumps(record)
 
     def test_record_with_exception(self):
         wrapper = SubmissionWrapperFactory()
@@ -40,12 +42,12 @@ class TestFindUrls(unittest.IsolatedAsyncioTestCase):
             "src.reddit.submission_wrapper.parse_find_urls",
             new_callable=AsyncMock,
         ) as mock_find:
-            mock_find.return_value = {"https://img/1", "https://img/2"}
+            mock_find.return_value = ["https://img/1", "https://img/2"]
             result = await wrapper.find_urls(mock_clients)
 
         mock_find.assert_awaited_once_with("https://example.com/post", mock_clients)
-        self.assertEqual(wrapper.urls, {"https://img/1", "https://img/2"})
-        self.assertEqual(result, {"https://img/1", "https://img/2"})
+        self.assertEqual(wrapper.urls, ["https://img/1", "https://img/2"])
+        self.assertEqual(result, ["https://img/1", "https://img/2"])
         self.assertTrue(wrapper.has_urls())
 
     async def test_find_urls_empty(self):
@@ -56,8 +58,8 @@ class TestFindUrls(unittest.IsolatedAsyncioTestCase):
             "src.reddit.submission_wrapper.parse_find_urls",
             new_callable=AsyncMock,
         ) as mock_find:
-            mock_find.return_value = set()
+            mock_find.return_value = []
             await wrapper.find_urls(mock_clients)
 
-        self.assertEqual(wrapper.urls, set())
+        self.assertEqual(wrapper.urls, [])
         self.assertFalse(wrapper.has_urls())

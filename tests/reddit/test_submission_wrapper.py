@@ -1,53 +1,112 @@
+import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 
 from src.reddit.submission_wrapper import _get_with_retry
-from tests import SubmissionWrapperFactory
+from tests import SubmissionWrapperFactory, mock_http_bundle
 
 # Note: log() and find_urls() are covered in tests/reddit/test_reddit.py
 
 
+def _client(handler) -> httpx.AsyncClient:
+    """The production-configured client, answered by handler"""
+    return mock_http_bundle(handler).http
+
+
+def _responses(*results):
+    """A handler that returns (or raises) each of results in turn, recording calls"""
+    remaining = list(results)
+    calls: list[httpx.Request] = []
+
+    def handler(request):
+        calls.append(request)
+        result = remaining.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return httpx.Response(result)
+
+    return handler, calls
+
+
 class TestGetWithRetry(unittest.IsolatedAsyncioTestCase):
 
+    async def _get(self, handler, **kwargs):
+        return await _get_with_retry(
+            _client(handler), "https://x/u", asyncio.Semaphore(1), backoff=0, **kwargs
+        )
+
     async def test_returns_response_on_success(self):
-        resp = MagicMock(status_code=200)
-        client = AsyncMock()
-        client.get = AsyncMock(return_value=resp)
-        result = await _get_with_retry(client, "u", backoff=0)
-        self.assertIs(result, resp)
-        self.assertEqual(client.get.await_count, 1)
+        handler, calls = _responses(200)
+        result = await self._get(handler)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(len(calls), 1)
 
     async def test_does_not_retry_hard_error(self):
-        resp = MagicMock(status_code=404)  # 404 is a hard error, not retryable
-        client = AsyncMock()
-        client.get = AsyncMock(return_value=resp)
-        result = await _get_with_retry(client, "u", attempts=3, backoff=0)
-        self.assertIs(result, resp)
-        self.assertEqual(client.get.await_count, 1)
+        handler, calls = _responses(404)  # 404 is a hard error, not retryable
+        result = await self._get(handler, attempts=3)
+        self.assertEqual(result.status_code, 404)
+        self.assertEqual(len(calls), 1)
 
     async def test_retries_transport_error_then_succeeds(self):
-        ok = MagicMock(status_code=200)
-        client = AsyncMock()
-        client.get = AsyncMock(side_effect=[httpx.ConnectError("x"), ok])
-        result = await _get_with_retry(client, "u", attempts=3, backoff=0)
-        self.assertIs(result, ok)
-        self.assertEqual(client.get.await_count, 2)
+        handler, calls = _responses(httpx.ConnectError("x"), 200)
+        result = await self._get(handler, attempts=3)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(len(calls), 2)
+
+    async def test_retries_timeout_then_succeeds(self):
+        handler, _ = _responses(httpx.ReadTimeout("x"), 200)
+        result = await self._get(handler, attempts=3)
+        self.assertEqual(result.status_code, 200)
 
     async def test_retries_retryable_status_then_succeeds(self):
-        ok = MagicMock(status_code=200)
-        client = AsyncMock()
-        client.get = AsyncMock(side_effect=[MagicMock(status_code=503), ok])
-        result = await _get_with_retry(client, "u", attempts=3, backoff=0)
-        self.assertIs(result, ok)
+        handler, calls = _responses(503, 429, 200)
+        result = await self._get(handler, attempts=3)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(len(calls), 3)
+
+    async def test_returns_last_response_when_statuses_exhaust_attempts(self):
+        handler, _ = _responses(503, 502)
+        result = await self._get(handler, attempts=2)
+        self.assertEqual(result.status_code, 502)
 
     async def test_returns_none_when_transport_errors_exhaust_attempts(self):
-        client = AsyncMock()
-        client.get = AsyncMock(side_effect=httpx.ConnectError("x"))
-        result = await _get_with_retry(client, "u", attempts=2, backoff=0)
+        handler, calls = _responses(httpx.ConnectError("x"), httpx.ConnectError("x"))
+        result = await self._get(handler, attempts=2)
         self.assertIsNone(result)
-        self.assertEqual(client.get.await_count, 2)
+        self.assertEqual(len(calls), 2)
+
+    async def test_releases_semaphore_during_backoff(self):
+        # with one permit, a second request must run while the first is sleeping
+        # between retries, which only works if backoff happens outside the permit
+        semaphore = asyncio.Semaphore(1)
+        first_failed = asyncio.Event()
+        order = []
+
+        def handler(request):
+            order.append(request.url.path)
+            if request.url.path == "/flaky" and not first_failed.is_set():
+                first_failed.set()
+                raise httpx.ConnectError("x")
+            return httpx.Response(200)
+
+        client = _client(handler)
+
+        async def other():
+            await first_failed.wait()
+            return await _get_with_retry(client, "https://x/other", semaphore)
+
+        flaky, other_result = await asyncio.gather(
+            _get_with_retry(
+                client, "https://x/flaky", semaphore, attempts=2, backoff=0.2
+            ),
+            other(),
+        )
+        assert flaky is not None and other_result is not None
+        self.assertEqual(flaky.status_code, 200)
+        self.assertEqual(other_result.status_code, 200)
+        self.assertEqual(order, ["/flaky", "/other", "/flaky"])
 
 
 class TestUnsave(unittest.IsolatedAsyncioTestCase):
@@ -67,72 +126,103 @@ class TestUnsave(unittest.IsolatedAsyncioTestCase):
 class TestDownload(unittest.IsolatedAsyncioTestCase):
 
     async def test_download_empty(self):
-        # Assert that an empty list of urls returns an empty dictionary
+        requests = []
         wrapper = SubmissionWrapperFactory()
-        self.assertEqual(wrapper.urls, set())
-        mock_client = AsyncMock()
-        self.assertEqual(await wrapper.download(mock_client), [])
+        self.assertEqual(wrapper.urls, [])
+        client = _client(lambda request: requests.append(request))
+        self.assertEqual(await wrapper.download(client, asyncio.Semaphore(1)), [])
+        self.assertEqual(requests, [])
+
+    async def test_download_keeps_order_and_extensions(self):
+        content_types = {
+            "/3": "image/jpeg",
+            "/1": "image/png",
+            "/2": "image/gif",
+            "/4": "video/webm",
+        }
+
+        async def handler(request):
+            # finish out of order, so only gather's ordering keeps the result
+            # in url order
+            await asyncio.sleep(0.01 * (5 - int(request.url.path[1:])))
+            return httpx.Response(
+                200,
+                headers={"Content-Type": content_types[request.url.path]},
+                content=request.url.path.encode(),
+            )
+
+        wrapper = SubmissionWrapperFactory()
+        wrapper.urls = [f"https://x{path}" for path in content_types]
+
+        result = await wrapper.download(_client(handler), asyncio.Semaphore(4))
+
+        self.assertEqual(
+            result,
+            [(b"/3", ".jpg"), (b"/1", ".png"), (b"/2", ".gif"), (b"/4", ".webm")],
+        )
+
+    async def test_download_follows_redirects(self):
+        # a redirected image used to come back as a 3xx and be dropped
+        def handler(request):
+            if request.url.path == "/old":
+                return httpx.Response(301, headers={"Location": "https://x/new"})
+            return httpx.Response(
+                200, headers={"Content-Type": "image/png"}, content=b"png"
+            )
+
+        wrapper = SubmissionWrapperFactory()
+        wrapper.urls = ["https://x/old"]
+        result = await wrapper.download(_client(handler), asyncio.Semaphore(1))
+        self.assertEqual(result, [(b"png", ".png")])
 
     async def test_download_skips_failed_urls(self):
-        # a url that exhausts retries (None) is dropped; others still download
-        good = MagicMock(status_code=200, content=b"data")
-        good.headers = {"Content-type": "image/jpg"}
-
-        def fake(client, url, **kwargs):
-            return good if url == "good" else None
+        # a url that exhausts retries or returns a hard error is dropped; others
+        # still download
+        def handler(request):
+            if request.url.path == "/down":
+                raise httpx.ConnectError("x")
+            if request.url.path == "/missing":
+                return httpx.Response(404)
+            return httpx.Response(
+                200, headers={"Content-Type": "image/jpeg"}, content=b"data"
+            )
 
         wrapper = SubmissionWrapperFactory()
-        wrapper.urls = ["good", "bad"]
-        with patch(
-            "src.reddit.submission_wrapper._get_with_retry",
-            new_callable=AsyncMock,
-            side_effect=fake,
-        ):
-            result = await wrapper.download(AsyncMock())
+        wrapper.urls = ["https://x/good", "https://x/down", "https://x/missing"]
+        with patch("asyncio.sleep", new_callable=AsyncMock):  # skip backoff
+            result = await wrapper.download(_client(handler), asyncio.Semaphore(1))
 
         self.assertEqual(result, [(b"data", ".jpg")])
 
-    async def test_download_nonempty(self):
-        mock_client = AsyncMock()
+    async def test_in_flight_requests_never_exceed_semaphore(self):
+        limit = 3
+        semaphore = asyncio.Semaphore(limit)
+        in_flight = 0
+        peak = 0
 
-        urls_extensions = {
-            "url1": "jpg",
-            "url2": "png",
-            "url3": "gif",
-            "url4": "webm",
-        }
-
-        class MockResponse:
-            def __init__(self, content_mock, file_ext="jpg"):
-                self.status_code = 200
-                self.content = content_mock
-                self.headers = {"Content-type": f"image/{file_ext}"}
-
-        async def mock_response_contents(mock_url, **kwargs):
-            return MockResponse(
-                mock_url + " mock content", file_ext=urls_extensions[mock_url]
+        async def handler(request):
+            nonlocal in_flight, peak
+            in_flight += 1
+            peak = max(peak, in_flight)
+            await asyncio.sleep(0.01)
+            in_flight -= 1
+            return httpx.Response(
+                200, headers={"Content-Type": "image/jpeg"}, content=b"data"
             )
 
-        mock_client.get.side_effect = mock_response_contents
+        client = _client(handler)
+        wrappers = []
+        for i in range(4):
+            wrapper = SubmissionWrapperFactory()
+            wrapper.urls = [f"https://x/post{i}-img{j}" for j in range(5)]
+            wrappers.append(wrapper)
 
-        wrapper = SubmissionWrapperFactory()
-        wrapper.subreddit = "mock subreddit"
-        wrapper.title = "mock title"
-        wrapper.urls = list(urls_extensions.keys())
+        results = await asyncio.gather(
+            *(wrapper.download(client, semaphore) for wrapper in wrappers)
+        )
 
-        contents_extensions = await wrapper.download(mock_client)
-
-        expected = [
-            ("url1 mock content", ".jpg"),
-            ("url2 mock content", ".png"),
-            ("url3 mock content", ".gif"),
-            ("url4 mock content", ".webm"),
-        ]
-
-        for url in urls_extensions:
-            mock_client.get.assert_any_call(url, timeout=10)
-
-        self.assertListEqual(contents_extensions, expected)
+        self.assertEqual(peak, limit)
+        self.assertEqual([len(r) for r in results], [5] * 4)
 
 
 class TestStr(unittest.TestCase):
@@ -151,10 +241,10 @@ class TestHasUrls(unittest.TestCase):
 
     def test_has_urls_empty(self):
         wrapped = SubmissionWrapperFactory()
-        wrapped.urls = set()
+        wrapped.urls = []
         self.assertFalse(wrapped.has_urls())
 
     def test_has_urls_nonempty(self):
         wrapped = SubmissionWrapperFactory()
-        wrapped.urls = set("example_url")
+        wrapped.urls = ["https://example.com/a.jpg"]
         self.assertTrue(wrapped.has_urls())

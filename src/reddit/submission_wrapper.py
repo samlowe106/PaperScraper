@@ -14,6 +14,7 @@ _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 async def _get_with_retry(
     client: httpx.AsyncClient,
     url: str,
+    semaphore: asyncio.Semaphore,
     *,
     attempts: int = 3,
     backoff: float = 0.5,
@@ -24,12 +25,14 @@ async def _get_with_retry(
     exponential backoff. Returns the response once it's non-retryable (success or
     a hard error like 404), or ``None`` if every attempt failed at the transport
     level — so one persistently-broken url drops a single file rather than failing
-    the whole submission.
+    the whole submission. ``semaphore`` is held only for each request, not
+    during backoff, so a retrying url doesn't block others from downloading.
     """
     response: httpx.Response | None = None
     for attempt in range(attempts):
         try:
-            response = await client.get(url, timeout=timeout)
+            async with semaphore:
+                response = await client.get(url, timeout=timeout)
             if response.status_code not in _RETRYABLE_STATUS:
                 return response
         except httpx.TransportError, httpx.TimeoutException:
@@ -42,12 +45,7 @@ async def _get_with_retry(
 class SubmissionWrapper:
     """Wraps Submission objects to provide extra functionality"""
 
-    def __init__(
-        self,
-        submission: asyncpraw.models.Submission,
-        client: httpx.AsyncClient,
-        dry: bool = True,
-    ):
+    def __init__(self, submission: asyncpraw.models.Submission):
         self._submission = submission
 
         self.title = submission.title
@@ -57,7 +55,7 @@ class SubmissionWrapper:
         self.nsfw = submission.over_18
         self.score = submission.score
         self.created_utc = submission.created_utc
-        self.urls: set[str] = set()
+        self.urls: list[str] = []
 
     async def unsave(self):
         """
@@ -68,10 +66,12 @@ class SubmissionWrapper:
     async def download(
         self,
         client: httpx.AsyncClient,
+        semaphore: asyncio.Semaphore,
     ) -> list[tuple[bytes, str]]:
         """
         Downloads all urls and bundles them with their file extension
         :client: the httpx client to use for downloading
+        :semaphore: bounds in-flight requests across all submissions
         :return: a list of tuples, where the first element is
         the content of the downloaded file and the second element is the file extension
         """
@@ -79,7 +79,7 @@ class SubmissionWrapper:
             return []
 
         responses = await asyncio.gather(
-            *(_get_with_retry(client, url) for url in self.urls)
+            *(_get_with_retry(client, url, semaphore) for url in self.urls)
         )
 
         return [
@@ -91,12 +91,12 @@ class SubmissionWrapper:
             if response is not None and response.status_code == 200
         ]
 
-    async def find_urls(self, clients: AsyncClientBundle) -> set[str]:
+    async def find_urls(self, clients: AsyncClientBundle) -> list[str]:
         """
         Runs every parser against this submission's url and stores the resulting
         direct media links in ``self.urls``.
         :param clients: the full client bundle (parsers need http AND reddit)
-        :return: the set of discovered urls (also stored on self.urls)
+        :return: the discovered urls, in order (also stored on self.urls)
         """
         self.urls = await parse_find_urls(self.url, clients)
         return self.urls
@@ -110,7 +110,7 @@ class SubmissionWrapper:
             "title": self._submission.title,
             "id": self._submission.id,
             "url": self._submission.url,
-            "recognized_urls": sorted(self.urls),  # set -> list for JSON
+            "recognized_urls": list(self.urls),
             "exception": exception,
         }
 

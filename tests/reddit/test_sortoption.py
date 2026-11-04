@@ -1,51 +1,38 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import create_autospec
+
+from asyncpraw.models import Subreddit
 
 from src.reddit import SortOption
 
+# every option and the asyncpraw call it should make
+EXPECTED_CALLS = {
+    SortOption.NEW: ("new", {}),
+    SortOption.HOT: ("hot", {}),
+    SortOption.CONTROVERSIAL: ("controversial", {}),
+    SortOption.TOP_ALL: ("top", {"time_filter": "all"}),
+    SortOption.TOP_DAY: ("top", {"time_filter": "day"}),
+    SortOption.TOP_HOUR: ("top", {"time_filter": "hour"}),
+    SortOption.TOP_WEEK: ("top", {"time_filter": "week"}),
+    SortOption.TOP_MONTH: ("top", {"time_filter": "month"}),
+    SortOption.TOP_YEAR: ("top", {"time_filter": "year"}),
+}
 
-class TestSortOptionMembers(unittest.TestCase):
 
-    def test_all_options_are_members(self):
-        names = {o.name for o in SortOption}
-        expected = {
-            "NEW",
-            "HOT",
-            "CONTROVERSIAL",
-            "GILDED",
-            "TOP_ALL",
-            "TOP_DAY",
-            "TOP_HOUR",
-            "TOP_WEEK",
-            "TOP_MONTH",
-            "TOP_YEAR",
-        }
-        self.assertEqual(names, expected)
+class TestSortOption(unittest.TestCase):
 
-    def test_lookup_by_name(self):
-        self.assertIs(SortOption["HOT"], SortOption.HOT)
+    def test_every_option_is_a_member(self):
+        # a bare partial isn't an enum member on modern Python; without member()
+        # options silently disappear from the enum (and from --sortby)
+        self.assertEqual(set(SortOption), set(EXPECTED_CALLS))
 
-    def test_hot_calls_subreddit_hot(self):
-        sub = MagicMock()
-        SortOption.HOT(sub)
-        sub.hot.assert_called_once_with()
-
-    def test_new_calls_subreddit_new(self):
-        sub = MagicMock()
-        SortOption.NEW(sub)
-        sub.new.assert_called_once_with()
-
-    def test_top_all_passes_time_filter(self):
-        sub = MagicMock()
-        SortOption.TOP_ALL(sub)
-        sub.top.assert_called_once_with(time_filter="all")
-
-    def test_top_day_passes_time_filter(self):
-        sub = MagicMock()
-        SortOption.TOP_DAY(sub)
-        sub.top.assert_called_once_with(time_filter="day")
-
-    def test_call_returns_value(self):
-        sub = MagicMock()
-        sub.hot.return_value = "sentinel"
-        self.assertEqual(SortOption.HOT(sub), "sentinel")
+    def test_each_option_calls_a_real_listing_method(self):
+        for option, (method, kwargs) in EXPECTED_CALLS.items():
+            with self.subTest(option.name):
+                # autospec rejects methods asyncpraw's Subreddit doesn't have
+                # (a plain MagicMock accepted the removed gilded()) and
+                # arguments it wouldn't accept
+                subreddit = create_autospec(Subreddit, instance=True)
+                result = option(subreddit, limit=5)
+                getattr(subreddit, method).assert_called_once_with(**kwargs, limit=5)
+                self.assertIs(result, getattr(subreddit, method).return_value)

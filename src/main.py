@@ -10,7 +10,9 @@ from .core import AsyncClientBundle, Predicate, UniqueDirectoryFileManager
 from .reddit import SortOption, StreamBuilder, SubmissionWrapper
 
 MAX_FINDERS = 10
-MAX_DOWNLOADS = 100
+# bounds individual download requests, not posts; kept below httpx's default
+# 100-connection pool so the parsers sharing the client still get connections
+MAX_DOWNLOADS = 90
 
 
 async def main(args: argparse.Namespace) -> None:
@@ -28,7 +30,9 @@ async def main(args: argparse.Namespace) -> None:
     )
 
     tasks: list[asyncio.Task[list[str]]] = []
-    async with asyncio.TaskGroup() as task_group, AsyncClientBundle() as clients:
+    # the bundle must be the outer context: contexts exit in reverse, so this
+    # way the task group waits for every submission before the clients close
+    async with AsyncClientBundle() as clients, asyncio.TaskGroup() as task_group:
         stream = await build_stream(
             clients,
             saved=args.saved,
@@ -129,8 +133,8 @@ async def process_submission(
         async with find_urls_sem:
             await wrapped.find_urls(clients)
 
-        # download only needs the http client; awaiting inline keeps the result
-        # reachable for collection while the download semaphore bounds concurrency
+        # download only needs the http client; the download semaphore bounds
+        # individual requests inside it, not whole posts
         saved = await process_download(
             wrapped, clients.http, file_manager, download_sem
         )
@@ -150,7 +154,12 @@ async def process_submission(
     except Exception as e:  # noqa: BLE001
         print(f"error processing {wrapped.url}: {e}")
         if log:
-            await file_manager.log(wrapped.log_record(exception=str(e)))
+            # logging can fail too (disk full, the failure above was the log);
+            # letting that escape would abort every other submission
+            try:
+                await file_manager.log(wrapped.log_record(exception=str(e)))
+            except Exception as log_error:  # noqa: BLE001
+                print(f"could not log error for {wrapped.url}: {log_error}")
         return []
 
 
@@ -160,12 +169,11 @@ async def process_download(
     file_manager: UniqueDirectoryFileManager,
     download_sem: asyncio.Semaphore,
 ) -> list[str]:
-    async with download_sem:
-        return await file_manager.save_files(
-            wrapped.title,
-            await wrapped.download(client),
-            subreddit=wrapped.subreddit,
-        )
+    return await file_manager.save_files(
+        wrapped.title,
+        await wrapped.download(client, download_sem),
+        subreddit=wrapped.subreddit,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:

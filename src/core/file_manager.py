@@ -1,30 +1,34 @@
 import asyncio
+import itertools
 import json
 import os
+from collections.abc import Iterator
 from datetime import datetime
 
 import aiofiles
 import aiofiles.os
 
+# (content, extension) pairs; extensions keep their leading dot, e.g. ".jpg"
 type DownloadsExtensions = list[tuple[bytes, str]]
 
-# leave headroom under the typical 255-char filename limit for the extension
-MAX_FILENAME_LENGTH = 250
+# most filesystems cap a single path component at 255 bytes (not characters)
+MAX_NAME_BYTES = 255
+
+# characters that are invalid in file and directory names on at least one OS
+_INVALID_CHARS = set(r'\/:*?"<>|') | {chr(c) for c in range(32)}
 
 
 class UniqueDirectoryFileManager:
     def __init__(self, directory, organize=False):
-        # this will essentially be the woking directory,
+        # this will essentially be the working directory,
         #  all files will be downloaded to this directory or its subdirectories
         # local (naive) time is intentional: the folder name should match the
-        # user's clock
-        self.directory = os.path.join(
+        # user's clock. no colons, since they're invalid on Windows
+        os.makedirs(directory, exist_ok=True)
+        self.directory = self._mkdir_unique_sync(
             directory,
-            datetime.today().strftime("PaperScraper %Y-%m-%d %H:%M"),  # noqa: DTZ002
+            datetime.today().strftime("PaperScraper %Y-%m-%d %H-%M"),  # noqa: DTZ002
         )
-        # we can assume that this directory does not already exist
-        #  if it does, that's basically intentional from the user
-        os.makedirs(self.directory, exist_ok=False)
         self.organize = organize
         # serializes concurrent appends so log lines don't interleave
         self._log_lock = asyncio.Lock()
@@ -72,91 +76,97 @@ class UniqueDirectoryFileManager:
         if len(downloads) == 1:
             # just one file, no need for a directory
             download, extension = downloads[0]
-            filepath = await self.get_unique_filepath(directory, title, extension)
-            await self._write(filepath, download)
-            return [filepath]
+            return [await self._write_unique(directory, title, extension, download)]
 
         # album, need a directory to hold all the files
-        directory = os.path.join(directory, await self.get_unique_dirname(title))
-        # album directory should be unique
-        await aiofiles.os.makedirs(directory, exist_ok=False)
+        directory = await self._mkdir_unique(directory, title)
 
         filepaths = [
-            os.path.join(directory, f"{i}.{extension}")
+            os.path.join(directory, f"{i}{extension}")
             for i, (_, extension) in enumerate(downloads)
         ]
         # write every file in the album concurrently
         await asyncio.gather(
             *(
                 self._write(destination, download)
-                for destination, (download, _) in zip(
-                    filepaths, downloads, strict=False
-                )
+                for destination, (download, _) in zip(filepaths, downloads, strict=True)
             )
         )
 
         return filepaths
 
     @staticmethod
-    async def _write(destination: str, content: bytes) -> None:
+    async def _write(destination: str, content: bytes, mode: str = "wb") -> None:
         """Writes bytes to a path without blocking the event loop"""
-        async with aiofiles.open(destination, "wb") as f:
+        async with aiofiles.open(destination, mode) as f:
             await f.write(content)
 
-    async def get_unique_filepath(
-        self, directory: str, title: str, file_extension: str
+    async def _write_unique(
+        self, directory: str, title: str, extension: str, content: bytes
     ) -> str:
         """
-        Gets a unique filename in the specified directory with the specified title as a prefix
-        :param title: the prefix for the filename
-        :param directory: the directory in which to check for filename conflicts
-        :param file_extension: the file extension for the filename
-        :return: a unique filename in the specified directory with the specified title as a prefix
+        Writes content to a new file in directory named after title, appending
+        " (1)", " (2)", ... until the name is free
+        :return: the path that was written to
         """
-        # this naive implementation may have bad big O runtime if there are a lot of duplicate
-        #  filenames, and could be optimized by keeping a persistent counter for each title,
-        #  but this should almost never happen in practice so this is good enough
-        # ensure validity
-        title = self.ensure_valid_filename(title)
-        filename = f"{title}.{file_extension}"
-        # ensure uniqueness
-        offset = 0
-        existing = await aiofiles.os.listdir(directory)
-        while filename in existing:
-            offset += 1
-            filename = f"{title} ({offset}).{file_extension}"
-        return os.path.join(directory, filename)
+        # exclusive creation ("xb") makes checking and claiming a name one step,
+        # so concurrent saves of same-titled posts can't pick the same file
+        for name in self.unique_names(title, extension):
+            path = os.path.join(directory, name)
+            try:
+                await self._write(path, content, mode="xb")
+            except FileExistsError:
+                continue
+            return path
+        raise AssertionError("unreachable: unique_names is infinite")
 
-    def ensure_valid_filename(self, filename: str) -> str:
+    async def _mkdir_unique(self, parent: str, name: str) -> str:
+        """Async version of _mkdir_unique_sync"""
+        return await asyncio.to_thread(self._mkdir_unique_sync, parent, name)
+
+    @classmethod
+    def _mkdir_unique_sync(cls, parent: str, name: str) -> str:
         """
-        Replaces characters that are invalid in filenames with underscores and
-        caps the length so long titles can't exceed the OS filename limit
+        Creates a new directory in parent named after name, appending " (1)",
+        " (2)", ... until the name is free
+        :return: the path of the created directory
+        """
+        for candidate in cls.unique_names(name):
+            path = os.path.join(parent, candidate)
+            try:
+                os.mkdir(path)
+            except FileExistsError:
+                continue
+            return path
+        raise AssertionError("unreachable: unique_names is infinite")
+
+    @classmethod
+    def unique_names(cls, title: str, extension: str = "") -> Iterator[str]:
+        """
+        Yields valid names for title: "title.ext", then "title (1).ext", ...
+        Each is shortened so that it fits in MAX_NAME_BYTES with its suffix.
+        """
+        title = cls.ensure_valid_filename(title)
+        for offset in itertools.count():
+            suffix = (f" ({offset})" if offset else "") + extension
+            budget = MAX_NAME_BYTES - len(suffix.encode())
+            yield _truncate_utf8(title, budget) + suffix
+
+    @staticmethod
+    def ensure_valid_filename(filename: str) -> str:
+        """
+        Replaces characters that are invalid in file or directory names with
+        underscores
         :param filename: the filename to check
         :return: a valid filename with the same content as the input
         """
-        cleaned = "".join(c if c not in r'\/:*?"<>|' else "_" for c in filename)
-        return cleaned[:MAX_FILENAME_LENGTH]
+        cleaned = "".join("_" if c in _INVALID_CHARS else c for c in filename)
+        # Windows drops trailing dots and spaces, and "", "." and ".." aren't
+        # usable names anywhere
+        cleaned = cleaned.rstrip(". ")
+        return cleaned or "untitled"
 
-    async def get_unique_dirname(self, dirname):
-        """
-        Gets a unique directory name in the current directory with the specified name as a prefix
-        :param dirname: the prefix for the directory name
-        :return: a unique directory name in the current directory with the specified name as a prefix
-        """
-        # ensure validity
-        dirname = self.ensure_valid_dirname(dirname)
-        # ensure uniqueness
-        directory = os.path.join(self.directory, dirname)
-        offset = 0
-        while await aiofiles.os.path.exists(directory):
-            directory = os.path.join(self.directory, f"{dirname} ({offset})")
-            offset += 1
-        return directory
 
-    def ensure_valid_dirname(self, dirname: str) -> str:
-        """
-        Replaces characters that are invalid in directory names with underscores
-        :param dirname: the directory name to check
-        :return: a valid directory name with the same content as the input
-        """
-        return "".join(c if c not in r'\/:*?"<>|' else "_" for c in dirname)
+def _truncate_utf8(text: str, max_bytes: int) -> str:
+    """Cuts text to at most max_bytes of UTF-8 without splitting a character"""
+    return text.encode()[:max_bytes].decode(errors="ignore")

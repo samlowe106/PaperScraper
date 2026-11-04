@@ -33,78 +33,74 @@ def _get_headers() -> dict[str, str]:
 
 async def _handle_single_image(
     url: str, match: dict[str, str], client: httpx.AsyncClient
-) -> set[str]:
+) -> list[str]:
     if match["direct_link"]:
-        return {url}
+        # .gifv is an html page wrapping an mp4 of the same name
+        return [url.replace(".gifv", ".mp4")]
 
-    image_id = (
-        match["link_id"].split("/")[-1]
-        if not match["trailing_slash"]
-        else match["link_id"].split("/")[-2]
-    )
+    # link_id can't contain "/", but may carry an extension (imgur.com/abc.jpg)
+    image_id = match["link_id"].split(".")[0]
 
-    response = await client.get(
-        f"https://api.imgur.com/3/image/{image_id}", headers=_get_headers()
-    )
+    response = await client.get(IMAGE_API + image_id, headers=_get_headers())
 
     if response.status_code != 200:
-        return set()
+        return []
 
     data = response.json().get("data")
     if not isinstance(data, dict):
-        return set()
+        return []
 
     link = data.get("link")
     if isinstance(link, str):
-        return {link}
+        return [link]
 
-    return set()
+    return []
 
 
-async def _handle_album(match: dict[str, str], client: httpx.AsyncClient) -> set[str]:
+async def _handle_album(match: dict[str, str], client: httpx.AsyncClient) -> list[str]:
     link_id = match["link_id"].split("-")[-1]
-    response = await client.get(
-        f"https://api.imgur.com/3/album/{link_id}/images", headers=_get_headers()
-    )
+    response = await client.get(f"{ALBUM_API}{link_id}/images", headers=_get_headers())
     if response.status_code != 200:
-        return set()
+        return []
 
     data = response.json().get("data")
     if not isinstance(data, list):
-        return set()
+        return []
 
-    return {
+    return [
         image["link"]
         for image in data
         if isinstance(image, dict) and isinstance(image.get("link"), str)
-    }
+    ]
 
 
-async def _handle_gallery(match: dict[str, str], client: httpx.AsyncClient) -> set[str]:
+async def _handle_gallery(
+    match: dict[str, str], client: httpx.AsyncClient
+) -> list[str]:
     gallery_id = match["link_id"].split("-")[-1]
     response = await client.get(
-        f"https://api.imgur.com/3/gallery/album/{gallery_id}", headers=_get_headers()
+        f"{GALLERY_API}album/{gallery_id}", headers=_get_headers()
     )
 
     if response.status_code != 200:
-        return set()
+        return []
 
     data = response.json().get("data")
     if not isinstance(data, dict):
-        return set()
+        return []
 
     images = data.get("images")
     if not isinstance(images, list):
-        return set()
+        return []
 
-    return {
+    return [
         image["link"]
         for image in images
         if isinstance(image, dict) and isinstance(image.get("link"), str)
-    }
+    ]
 
 
-async def imgur_parser(url: str, clients: AsyncClientBundle) -> set[str]:
+async def imgur_parser(url: str, clients: AsyncClientBundle) -> list[str]:
     """
     Parse an Imgur link using the Imgur API.
 
@@ -113,7 +109,7 @@ async def imgur_parser(url: str, clients: AsyncClientBundle) -> set[str]:
     assert clients.http is not None, "bundle must be entered (async with) first"
     match = _split_imgur_url(url)
     if match is None:
-        return set()
+        return []
 
     SINGLE_IMAGE_LINK = "/"
     ALBUM_LINK = "/a/"
@@ -128,4 +124,4 @@ async def imgur_parser(url: str, clients: AsyncClientBundle) -> set[str]:
     if match["link_type"] == GALLERY_LINK:
         return await _handle_gallery(match, clients.http)
 
-    return set()
+    return []

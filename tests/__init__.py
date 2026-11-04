@@ -3,6 +3,7 @@ from .utils import (
     SubmissionWrapperFactory,
     acollect,
     async_iter,
+    mock_http_bundle,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "SubmissionWrapperFactory",
     "acollect",
     "async_iter",
+    "mock_http_bundle",
 ]

@@ -16,7 +16,6 @@ class SortOption(Enum):
     NEW = member(partial(lambda s, **kw: s.new(**kw)))
     HOT = member(partial(lambda s, **kw: s.hot(**kw)))
     CONTROVERSIAL = member(partial(lambda s, **kw: s.controversial(**kw)))
-    GILDED = member(partial(lambda s, **kw: s.gilded(**kw)))  # probably deprecated?
     TOP_ALL = member(partial(lambda s, **kw: s.top(time_filter="all", **kw)))
     TOP_DAY = member(partial(lambda s, **kw: s.top(time_filter="day", **kw)))
     TOP_HOUR = member(partial(lambda s, **kw: s.top(time_filter="hour", **kw)))

@@ -40,16 +40,9 @@ class StreamBuilder:
         self.redditor = (username, password)
         return self
 
-    def set_default_sortby(self, sortby: SortOption) -> Self:
-        self.sortby = sortby
-        return self
-
     async def build(
         self, clients: AsyncClientBundle
     ) -> AsyncIterable[SubmissionWrapper]:
-
-        assert clients.http is not None, "bundle must be entered (async with) first"
-        http = clients.http
 
         reddit = clients.set_reddit(
             username=self.redditor[0] if self.redditor else None,
@@ -73,9 +66,6 @@ class StreamBuilder:
         stream: AsyncIterable[asyncpraw.models.Comment | asyncpraw.models.Submission]
         stream = merge(*streams)
 
-        def mapfunc(submission: asyncpraw.models.Submission) -> SubmissionWrapper:
-            return SubmissionWrapper(submission, http)
-
         # saved() can also yield Comments; this filter guarantees only Submissions
         # remain, but the isinstance lambda doesn't narrow the type statically
         submissions = cast(
@@ -85,4 +75,4 @@ class StreamBuilder:
             ),
         )
 
-        return afilter(self.predicate, amap(mapfunc, submissions))
+        return afilter(self.predicate, amap(SubmissionWrapper, submissions))

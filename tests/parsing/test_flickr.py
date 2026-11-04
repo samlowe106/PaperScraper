@@ -1,95 +1,152 @@
-import asyncio
+import json
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
-from src.parsing.flickr import _get_flickr_photo_id, flickr_parser
+import httpx
 
+from src.parsing.flickr import _decode_base58, _get_flickr_photo_id, flickr_parser
+from tests import mock_http_bundle
 
-class TestFlickrRegex(unittest.TestCase):
-    def test_regex_matches_direct_photo(self):
-        result = asyncio.run(
-            _get_flickr_photo_id(
-                "https://www.flickr.com/photos/mockuser/12345/",
-                AsyncMock(),
-            )
-        )
-        self.assertEqual(result, "12345")
-
-    def test_regex_matches_short_photo(self):
-        mock_client = AsyncMock()
-        response = AsyncMock()
-        response.status_code = 200
-        response.url = "https://www.flickr.com/photos/mockuser/12345/"
-        mock_client.get.return_value = response
-
-        result = asyncio.run(
-            _get_flickr_photo_id("https://flic.kr/p/abcde", mock_client)
-        )
-        self.assertEqual(result, "12345")
+# the shape flickr.photos.getSizes returns with nojsoncallback=1 (dimensions
+# really do arrive as a mix of numbers and strings)
+_SIZES_RESPONSE = {
+    "sizes": {
+        "canblog": 0,
+        "canprint": 0,
+        "candownload": 1,
+        "size": [
+            {
+                "label": "Square",
+                "width": 75,
+                "height": 75,
+                "source": "https://live.staticflickr.com/1/1_s.jpg",
+            },
+            {
+                "label": "Original",
+                "width": "4000",
+                "height": "3000",
+                "source": "https://live.staticflickr.com/1/1_o.jpg",
+            },
+            {
+                "label": "Large",
+                "width": "1024",
+                "height": "768",
+                "source": "https://live.staticflickr.com/1/1_b.jpg",
+            },
+        ],
+    },
+    "stat": "ok",
+}
 
 
 class TestGetFlickrPhotoID(unittest.TestCase):
-    def test_returns_none_for_invalid_url(self):
-        result = asyncio.run(_get_flickr_photo_id("https://example.com", AsyncMock()))
-        self.assertIsNone(result)
+
+    def test_direct_photo(self):
+        for url in [
+            "https://www.flickr.com/photos/mockuser/12345/",
+            # no trailing slash used to go unrecognized
+            "https://www.flickr.com/photos/mockuser/12345",
+            "https://flickr.com/photos/mockuser/12345/in/album-72157/",
+        ]:
+            with self.subTest(url):
+                self.assertEqual(_get_flickr_photo_id(url), "12345")
+
+    def test_non_photo_pages(self):
+        for url in [
+            "https://example.com",
+            # "albums" used to be taken as a photo id
+            "https://www.flickr.com/photos/mockuser/albums/",
+            "https://www.flickr.com/photos/mockuser/",
+        ]:
+            with self.subTest(url):
+                self.assertIsNone(_get_flickr_photo_id(url))
+
+    def test_short_url_is_decoded_without_a_request(self):
+        self.assertEqual(
+            _get_flickr_photo_id("https://flic.kr/p/21"), _decode_base58("21")
+        )
 
 
+class TestDecodeBase58(unittest.TestCase):
+
+    def test_digits(self):
+        # "1" is zero and "2" is one in flickr's alphabet
+        self.assertEqual(_decode_base58("1"), "0")
+        self.assertEqual(_decode_base58("2"), "1")
+        self.assertEqual(_decode_base58("21"), "58")
+        self.assertEqual(_decode_base58("Z"), "57")
+
+    def test_rejects_characters_outside_alphabet(self):
+        # 0, O, I and l are left out because they look alike
+        for char in "0OIl":
+            self.assertIsNone(_decode_base58(char))
+
+
+@patch.dict("os.environ", {"FLICKR_CLIENT_ID": "mock_api_key"})
 class TestFlickrParser(unittest.IsolatedAsyncioTestCase):
 
-    @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
-    async def test_returns_empty_set_if_no_id(self, mock_get_flickr_photo_id):
-        mock_get_flickr_photo_id.return_value = None
-        result = await flickr_parser("mock url", MagicMock())
-        self.assertEqual(result, set())
+    def setUp(self):
+        self.requests: list[httpx.Request] = []
 
-    @patch.dict("os.environ", {}, clear=True)  # no FLICKR_CLIENT_ID
-    @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
-    async def test_returns_empty_without_api_key(self, mock_get_flickr_photo_id):
-        mock_get_flickr_photo_id.return_value = "12345"
-        result = await flickr_parser("mock url", MagicMock())
-        self.assertEqual(result, set())
+    def _bundle(self, status=200, body=_SIZES_RESPONSE):
+        def handler(request):
+            self.requests.append(request)
+            return httpx.Response(status, json=body)
 
-    @patch.dict("os.environ", {"FLICKR_CLIENT_ID": "mock_api_key"})
-    @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
-    async def test_returns_empty_on_non_200(self, mock_get_flickr_photo_id):
-        mock_get_flickr_photo_id.return_value = "12345"
-        response = AsyncMock()
-        response.status_code = 500
-        mock_client = AsyncMock()
-        mock_client.get.return_value = response
-        bundle = MagicMock()
-        bundle.http = mock_client
+        return mock_http_bundle(handler)
 
-        result = await flickr_parser("mock url", bundle)
-        self.assertEqual(result, set())
+    async def test_returns_largest_size(self):
+        result = await flickr_parser(
+            "https://www.flickr.com/photos/u/12345/", self._bundle()
+        )
+        self.assertEqual(result, ["https://live.staticflickr.com/1/1_o.jpg"])
 
-    @patch.dict("os.environ", {"FLICKR_CLIENT_ID": "mock_api_key"})
-    @patch("src.parsing.flickr._get_flickr_photo_id", new_callable=AsyncMock)
-    async def test_makes_api_call(self, mock_get_flickr_photo_id):
-        mock_get_flickr_photo_id.return_value = "12345"
-
-        response = AsyncMock()
-        response.status_code = 200
-        response.text = (
-            'jsonFlickrApi({"sizes":{"candownload":1,"size":['
-            '{"width":100,"height":100,"source":"https://i.flickr.com/1.jpg"},'
-            '{"width":200,"height":200,"source":"https://i.flickr.com/2.jpg"}'
-            "]}})"
+        (request,) = self.requests
+        self.assertEqual(
+            dict(request.url.params),
+            {
+                "api_key": "mock_api_key",
+                "format": "json",
+                "nojsoncallback": "1",
+                # getInfo returns a different shape and used to raise KeyError
+                "method": "flickr.photos.getSizes",
+                "photo_id": "12345",
+            },
         )
 
-        mock_client = AsyncMock()
-        mock_client.get.return_value = response
-        mock_client_bundle = MagicMock()
-        mock_client_bundle.http = mock_client
+    async def test_no_request_for_non_flickr_url(self):
+        self.assertEqual(await flickr_parser("https://example.com", self._bundle()), [])
+        self.assertEqual(self.requests, [])
 
-        result = await flickr_parser("mock url", mock_client_bundle)
-
-        self.assertEqual(result, {"https://i.flickr.com/2.jpg"})
-        expected_url = (
-            "https://www.flickr.com/services/rest/?"
-            "api_key=mock_api_key&format=json&method=flickr.photos.getInfo&photo_id=12345"
+    @patch.dict("os.environ", {}, clear=True)
+    async def test_returns_empty_without_api_key(self):
+        result = await flickr_parser(
+            "https://www.flickr.com/photos/u/12345/", self._bundle()
         )
-        mock_client.get.assert_awaited_once_with(expected_url)
+        self.assertEqual(result, [])
+        self.assertEqual(self.requests, [])
+
+    async def test_returns_empty_on_non_200(self):
+        result = await flickr_parser(
+            "https://www.flickr.com/photos/u/12345/", self._bundle(status=500)
+        )
+        self.assertEqual(result, [])
+
+    async def test_api_error_returned_as_200(self):
+        # flickr reports errors with stat "fail" and a 200 status
+        body = {"stat": "fail", "code": 1, "message": "Photo not found"}
+        result = await flickr_parser(
+            "https://www.flickr.com/photos/u/12345/", self._bundle(body=body)
+        )
+        self.assertEqual(result, [])
+
+    async def test_download_not_allowed(self):
+        body = json.loads(json.dumps(_SIZES_RESPONSE))
+        body["sizes"]["candownload"] = 0
+        result = await flickr_parser(
+            "https://www.flickr.com/photos/u/12345/", self._bundle(body=body)
+        )
+        self.assertEqual(result, [])
 
 
 if __name__ == "__main__":

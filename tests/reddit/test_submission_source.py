@@ -2,8 +2,10 @@ import unittest
 from collections import Counter
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import asyncpraw.models
+
 from src.core import AsyncClientBundle
-from src.reddit import SortOption, StreamBuilder, SubmissionWrapper
+from src.reddit import StreamBuilder, SubmissionWrapper
 from tests import SubmissionMockFactory, acollect, async_iter
 
 
@@ -66,11 +68,6 @@ class TestAddSubreddit(unittest.IsolatedAsyncioTestCase):
 
 class TestSetRedditor(unittest.IsolatedAsyncioTestCase):
 
-    async def test_changes_redditor(self):
-        builder = StreamBuilder()
-        builder.set_redditor("mock username", "mock password")
-        self.assertEqual(builder.redditor, ("mock username", "mock password"))
-
     async def test_redditor_stream(self):
         saved = SubmissionMockFactory()
         # saved posts come from the authenticated user's saved listing
@@ -89,6 +86,23 @@ class TestSetRedditor(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(result), 1)
         self.assertIsInstance(result[0], SubmissionWrapper)
         self.assertEqual(result[0].title, saved.title)
+
+    async def test_saved_comments_are_dropped(self):
+        # saved() yields Comments as well as Submissions; only posts have media
+        saved_post = SubmissionMockFactory()
+        saved_comment = MagicMock(spec=asyncpraw.models.Comment)
+        mock_me = MagicMock()
+        mock_me.saved.return_value = async_iter([saved_comment, saved_post])
+        mock_reddit = MagicMock()
+        mock_reddit.user.me = AsyncMock(return_value=mock_me)
+
+        async with AsyncClientBundle() as clients:
+            with patch.object(clients, "set_reddit", return_value=mock_reddit):
+                builder = StreamBuilder()
+                builder.set_redditor("user", "pw")
+                result = await acollect(await builder.build(clients))
+
+        self.assertEqual([w._submission for w in result], [saved_post])
 
 
 class TestMultiSource(unittest.IsolatedAsyncioTestCase):
@@ -118,14 +132,6 @@ class TestMultiSource(unittest.IsolatedAsyncioTestCase):
             Counter(w.title for w in result),
             Counter([saved.title, sub_a.title, sub_b.title]),
         )
-
-
-class TestDefaultSortby(unittest.IsolatedAsyncioTestCase):
-
-    async def test_changes_sortby(self):
-        builder = StreamBuilder()
-        builder.set_default_sortby(SortOption.TOP_ALL)
-        self.assertEqual(builder.sortby, SortOption.TOP_ALL)
 
 
 class TestLimit(unittest.IsolatedAsyncioTestCase):

@@ -17,15 +17,15 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit>=4.7.0,<5",
-    "pytest>=9.1.1",
+    "pytest>=9.2.0",
     "pytest-dotenv>=0.5.2,<0.6",
-    "vcrpy>=9.4.0",
-    "pytest-recording>=0.14.0,<0.15",
-    "pytest-asyncio>=1.4.0",
-    "coverage>=7.17.0",
+    "vcrpy>=9.4.2",
+    "pytest-recording>=0.14.1,<0.15",
+    "pytest-asyncio>=1.4.1.post1",
+    "coverage>=7.17.2",
     "pytest-cov>=7.1.0",
     "pytest-timeout>=2.3.0",
-    "ty>=0.0.91",
+    "ty>=0.0.99",
 ]
 
 [project.scripts]
